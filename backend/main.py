@@ -23,7 +23,8 @@ app.include_router(divine_router)
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok"}
+    from llm_client import get_mode
+    return {"status": "ok", "llm_mode": get_mode()}
 
 
 # ===== 托管前端静态文件 =====

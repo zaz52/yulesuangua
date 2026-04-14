@@ -1,5 +1,31 @@
+# ===== 核心依赖 =====
 fastapi==0.117.1
 uvicorn==0.36.0
-lunar_python==1.4.8
+pydantic==2.11.9
+python-multipart==0.0.20
+
+# ===== LLM 依赖 =====
+# langchain 用于消息格式和 OpenAI 兼容 API 调用
 langchain-core==1.0.2
+langchain-openai==1.0.1
+httpx==0.28.1
+
+# ===== 奇门排盘 =====
+lunar_python==1.4.8
+
+# ===== coze-coding-dev-sdk（沙箱模式专用） =====
+# 在 Render 等外部平台部署时，不需要此 SDK（设置 LLM_API_KEY 即可走 OpenAI 兼容模式）
+# 如果 pip install 失败可注释掉此行
 coze-coding-dev-sdk==0.5.14
+
+# ===== SDK 间接依赖（部分环境需显式声明） =====
+beautifulsoup4==4.12.2
+soupsieve==2.8.3
+requests==2.33.1
+
+# ===== 可选依赖（SDK 可能需要，按需启用） =====
+# sqlalchemy==2.0.43
+# alembic==1.18.4
+# psycopg2-binary==2.9.11
+# boto3==1.40.18
+# supabase==2.15.3

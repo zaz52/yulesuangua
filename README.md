@@ -30,7 +30,7 @@
 
 - **前端**：Vue 3 + Vue Router 4 + Vite
 - **后端**：Python FastAPI
-- **AI**：coze-coding-dev-sdk（豆包/DeepSeek 大模型，流式输出）
+- **AI**：coze-coding-dev-sdk（沙箱）/ OpenAI 兼容 API（外部部署），流式输出
 - **排盘**：lunar_python + qimen_cli.py
 - **字体**：Ma Shan Zheng（书法）+ Noto Serif SC（宋体）
 
@@ -152,6 +152,36 @@ cd backend && python3 -m uvicorn main:app --port 5000 --reload
 | 姻缘测算 | 朱砂 | `#c0392b` |
 | 佛学开示 | 古金 | `#b8860b` |
 | 奇门遁甲 | 青瓷 | `#2e7d5b` |
+
+## 部署
+
+### Render（后端）
+
+1. 在 Render 创建 Web Service，连接 GitHub 仓库
+2. **Root Directory** 设为 `backend`
+3. **Build Command**: `pip install -r requirements.txt`
+4. **Start Command**: `python render_start.py`
+5. 添加环境变量：
+
+| 变量名 | 说明 | 示例 |
+|--------|------|------|
+| `LLM_API_KEY` | LLM API Key（必填） | `sk-xxx` |
+| `LLM_BASE_URL` | OpenAI 兼容 API 地址 | `https://api.deepseek.com/v1` |
+| `LLM_MODEL` | 模型名称 | `deepseek-chat` |
+
+> 不设置 `LLM_API_KEY` 将使用沙箱 SDK 模式（仅 Coze 平台内可用）
+
+### Netlify（前端）
+
+1. 在 Netlify 创建站点，连接 GitHub 仓库
+2. 构建配置已内置在 `netlify.toml` 中
+3. 添加环境变量：
+
+| 变量名 | 说明 | 示例 |
+|--------|------|------|
+| `VITE_API_BASE` | 后端 API 地址 | `https://your-app.onrender.com/api` |
+
+> 不设置 `VITE_API_BASE` 时，前端默认请求同源 `/api`（适合后端托管前端的部署方式）
 
 ## 免责声明
 
