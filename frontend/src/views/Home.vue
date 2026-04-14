@@ -37,6 +37,11 @@
       </div>
     </div>
 
+    <!-- 后端离线提示 -->
+    <div v-if="!backendOk" class="offline-tip">
+      ⚠ 后端服务未启动，算卦功能暂不可用。请先启动 Python 后端（参考 README.md）
+    </div>
+
     <!-- 底部 -->
     <div class="footer">
       <div class="footer-line"></div>
@@ -49,10 +54,11 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { fetchSkills } from '../api/divine'
+import { fetchSkills, isBackendAvailable } from '../api/divine'
 
 const router = useRouter()
 const skills = ref([])
+const backendOk = ref(true)
 
 const runeChars = [
   '道','德','玄','妙','一','炁','无','极','太','上',
@@ -82,8 +88,12 @@ onMounted(() => {
   runes.value = generated
 
   try {
-    fetchSkills().then(data => { skills.value = data.skills })
+    fetchSkills().then(data => {
+      skills.value = data.skills
+      backendOk.value = isBackendAvailable()
+    })
   } catch {
+    backendOk.value = false
     skills.value = [
       { id: 'bazi', name: '四柱八字', description: '排出四柱八字，分析命理运势', icon: '☰' },
       { id: 'yinyuan', name: '姻缘测算', description: '八字合婚、生肖配对、签诗占卜', icon: '🎎' },
@@ -285,6 +295,21 @@ function goDivine(skillId) {
 .skill-qimen .skill-seal { border-color: var(--qing); color: var(--qing); }
 .skill-qimen .skill-icon { color: var(--qing); }
 .skill-qimen:hover { border-color: var(--qing); }
+
+/* ===== 离线提示 ===== */
+.offline-tip {
+  position: relative; z-index: 2;
+  max-width: 640px; width: 100%;
+  padding: 14px 20px;
+  background: rgba(192,57,43,0.08);
+  border: 1px solid rgba(192,57,43,0.2);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  color: var(--zhu);
+  text-align: center;
+  line-height: 1.6;
+  letter-spacing: 0.5px;
+}
 
 /* ===== 底部 ===== */
 .footer {
