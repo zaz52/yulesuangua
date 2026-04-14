@@ -1,7 +1,11 @@
 /**
  * 后端 API 调用模块
+ * 
+ * API 地址配置：
+ * - 本地开发/同源部署：不用配置，默认 /api
+ * - 后端独立部署（如 Render）：在 Netlify 设置环境变量 VITE_API_BASE = https://你的后端地址
  */
-const API_BASE = '/api'
+const API_BASE = import.meta.env.VITE_API_BASE || '/api'
 
 // 检测后端是否可用
 let backendAvailable = null
