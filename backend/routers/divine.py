@@ -78,7 +78,9 @@ def divine_bazi(req: DivineRequest):
 
     def generate():
         for text in chat_stream(system_prompt, req.message, req.history):
-            yield f"data: {text}\n\n"
+            # SSE 规范：data 行以 \n\n 结尾，文本中的换行需转义
+            escaped = text.replace("\n", "\\n")
+            yield f"data: {escaped}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(
@@ -100,7 +102,8 @@ def divine_yinyuan(req: DivineRequest):
 
     def generate():
         for text in chat_stream(system_prompt, req.message, req.history):
-            yield f"data: {text}\n\n"
+            escaped = text.replace("\n", "\\n")
+            yield f"data: {escaped}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(
@@ -122,7 +125,8 @@ def divine_fojiao(req: DivineRequest):
 
     def generate():
         for text in chat_stream(system_prompt, req.message, req.history):
-            yield f"data: {text}\n\n"
+            escaped = text.replace("\n", "\\n")
+            yield f"data: {escaped}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(
@@ -179,7 +183,8 @@ def divine_qimen(req: QimenRequest):
 
     def generate():
         for text in chat_stream(system_prompt, user_msg, req.history):
-            yield f"data: {text}\n\n"
+            escaped = text.replace("\n", "\\n")
+            yield f"data: {escaped}\n\n"
         yield "data: [DONE]\n\n"
 
     return StreamingResponse(

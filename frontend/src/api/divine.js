@@ -48,7 +48,8 @@ export async function divineStream(skill, message, history = [], extra = {}, onC
       if (line.startsWith('data: ')) {
         const data = line.slice(6)
         if (data === '[DONE]') { onDone?.(); return }
-        onChunk?.(data)
+        // 反转义后端转义的换行符
+        onChunk?.(data.replace(/\\n/g, '\n'))
       }
     }
   }

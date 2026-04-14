@@ -76,6 +76,7 @@
             <input v-model="qimenForm.city" placeholder="如：长安" />
           </div>
         </div>
+        <div class="form-hint">默认使用当前时间排盘</div>
       </div>
 
       <!-- 提问输入 -->
@@ -178,10 +179,35 @@ const shichenList = [
   { name: '亥时', range: '21:00-23:00' },
 ]
 
+// 根据当前时间自动推算时辰
+function getCurrentShichen() {
+  const h = new Date().getHours()
+  if (h >= 23 || h < 1) return '子时'
+  if (h < 3) return '丑时'
+  if (h < 5) return '寅时'
+  if (h < 7) return '卯时'
+  if (h < 9) return '辰时'
+  if (h < 11) return '巳时'
+  if (h < 13) return '午时'
+  if (h < 15) return '未时'
+  if (h < 17) return '申时'
+  if (h < 19) return '酉时'
+  if (h < 21) return '戌时'
+  return '亥时'
+}
+
+// 格式化当前时间给 datetime-local
+function getNowDatetimeLocal() {
+  const d = new Date()
+  const pad = n => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 const runeChars = ['道','德','玄','妙','一','炁','无','极','太','上','清','静','真','符','甲','乙','丙','丁','戊','己','庚','辛','壬','癸','子','丑','寅','卯','辰','巳','午','未','申','酉']
 const runes = ref([])
 
 onMounted(() => {
+  // 符文
   const generated = []
   for (let i = 0; i < 25; i++) {
     generated.push({
@@ -198,6 +224,12 @@ onMounted(() => {
     })
   }
   runes.value = generated
+
+  // 八字默认时辰
+  baziForm.value.shichen = getCurrentShichen()
+
+  // 奇门默认当前时间
+  qimenForm.value.datetime = getNowDatetimeLocal()
 })
 
 watch(skillId, () => {
@@ -411,6 +443,10 @@ function scrollToBottom() {
   padding: 8px 12px; font-size: 0.82rem; color: var(--hui-light);
   font-style: italic;
 }
+.form-hint {
+  margin-top: 10px; font-size: 0.78rem; color: var(--hui-light);
+  text-align: center; letter-spacing: 1px;
+}
 
 .radio-group { display: flex; gap: 8px; }
 .radio {
@@ -516,5 +552,9 @@ function scrollToBottom() {
   .form-grid { grid-template-columns: 1fr; }
   .info-form.compact .form-grid { grid-template-columns: 1fr; }
   .ask-wrap { flex-direction: column; }
+  .header { padding: 12px 14px; }
+  .main-scroll { padding: 16px 14px 80px; }
+  .page-title { font-size: 1.1rem; letter-spacing: 2px; }
+  .header-spacer { width: 50px; }
 }
 </style>
