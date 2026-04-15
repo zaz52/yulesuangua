@@ -1,0 +1,10 @@
+[project]
+requires = ["python-3.12"]
+
+[dev]
+build = ["bash", "-c", "pip3 install fastapi uvicorn pydantic python-multipart lunar_python tzdata pypinyin pyyaml coze-coding-dev-sdk python-pptx openpyxl numpy pandas beautifulsoup4 2>/dev/null; echo done"]
+run = ["python3", "-m", "uvicorn", "main:app", "--reload", "--port", "5000", "--host", "0.0.0.0"]
+
+[deploy]
+build = ["bash", "-c", "pip3 install -r requirements.txt 2>/dev/null; echo done"]
+run = ["python3", "-m", "uvicorn", "main:app", "--port", "5000", "--host", "0.0.0.0"]

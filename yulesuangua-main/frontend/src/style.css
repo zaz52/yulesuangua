@@ -1,0 +1,42 @@
+/* ===== 乾坤之道 · 古风水墨全局样式 ===== */
+
+@import url('https://fonts.googleapis.cn/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Ma+Shan+Zheng&display=swap');
+
+:root {
+  /* 古风水墨色板 */
+  --xuanzhi: #f7f2e8;          /* 宣纸底色 */
+  --xuanzhi-deep: #ede6d6;     /* 宣纸深 */
+  --xuanzhi-light: #faf6ee;    /* 宣纸浅 */
+  --mo: #2c2c2c;               /* 墨色 */
+  -mo-light: #4a4a4a;          /* 墨浅 */
+  --mo-mid: #5c5c5c;           /* 墨中 */
+  --zhu: #c0392b;              /* 朱砂红 */
+  --zhu-glow: rgba(192,57,43,0.15);
+  --jin: #b8860b;              /* 古金 */
+  --jin-glow: rgba(184,134,11,0.15);
+  --qing: #2e7d5b;             /* 青瓷 */
+  --qing-glow: rgba(46,125,91,0.12);
+  --lan: #3a6b8c;              /* 靛蓝 */
+  --lan-glow: rgba(58,107,140,0.12);
+  --hui: #8c8c7a;              /* 灰褐 */
+  --hui-light: #b5b5a5;        /* 浅灰 */
+  --zhi: #f5f0e8;              /* 纸白 */
+  --yin: rgba(0,0,0,0.04);     /* 阴影 */
+  --border: rgba(44,44,44,0.1); /* 通用边框 */
+  --ink-wash: rgba(44,44,44,0.06); /* 水墨晕染 */
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', serif;
+  -webkit-font-smoothing: antialiased;
+  background: var(--xuanzhi);
+  color: var(--mo);
+}
+
+#app { width: 100%; min-height: 100vh; }
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--xuanzhi-deep); }
+::-webkit-scrollbar-thumb { background: var(--hui-light); border-radius: 3px; }
