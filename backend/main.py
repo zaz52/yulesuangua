@@ -9,10 +9,13 @@ from routers.divine import router as divine_router
 app = FastAPI(title="乾坤之道 API", version="1.0.0")
 
 # 允许前端访问
+# CORS 规范: allow_origins=["*"] 与 allow_credentials=True 冲突
+# 前后端分离部署时，应将前端域名加入允许列表
+_CORS_ORIGINS = os.environ.get("CORS_ORIGINS", "*")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_CORS_ORIGINS.split(",") if _CORS_ORIGINS != "*" else ["*"],
+    allow_credentials=False if _CORS_ORIGINS == "*" else True,
     allow_methods=["*"],
     allow_headers=["*"],
 )

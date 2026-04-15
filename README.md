@@ -179,9 +179,9 @@ cd backend && python3 -m uvicorn main:app --port 5000 --reload
 
 | 变量名 | 说明 | 示例 |
 |--------|------|------|
-| `VITE_API_BASE` | 后端 API 地址 | `https://your-app.onrender.com/api` |
+| `VITE_API_BASE_URL` | 后端 API 地址 | `https://your-app.onrender.com/api` |
 
-> 不设置 `VITE_API_BASE` 时，前端默认请求同源 `/api`（适合后端托管前端的部署方式）
+> 不设置 `VITE_API_BASE_URL` 时，前端默认请求同源 `/api`（适合后端托管前端的部署方式）
 
 ## 免责声明
 

@@ -39,7 +39,7 @@
 
     <!-- 后端离线提示 -->
     <div v-if="!backendOk" class="offline-tip">
-      ⚠ 后端服务未连接，算卦功能暂不可用。请检查后端是否启动，或在 Netlify 设置 VITE_API_BASE 环境变量指向后端地址。
+      ⚠ 后端服务未连接，算卦功能暂不可用。请检查后端是否启动，或在 Netlify 设置 VITE_API_BASE_URL 环境变量指向后端地址。
     </div>
 
     <!-- 底部 -->

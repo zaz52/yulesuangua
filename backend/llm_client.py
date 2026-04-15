@@ -9,12 +9,31 @@ LLM 调用模块：双模式支持
   LLM_MODEL    - 外部部署时的模型名（默认 deepseek-chat）
 """
 import os
+import logging
 from typing import Iterator
 
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
-# 检测运行模式：有 LLM_API_KEY 则走外部部署模式，否则走沙箱 SDK 模式
+logger = logging.getLogger(__name__)
+
+# 检测运行模式：有 LLM_API_KEY 则走外部部署模式
 _USE_EXTERNAL = bool(os.environ.get("LLM_API_KEY"))
+
+# 检测 SDK 是否可用
+_SDK_AVAILABLE = False
+try:
+    from coze_coding_dev_sdk import LLMClient as _SDKClient
+    _SDK_AVAILABLE = True
+except ImportError:
+    _SDK_AVAILABLE = False
+    logger.warning("coze-coding-dev-sdk 未安装，SDK 模式不可用。请设置 LLM_API_KEY 使用外部 API 模式。")
+
+# 如果没有显式设置 LLM_API_KEY 且 SDK 也不可用，提前警告
+if not _USE_EXTERNAL and not _SDK_AVAILABLE:
+    logger.error(
+        "LLM 不可用！coze-coding-dev-sdk 未安装且未设置 LLM_API_KEY。"
+        "请安装 SDK 或设置 LLM_API_KEY 环境变量。"
+    )
 
 
 def get_text_content(content) -> str:
@@ -35,18 +54,22 @@ def get_text_content(content) -> str:
 
 # ==================== 外部部署模式 ====================
 
-def _get_external_client():
-    """获取外部部署的 ChatOpenAI 客户端"""
+def _get_external_client(temperature: float = 0.8, model: str | None = None):
+    """获取外部部署的 ChatOpenAI 客户端，所有密钥从环境变量读取"""
     from langchain_openai import ChatOpenAI
     api_key = os.environ.get("LLM_API_KEY", "")
     base_url = os.environ.get("LLM_BASE_URL", "https://api.deepseek.com/v1")
-    model = os.environ.get("LLM_MODEL", "deepseek-chat")
+    use_model = model or os.environ.get("LLM_MODEL", "deepseek-chat")
+
+    if not api_key:
+        raise ValueError("LLM_API_KEY 环境变量未设置，无法调用外部 API")
+
     return ChatOpenAI(
         api_key=api_key,
         base_url=base_url,
-        model=model,
+        model=use_model,
         streaming=True,
-        temperature=0.8,
+        temperature=temperature,
         max_tokens=4096,
     )
 
@@ -59,19 +82,7 @@ def _external_stream(
     temperature: float = 0.8,
 ) -> Iterator[str]:
     """外部部署模式：使用 ChatOpenAI 流式输出"""
-    client = _get_external_client()
-    # 如果传了不同的模型/温度，重新创建客户端
-    override_model = model or os.environ.get("LLM_MODEL", "deepseek-chat")
-    if override_model != os.environ.get("LLM_MODEL", "deepseek-chat") or temperature != 0.8:
-        from langchain_openai import ChatOpenAI
-        client = ChatOpenAI(
-            api_key=os.environ.get("LLM_API_KEY", ""),
-            base_url=os.environ.get("LLM_BASE_URL", "https://api.deepseek.com/v1"),
-            model=override_model,
-            streaming=True,
-            temperature=temperature,
-            max_tokens=4096,
-        )
+    client = _get_external_client(temperature=temperature, model=model)
 
     messages = [SystemMessage(content=system_prompt)]
     if history:
@@ -96,14 +107,18 @@ def _external_invoke(
 ) -> str:
     """外部部署模式：使用 ChatOpenAI 非流式调用"""
     from langchain_openai import ChatOpenAI
+
     api_key = os.environ.get("LLM_API_KEY", "")
     base_url = os.environ.get("LLM_BASE_URL", "https://api.deepseek.com/v1")
-    override_model = model or os.environ.get("LLM_MODEL", "deepseek-chat")
+    use_model = model or os.environ.get("LLM_MODEL", "deepseek-chat")
+
+    if not api_key:
+        raise ValueError("LLM_API_KEY 环境变量未设置，无法调用外部 API")
 
     client = ChatOpenAI(
         api_key=api_key,
         base_url=base_url,
-        model=override_model,
+        model=use_model,
         streaming=False,
         temperature=temperature,
         max_tokens=4096,
@@ -132,6 +147,12 @@ def _sdk_stream(
     temperature: float = 0.8,
 ) -> Iterator[str]:
     """沙箱模式：使用 coze-coding-dev-sdk 流式输出"""
+    if not _SDK_AVAILABLE:
+        raise RuntimeError(
+            "coze-coding-dev-sdk 未安装，无法使用 SDK 模式。"
+            "请设置 LLM_API_KEY 环境变量切换到外部 API 模式。"
+        )
+
     from coze_coding_dev_sdk import LLMClient
 
     client = LLMClient()
@@ -166,6 +187,12 @@ def _sdk_invoke(
     temperature: float = 0.8,
 ) -> str:
     """沙箱模式：使用 coze-coding-dev-sdk 非流式调用"""
+    if not _SDK_AVAILABLE:
+        raise RuntimeError(
+            "coze-coding-dev-sdk 未安装，无法使用 SDK 模式。"
+            "请设置 LLM_API_KEY 环境变量切换到外部 API 模式。"
+        )
+
     from coze_coding_dev_sdk import LLMClient
 
     client = LLMClient()
@@ -209,7 +236,7 @@ def chat_stream(
         model: 模型 ID（沙箱模式下使用 SDK 模型名，外部模式下被 LLM_MODEL 覆盖）
         temperature: 随机性 (0-2)
     """
-    if _USE_EXTERNAL:
+    if _USE_EXTERNAL or not _SDK_AVAILABLE:
         yield from _external_stream(system_prompt, user_message, history, model, temperature)
     else:
         yield from _sdk_stream(system_prompt, user_message, history, model, temperature)
@@ -225,7 +252,7 @@ def chat_invoke(
     """
     非流式调用 LLM，一次性返回完整结果。自动检测运行模式。
     """
-    if _USE_EXTERNAL:
+    if _USE_EXTERNAL or not _SDK_AVAILABLE:
         return _external_invoke(system_prompt, user_message, history, model, temperature)
     else:
         return _sdk_invoke(system_prompt, user_message, history, model, temperature)
@@ -233,4 +260,8 @@ def chat_invoke(
 
 def get_mode() -> str:
     """返回当前 LLM 模式：'external' 或 'sdk'"""
-    return "external" if _USE_EXTERNAL else "sdk"
+    if _USE_EXTERNAL:
+        return "external"
+    if _SDK_AVAILABLE:
+        return "sdk"
+    return "unavailable"
