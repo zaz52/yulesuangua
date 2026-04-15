@@ -116,8 +116,8 @@ GET /api/divine/lunar?date=1990-05-15
 # 前端
 cd frontend && pnpm install
 
-# 后端
-pip install fastapi uvicorn coze-coding-dev-sdk langchain-core lunar_python
+# 后端（推荐）
+python3 -m pip install -r backend/requirements.txt
 ```
 
 ### 本地运行
@@ -127,6 +127,10 @@ pip install fastapi uvicorn coze-coding-dev-sdk langchain-core lunar_python
 cd frontend && pnpm build
 
 # 2. 启动后端（端口 5000）
+# 方式 A（推荐）：带依赖自检
+python3 backend/run.py
+
+# 方式 B（传统）
 cd backend && python3 -m uvicorn main:app --port 5000 --host 0.0.0.0
 ```
 
