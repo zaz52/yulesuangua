@@ -146,6 +146,36 @@ cd frontend && pnpm dev
 cd backend && python3 -m uvicorn main:app --port 5000 --reload
 ```
 
+## Git 内自动更新（可选）
+
+如果你希望“在 Git 里操作时自动 push”，推荐使用仓库内置的 `post-commit` Hook 模板：**只有提交信息包含 `[push]` 才会自动推送**，避免每次 commit 都触发 push。
+
+### 安装 Hook
+
+```bash
+bash scripts/setup-git-hooks.sh
+```
+
+### 触发自动推送
+
+```bash
+git add -A
+git commit -m "feat: 更新首页文案 [push]"
+```
+
+提交完成后，Hook 会自动执行 `git push origin <当前分支>`。
+
+### 可选环境变量
+
+- `AUTO_PUSH_REMOTE`：默认 `origin`
+- `AUTO_PUSH_BRANCH`：默认“当前分支”
+
+示例（固定推送到 `work`）：
+
+```bash
+AUTO_PUSH_BRANCH=work git commit -m "chore: 同步配置 [push]"
+```
+
 ## UI 设计
 
 古风水墨风格，四色体系对应四大技能：
