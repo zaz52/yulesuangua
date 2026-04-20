@@ -162,7 +162,7 @@ def divine_qimen(req: QimenRequest):
                 / "qimen_cli.py"
             )
             result = subprocess.run(
-                ["python", script_path, "--datetime", req.datetime_str, "--json"],
+                ["python3", script_path, "--datetime", req.datetime_str, "--json"],
                 capture_output=True,
                 text=True,
                 timeout=30,
@@ -172,7 +172,7 @@ def divine_qimen(req: QimenRequest):
             else:
                 chart_result = f"[排盘计算出错: {result.stderr[:200]}]"
         except Exception as e:
-            chart_result = f"[排盘调用失败: {str(e)}"
+            chart_result = f"[排盘调用失败: {str(e)}]"
 
     # 组装用户消息
     user_msg = req.message

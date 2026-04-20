@@ -26,3 +26,4 @@ coze-coding-dev-sdk==0.5.14
 beautifulsoup4==4.12.2
 soupsieve==2.8.3
 requests==2.33.1
+python-pptx==1.0.2
