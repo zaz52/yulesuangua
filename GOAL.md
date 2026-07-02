@@ -122,6 +122,11 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Done: verified production `/divine/bazi` and `/divine/qimen` return HTTP 200.
 - Done: verified production bundle contains all four board titles and the final streaming state keeps the object shape.
 - Done: verified production `POST /api/divine/bazi` returns `text/event-stream`.
+- New work started: redesign the site based on the reference `https://putiyuan.pages.dev/` while keeping the Yule Suangua brand and API contract. The target is a darker temple/oracle-inspired dashboard with visible utility modules, mobile bottom navigation, richer feature cards, and quick devotional/fortune interactions instead of a sparse landing page.
+- Done: rebuilt `frontend/src/views/Home.vue` into a dark temple/oracle dashboard with status chips, nine feature gates, daily almanac, selected-tool detail panel, local wish storage, online incense interaction, and mobile bottom tabs.
+- Done: kept the existing four AI routes intact and mapped extra modules to either local interactions or existing AI pages.
+- Done: `npm run build` passes; source scan found no common mojibake/demo leftovers; local preview `/` returns HTTP 200.
+- Done: verified the built JS contains `九宫功能入口`, `在线上香`, `今日黄历`, `移动端快捷导航`, and `起一局奇门`.
 
 ## Review Notes
 
