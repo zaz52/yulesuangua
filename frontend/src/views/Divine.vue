@@ -244,26 +244,76 @@ function buildMessage() {
 }
 
 function buildBoard() {
+  const birthYear = profile.value.birthDate?.slice(0, 4) || '待定'
+  const birthMonth = profile.value.birthDate?.slice(5, 7) || '待定'
+  const birthDay = profile.value.birthDate?.slice(8, 10) || '待定'
+  const baziColumns = ['年柱', '月柱', '日柱', '时柱']
   const base = {
-    bazi: [['年柱', profile.value.birthDate?.slice(0, 4) || '待定'], ['月柱', profile.value.birthDate?.slice(5, 7) || '待定'], ['日主', profile.value.name || '本人'], ['时柱', profile.value.shichen || '待定']],
-    ziwei: [['命宫', '待排'], ['身宫', '待排'], ['事业宫', '重点'], ['迁移宫', '观察']],
-    qimen: [['巽四', '东南'], ['离九', '南'], ['坤二', '西南'], ['震三', '东'], ['中五', eventForm.value.topic], ['兑七', '西'], ['艮八', '东北'], ['坎一', '北'], ['乾六', '西北']],
-    liuyao: [['本卦', '待填'], ['动爻', '观察'], ['世应', '关系'], ['用神', '取象']],
-    meihua: [['上卦', '外应'], ['下卦', '时间'], ['体卦', '自身'], ['用卦', '所问']],
-    daliuren: [['四课', '结构'], ['三传', '路径'], ['神将', '环境'], ['所问', eventForm.value.topic]],
-    xiaoliuren: [['宫位', '速断'], ['状态', '待定'], ['宜', '简行'], ['忌', '拖延']],
-    yinyuan: [['关系', relation.value.status || '待定'], ['关注', relation.value.focus || '待定'], ['对方', relation.value.partner || '未填'], ['阶段', '沟通']],
-    hehun: [['生肖', '参考'], ['生日', relation.value.birthday || '未填'], ['对方', relation.value.partner || '未填'], ['磨合', relation.value.focus || '待定']],
-    fojiao: [['困惑', mind.value.topic || '待定'], ['心境', mind.value.mood || '待定'], ['执着点', '照见'], ['练习', '安顿']],
-    fengshui: [['空间', space.value.kind], ['朝向', space.value.direction], ['明堂', '观察'], ['动线', '调整']],
-    'daily-fortune': [['日运', '今日'], ['行动', eventForm.value.topic], ['方位', eventForm.value.place || '自定'], ['提醒', '稳中求进']],
-    tarot: [['牌阵', tarot.value.spread], ['主题', tarot.value.topic], ['现状', '第一张'], ['建议', '第三张']],
+    bazi: {
+      columns: baziColumns,
+      rows: [
+        ['天干', `${birthYear}干`, `${birthMonth}干`, '日主', `${profile.value.shichen || '时'}干`],
+        ['地支', `${birthYear}支`, `${birthMonth}支`, `${birthDay}支`, `${profile.value.shichen || '时'}支`],
+        ['藏干', '主气 / 余气', '月令司权', '根气定位', '时上取象'],
+        ['十神', '祖上与早年', '父母与环境', profile.value.name || '本人', '子女与晚景'],
+        ['五行', '木火土金水', '月令旺衰', '日主强弱', '时柱补偏'],
+        ['纳音', '年命参考', '月柱参考', '日柱参考', '时柱参考'],
+        ['长生', '阶段起势', '节气承接', '自身落点', '后续走势'],
+        ['合冲刑害', '年支关系', '月日关系', '日时关系', '全局复核'],
+      ],
+      highlights: ['先看日主旺衰', '再看月令格局', '最后看合冲刑害'],
+    },
+    ziwei: {
+      palaces: ['命宫', '兄弟', '夫妻', '子女', '财帛', '疾厄', '迁移', '仆役', '官禄', '田宅', '福德', '父母'].map((name, index) => ({
+        name,
+        star: ['紫微', '天机', '太阳', '武曲', '天同', '廉贞', '天府', '太阴', '贪狼', '巨门', '天相', '天梁'][index],
+        note: index === 0 ? '本命核心' : index === 8 ? '事业重点' : index === 6 ? '外部机会' : '待排参考',
+      })),
+      center: `${profile.value.name || '命主'} · ${profile.value.gender} · ${profile.value.shichen || '时辰待定'}`,
+    },
+    qimen: {
+      cells: [
+        ['巽四', '杜门', '天辅', '东南'], ['离九', '景门', '天英', '正南'], ['坤二', '死门', '天芮', '西南'],
+        ['震三', '伤门', '天冲', '正东'], ['中五', eventForm.value.topic, '值符', '核心'], ['兑七', '惊门', '天柱', '正西'],
+        ['艮八', '生门', '天任', '东北'], ['坎一', '休门', '天蓬', '正北'], ['乾六', '开门', '天心', '西北'],
+      ],
+    },
+    liuyao: {
+      lines: [
+        ['上爻', '阴爻', '父母', '应', '收束与外部'],
+        ['五爻', '阳爻', '官鬼', '', '主事压力'],
+        ['四爻', '阴爻', '妻财', '动', '资源变化'],
+        ['三爻', '阳爻', '兄弟', '', '竞争与阻力'],
+        ['二爻', '阴爻', '子孙', '世', '自身落点'],
+        ['初爻', '阳爻', '父母', '', '事情起因'],
+      ],
+    },
+    meihua: {
+      blocks: [['本卦', '乾为天', '初始态势'], ['互卦', '天泽履', '过程暗线'], ['变卦', '天风姤', '变化结果'], ['体用', '体金 / 用木', '生克关系']],
+    },
+    daliuren: { items: [['四课', '日干 / 日支 / 课体 / 发用'], ['三传', '初传 -> 中传 -> 末传'], ['神将', '贵人、六合、勾陈、天空'], ['判断', eventForm.value.topic || '复杂事件']] },
+    xiaoliuren: { items: [['大安', '稳定可守'], ['留连', '拖延反复'], ['速喜', '消息临近'], ['赤口', '口舌谨慎'], ['小吉', '小成可进'], ['空亡', '暂缓复核']] },
+    yinyuan: { items: [['关系阶段', relation.value.status || '待定'], ['关注点', relation.value.focus || '待定'], ['对方线索', relation.value.partner || '未填'], ['建议方向', '先看沟通与边界']] },
+    hehun: { items: [['你的信息', relation.value.birthday || '生日未填'], ['对方信息', relation.value.partner || '未填'], ['合盘重点', relation.value.focus || '待定'], ['长期磨合', '价值观 / 节奏 / 家庭观']] },
+    fojiao: { items: [['所问困惑', mind.value.topic || '待定'], ['当前心境', mind.value.mood || '待定'], ['观照重点', '看见执着处'], ['行动练习', '少说急话，先定一念']] },
+    fengshui: {
+      cells: [
+        ['东南', '文昌', '书桌 / 学习'], ['正南', '名声', '光线 / 火气'], ['西南', '坤位', '关系 / 稳定'],
+        ['正东', '生发', '入口动线'], ['中宫', space.value.kind, space.value.direction], ['正西', '收敛', '金属 / 口舌'],
+        ['东北', '止息', '储物 / 静区'], ['正北', '事业', '水气 / 流动'], ['西北', '乾位', '贵人 / 主位'],
+      ],
+    },
+    'daily-fortune': { items: [['今日主题', eventForm.value.topic], ['行动节奏', '先稳后动'], ['提醒方位', eventForm.value.place || '自定'], ['桌面建议', '清空正前方杂物']] },
+    tarot: {
+      cards: [['过去', '权杖二', '选择已经出现'], ['现在', '节制', '需要重新配比资源'], ['建议', '星币八', '把注意力放回可执行步骤']],
+      spread: tarot.value.spread,
+    },
   }
   return {
     type: skillId.value,
     title: `${skillInfo.value.name}盘面`,
     badge: skillInfo.value.caption,
-    items: base[skillId.value] || base.qimen,
+    data: base[skillId.value] || base.qimen,
   }
 }
 
@@ -277,6 +327,7 @@ async function sendMessage() {
   loading.value = true
   userInput.value = ''
   let answer = ''
+  responses.value.push({ text: '盘面已定，正在生成文字解读...', streaming: true, board })
   await nextTick()
 
   try {
@@ -284,14 +335,18 @@ async function sendMessage() {
       answer += chunk
       const last = responses.value[responses.value.length - 1]
       if (last?.streaming) last.text = answer
-      else responses.value.push({ text: answer, streaming: true, board })
     }, () => {
       const last = responses.value[responses.value.length - 1]
       if (last && typeof last !== 'string') responses.value[responses.value.length - 1] = { ...last, text: last.text || answer, streaming: false }
       loading.value = false
     })
   } catch (error) {
-    responses.value.push(`暂时无法完成推演：${error.message}`)
+    const last = responses.value[responses.value.length - 1]
+    if (last && typeof last !== 'string') {
+      responses.value[responses.value.length - 1] = { ...last, text: `暂时无法完成推演：${error.message}`, streaming: false }
+    } else {
+      responses.value.push(`暂时无法完成推演：${error.message}`)
+    }
     loading.value = false
   }
 }
@@ -299,20 +354,92 @@ async function sendMessage() {
 const VisualBoard = defineComponent({
   props: { board: Object },
   setup(props) {
-    return () => h('div', { class: ['visual-board', `board-${props.board.type}`] }, [
+    return () => h('div', { class: ['visual-board', 'pro-board', `board-${props.board.type}`] }, [
       h('div', { class: 'board-head' }, [h('h3', props.board.title), h('span', { class: 'ds-badge gold' }, props.board.badge)]),
-      h('div', { class: 'board-grid' }, props.board.items.map(([label, value]) => h('div', { class: 'board-cell' }, [h('span', label), h('strong', value), h('em', boardNote(props.board.type, label))]))),
+      renderBoard(props.board),
     ])
   },
 })
 
-function boardNote(type, label) {
-  if (type === 'qimen') return label === '中五' ? '本次所问核心' : '观察方位与策略'
-  if (['bazi', 'ziwei'].includes(type)) return '用于定位命盘结构'
-  if (['yinyuan', 'hehun'].includes(type)) return '用于观察关系状态'
-  if (type === 'fengshui') return '用于观察空间气口'
-  if (type === 'tarot') return '用于多角度思考'
-  return '用于整理问事线索'
+function renderBoard(board) {
+  const renderers = {
+    bazi: renderBaziBoard,
+    ziwei: renderZiweiBoard,
+    qimen: renderQimenBoard,
+    liuyao: renderLiuyaoBoard,
+    meihua: renderMeihuaBoard,
+    fengshui: renderFengshuiBoard,
+    tarot: renderTarotBoard,
+  }
+  return (renderers[board.type] || renderGenericBoard)(board.data)
+}
+
+function renderBaziBoard(data) {
+  return h('div', { class: 'bazi-pro-table' }, [
+    h('div', { class: 'bazi-row bazi-header' }, [h('span', '项目'), ...data.columns.map((item) => h('strong', item))]),
+    ...data.rows.map((row) => h('div', { class: 'bazi-row' }, [h('span', row[0]), ...row.slice(1).map((item) => h('em', item))])),
+    h('div', { class: 'board-tips' }, data.highlights.map((item) => h('small', item))),
+  ])
+}
+
+function renderZiweiBoard(data) {
+  return h('div', { class: 'ziwei-palace-grid' }, [
+    ...data.palaces.map((palace, index) => h('div', { class: ['palace-cell', index === 0 ? 'is-primary' : ''] }, [
+      h('span', palace.name),
+      h('strong', palace.star),
+      h('em', palace.note),
+    ])),
+    h('div', { class: 'ziwei-center' }, [h('b', '命盘'), h('small', data.center)]),
+  ])
+}
+
+function renderQimenBoard(data) {
+  return h('div', { class: 'qimen-nine-grid' }, data.cells.map((cell) => h('div', { class: cell[0] === '中五' ? 'nine-cell center' : 'nine-cell' }, [
+    h('span', cell[0]),
+    h('strong', cell[1]),
+    h('em', cell[2]),
+    h('small', cell[3]),
+  ])))
+}
+
+function renderLiuyaoBoard(data) {
+  return h('div', { class: 'liuyao-pro-lines' }, data.lines.map((line) => h('div', { class: 'yao-row' }, [
+    h('span', line[0]),
+    h('i', { class: line[1] === '阳爻' ? 'yao-line yang' : 'yao-line yin' }),
+    h('strong', line[2]),
+    h('b', line[3]),
+    h('em', line[4]),
+  ])))
+}
+
+function renderMeihuaBoard(data) {
+  return h('div', { class: 'meihua-pro-grid' }, data.blocks.map((block) => h('div', { class: 'meihua-cell' }, [
+    h('span', block[0]),
+    h('strong', block[1]),
+    h('em', block[2]),
+  ])))
+}
+
+function renderFengshuiBoard(data) {
+  return h('div', { class: 'fengshui-nine-grid' }, data.cells.map((cell) => h('div', { class: cell[0] === '中宫' ? 'feng-cell center' : 'feng-cell' }, [
+    h('span', cell[0]),
+    h('strong', cell[1]),
+    h('em', cell[2]),
+  ])))
+}
+
+function renderTarotBoard(data) {
+  return h('div', { class: 'tarot-spread' }, [
+    h('div', { class: 'tarot-spread-name' }, data.spread),
+    ...data.cards.map((card) => h('div', { class: 'tarot-card' }, [h('span', card[0]), h('strong', card[1]), h('em', card[2])])),
+  ])
+}
+
+function renderGenericBoard(data) {
+  return h('div', { class: 'generic-pro-grid' }, data.items.map((item) => h('div', { class: 'generic-cell' }, [
+    h('span', item[0]),
+    h('strong', item[1]),
+  ])))
 }
 </script>
 
@@ -500,11 +627,14 @@ function boardNote(type, label) {
 .visual-board {
   display: grid;
   gap: 14px;
+  overflow-x: auto;
   margin-bottom: 18px;
   padding: 16px;
   border: 1px solid rgba(215, 179, 95, 0.2);
   border-radius: var(--radius-sm);
-  background: rgba(13, 9, 7, 0.32);
+  background:
+    radial-gradient(circle at 20% 0%, rgba(215, 179, 95, 0.12), transparent 34%),
+    linear-gradient(145deg, rgba(13, 9, 7, 0.72), rgba(43, 25, 16, 0.42));
 }
 
 .board-head h3 {
@@ -514,34 +644,123 @@ function boardNote(type, label) {
   font-weight: 400;
 }
 
-.board-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.board-qimen .board-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.board-cell {
-  display: grid;
-  min-height: 116px;
-  align-content: start;
-  gap: 6px;
-  padding: 12px;
-  border: 1px solid rgba(215, 179, 95, 0.16);
+.bazi-pro-table,
+.ziwei-palace-grid,
+.qimen-nine-grid,
+.liuyao-pro-lines,
+.meihua-pro-grid,
+.fengshui-nine-grid,
+.tarot-spread,
+.generic-pro-grid {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(215, 179, 95, 0.18);
   border-radius: var(--radius-xs);
-  background: rgba(255, 247, 231, 0.05);
+  background: rgba(255, 247, 231, 0.035);
 }
 
-.board-cell span {
+.bazi-pro-table {
+  min-width: 680px;
+}
+
+.bazi-row {
+  display: grid;
+  grid-template-columns: 92px repeat(4, minmax(116px, 1fr));
+  border-top: 1px solid rgba(215, 179, 95, 0.13);
+}
+
+.bazi-row:first-child {
+  border-top: 0;
+}
+
+.bazi-row > * {
+  min-height: 44px;
+  padding: 11px 10px;
+  border-left: 1px solid rgba(215, 179, 95, 0.13);
+  color: var(--paper);
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.bazi-row > :first-child {
+  border-left: 0;
+  color: var(--seal);
+  font-weight: 700;
+}
+
+.bazi-header {
+  background: rgba(215, 179, 95, 0.12);
+}
+
+.bazi-header strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 400;
+}
+
+.board-tips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid rgba(215, 179, 95, 0.13);
+}
+
+.board-tips small,
+.tarot-spread-name {
+  padding: 6px 9px;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: 999px;
+  color: var(--paper-dim);
+  background: rgba(0, 0, 0, 0.16);
+}
+
+.ziwei-palace-grid,
+.qimen-nine-grid,
+.fengshui-nine-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-height: 390px;
+}
+
+.ziwei-palace-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.palace-cell,
+.nine-cell,
+.feng-cell,
+.meihua-cell,
+.generic-cell,
+.tarot-card {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-height: 118px;
+  padding: 13px;
+  border: 1px solid rgba(215, 179, 95, 0.12);
+  background: rgba(255, 247, 231, 0.035);
+}
+
+.palace-cell span,
+.nine-cell span,
+.feng-cell span,
+.meihua-cell span,
+.generic-cell span,
+.tarot-card span,
+.yao-row span {
   color: var(--seal);
   font-weight: 700;
   font-size: 12px;
 }
 
-.board-cell strong {
+.palace-cell strong,
+.nine-cell strong,
+.feng-cell strong,
+.meihua-cell strong,
+.generic-cell strong,
+.tarot-card strong {
   color: var(--gold-bright);
   font-family: var(--font-display);
   font-size: 25px;
@@ -549,10 +768,137 @@ function boardNote(type, label) {
   line-height: 1.1;
 }
 
-.board-cell em {
+.palace-cell em,
+.nine-cell em,
+.feng-cell em,
+.meihua-cell em,
+.tarot-card em,
+.yao-row em {
   color: var(--paper-dim);
   font-size: 13px;
   font-style: normal;
+}
+
+.palace-cell.is-primary,
+.nine-cell.center,
+.feng-cell.center {
+  background: radial-gradient(circle, rgba(177, 49, 35, 0.22), rgba(215, 179, 95, 0.08));
+}
+
+.ziwei-center {
+  position: absolute;
+  inset: 50%;
+  display: grid;
+  width: 170px;
+  height: 118px;
+  place-items: center;
+  padding: 12px;
+  border: 1px solid rgba(240, 217, 132, 0.4);
+  border-radius: var(--radius-xs);
+  color: var(--paper);
+  background: rgba(13, 9, 7, 0.92);
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.ziwei-center b {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 400;
+}
+
+.ziwei-center small,
+.nine-cell small {
+  color: var(--paper-dim);
+}
+
+.liuyao-pro-lines {
+  display: grid;
+  gap: 0;
+}
+
+.yao-row {
+  display: grid;
+  grid-template-columns: 52px minmax(120px, 1fr) 64px 44px minmax(120px, 1fr);
+  align-items: center;
+  gap: 12px;
+  min-height: 58px;
+  padding: 9px 12px;
+  border-top: 1px solid rgba(215, 179, 95, 0.12);
+}
+
+.yao-row:first-child {
+  border-top: 0;
+}
+
+.yao-line {
+  position: relative;
+  display: block;
+  height: 10px;
+}
+
+.yao-line::before,
+.yao-line::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #b8842d, #f0d984, #b8842d);
+  box-shadow: 0 0 18px rgba(240, 217, 132, 0.28);
+}
+
+.yao-line.yang::before {
+  left: 0;
+  right: 0;
+}
+
+.yao-line.yin::before {
+  left: 0;
+  width: 42%;
+}
+
+.yao-line.yin::after {
+  right: 0;
+  width: 42%;
+}
+
+.yao-row b {
+  min-height: 24px;
+  color: var(--gold-bright);
+}
+
+.meihua-pro-grid,
+.generic-pro-grid,
+.tarot-spread {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.tarot-spread {
+  grid-template-columns: 120px repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  padding: 12px;
+  gap: 10px;
+}
+
+.tarot-spread-name {
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-xs);
+  color: var(--gold-bright);
+  writing-mode: vertical-rl;
+  letter-spacing: 0;
+}
+
+.tarot-card {
+  min-height: 180px;
+  place-items: center;
+  text-align: center;
+  background:
+    linear-gradient(135deg, rgba(177, 49, 35, 0.16), transparent),
+    rgba(255, 247, 231, 0.045);
 }
 
 .answer-card pre {
@@ -583,8 +929,18 @@ function boardNote(type, label) {
   }
 
   .form-grid,
-  .board-grid {
+  .meihua-pro-grid,
+  .generic-pro-grid,
+  .tarot-spread {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .ziwei-palace-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .tarot-spread-name {
+    writing-mode: horizontal-tb;
   }
 }
 
@@ -596,8 +952,12 @@ function boardNote(type, label) {
 
   .method-menu,
   .form-grid,
-  .board-grid,
-  .board-qimen .board-grid {
+  .ziwei-palace-grid,
+  .qimen-nine-grid,
+  .fengshui-nine-grid,
+  .meihua-pro-grid,
+  .generic-pro-grid,
+  .tarot-spread {
     grid-template-columns: 1fr;
   }
 
@@ -609,6 +969,24 @@ function boardNote(type, label) {
   .answer-head,
   .board-head {
     display: grid;
+  }
+
+  .ziwei-center {
+    position: relative;
+    inset: auto;
+    width: auto;
+    height: auto;
+    order: -1;
+    transform: none;
+  }
+
+  .yao-row {
+    grid-template-columns: 42px minmax(100px, 1fr) 48px;
+  }
+
+  .yao-row b,
+  .yao-row em {
+    grid-column: 2 / -1;
   }
 }
 </style>

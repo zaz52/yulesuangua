@@ -1,61 +1,56 @@
-# 全站周易仪式化重构目标
+# yulesuangua 网站改造目标与进度
 
-## 任务
+## 当前任务
 
-将现有 `yulesuangua` 网站的旧 UI 推翻重做，不做独立项目，不在原页面上小修小补。保留现有 Vue 3 + Vite、路由、Netlify Functions 后端契约，把首页、AI 占问页、独立工具页、周易起卦页统一重构为“东方玄学 + 周易文化 + 古风仪式感 + 复古科技感”的沉浸式产品。
+把 `yulesuangua` 从旧工具站改成沉浸式玄学问事产品，并继续完善各个术法页面的结果表达。当前重点是：不同术法“算出来”的盘面不能都长成同一种卡片网格，而要按术法本身的专业表达呈现。
 
 ## 成功标准
 
-- 首页不再堆满所有功能，而是作为清晰入口，突出“周易起卦”和四类 AI 问事。
-- `/zhouyi` 与 `/tools/liuyao` 是完整动态起卦流程：静心、默念、准备、投掷、六爻、定格、解卦。
-- `/divine/:skill` 保留后端 API 调用，界面改为统一的暗色仪式工作台，表单、盘面、结果都可读。
-- `/tools/:tool` 每个工具有独立页面和可交互内容，不再依赖首页堆叠。
-- 全局样式使用统一 design tokens：墨黑、深棕、暗金、朱红、宣纸白、青铜、烟雾、粒子、卷轴、印章按钮。
-- 桌面端与移动端都可用，不出现明显遮挡、横向溢出、乱码或旧 demo 内容。
-- `npm run build` 通过，主要路由本地预览返回 200。
-- 不读取 C 盘文件，不同步 Obsidian，除非用户明确说“同步”。
+- 八字结果使用接近专业命盘的四柱表格，包含年柱、月柱、日柱、时柱，以及天干、地支、藏干、十神、五行、纳音、长生、合冲刑害等行。
+- 紫微斗数使用十二宫盘样式，不复用八字表。
+- 奇门遁甲使用九宫盘样式。
+- 六爻使用六爻线、阴阳爻、世应、六亲、动爻提示。
+- 梅花易数使用本卦、互卦、变卦、体用关系盘。
+- 风水阳宅使用九宫方位盘。
+- 塔罗使用牌阵卡牌布局。
+- 其它轻量技能使用统一但不抢戏的结构化结果格。
+- 点击提交后立即展示盘面，AI 后端文字解读随后补充；后端慢或失败时也不能让用户看不到盘面。
+- 桌面端和移动端都能打开主要页面，没有页面级横向溢出。
+- `npm run build` 必须通过；主要路由和浏览器提交验证必须通过。
+- 不提交密钥，不触碰用户未要求的 Obsidian 同步。
 
 ## 架构思路
 
-- 继续使用 Vue 3 + Vite，避免把现有项目迁成独立 React 项目。
-- 用 `frontend/src/style.css` 承担全局主题、材质、按钮、卡片、表单、动效基础。
-- 各页面保留业务逻辑但重写布局和文案：
-  - `Home.vue`：沉浸入口、核心问事、独立工具、理性边界。
-  - `Divine.vue`：方法侧栏、信息表单、视觉盘面、流式结果。
-  - `ToolPage.vue`：黄历、灵签、解梦、起名、香火等独立交互。
-  - `ZhouyiRitual.vue`：完整周易起卦仪式。
-- 后端 API 不改动：继续调用 `/api/health`、`/api/divine/:skill`、`/api/divine/lunar`。
+- 保留现有 Vue 3 + Vite 项目，不迁移 React。
+- 在 `frontend/src/views/Divine.vue` 内继续保留现有表单和后端流式调用。
+- `buildBoard()` 生成按 `skillId` 分流的结构化盘面数据。
+- `VisualBoard` 不再渲染单一 `board-grid`，而是分发到各术法专属 renderer。
+- CSS 使用当前暗色周易仪式风格，补充专业盘面类名：`bazi-pro-table`、`ziwei-palace-grid`、`qimen-nine-grid`、`liuyao-pro-lines`、`meihua-pro-grid`、`fengshui-nine-grid`、`tarot-spread`。
 
 ## 进度记录
 
-### 2026-07-02
-
-- 确认用户最新意图：不是在原 UI 基础上修改，而是全站推翻重做。
-- 确认当前主要页面存在乱码和旧浅色设计系统残留，需要直接重写。
-- 约束确认：不触碰 C 盘 PDF，不进行 Obsidian 同步，工作继续保持在 E 盘仓库内。
-- 已重写 `frontend/src/style.css`，把旧浅色设计系统替换为暗色周易仪式主题，并统一卡片、按钮、表单、徽章、烟雾粒子和六爻线条基础样式。
-- 已重写 `frontend/index.html` 与 `frontend/src/api/divine.js`，恢复正常中文 SEO 文案、标题、favicon 和后端不可用提示。
-- 已重写 `Home.vue`，首页变为沉浸式门户，第一屏突出“静心起卦，观象问事”，并将 AI 问事和独立工具拆成清晰入口。
-- 已重写 `Divine.vue`，保留后端流式 API 调用，改成暗色仪式工作台，包含方法侧栏、项目信息表单、视觉盘面和结果区。
-- 已重写 `ToolPage.vue`，黄历、灵签、解梦、起名、香火均有独立交互；六爻继续由 `/tools/liuyao` 路由进入完整周易起卦。
-- 已重写 `ZhouyiRitual.vue`，实现静心引导、默念问题、起卦准备、铜钱投掷、六爻生成、卦象定格、卷轴解卦的完整流程。
-- 验证：`npm run build` 已通过，构建产物生成成功。
-- 验证：本地预览 `http://127.0.0.1:4196` 下 `/`、`/zhouyi`、`/tools/huangli`、`/tools/lingqian`、`/tools/jiemeng`、`/tools/qiming`、`/tools/xianghuo`、`/tools/liuyao`、`/divine/bazi`、`/divine/qimen` 均返回 HTTP 200。
-- 验证：扫描 `frontend/src`、`frontend/index.html`、`frontend/dist`，未发现常见乱码片段或旧设计系统 demo 文案。
-- 验证：`git diff --check` 通过，仅有 Windows 换行提示。
-- 限制：Playwright 包可用，但浏览器二进制缺失；按“不碰 C 盘”约束，尝试把 Chromium 下载到 `E:\ms-playwright`，120 秒内未完成，因此未执行截图级浏览器验证。
-- 已提交并推送到 GitHub：`2b28fe8 feat: rebuild site with zhouyi ritual UI`，远端 `origin/main` 已确认指向该提交。
-- 部署状态：Netlify CLI 执行生产部署时返回 `Forbidden`，说明当前本机 CLI 凭据没有部署权限或已失效。随后检查 `https://suanguan.netlify.app/`，主要路由返回 200，`/api/health` 仍为外部 LLM 模式，但线上首页 HTML 与首页首屏 bundle 文案尚未完全切到最新提交。
-- 最终 review：本地代码、构建、主要路由、乱码扫描、后端契约均已达到本次代码层面的验收；线上发布仍需 Netlify 权限恢复或 Netlify 后台手动触发最新 GitHub commit 部署。
-- Cloudflare 迁移：已登录 Wrangler，创建 Cloudflare Pages 项目 `yulesuangua`，生产地址为 `https://yulesuangua.pages.dev/`。
-- Cloudflare 部署：已添加 Pages Function `frontend/functions/api/[[path]].js`，将 `/api/*` 代理到现有 Netlify API，避免 Netlify 额度阻塞前端新地址上线。
-- Cloudflare 验证：`https://yulesuangua.pages.dev/`、`/zhouyi`、`/tools/liuyao`、`/divine/bazi`、`/api/health`、`/api/divine/skills` 均返回 200；`POST /api/divine/bazi` 可返回流式 `data:` 内容。
-
 ### 2026-07-03
 
-- 根据用户提供的 14 个玄学 Skills 仓库清单，对照现有网站能力：已有八字、姻缘、佛学、奇门、周易起卦、黄历、灵签、解梦、起名、香火；缺少紫微斗数、梅花易数、大六壬、小六壬、塔罗、风水阳宅、生肖合婚、每日运势等入口。
-- 已重写首页交互为“玄学 Skills 能力库”，新增分类筛选：全部、命理、占问、关系、风水、西式，并在卡片上标识“已有/新增”和参考来源。
-- 已重写 `Divine.vue` 的术法矩阵，新增 `/divine/ziwei`、`/divine/liuyao`、`/divine/meihua`、`/divine/daliuren`、`/divine/xiaoliuren`、`/divine/hehun`、`/divine/fengshui`、`/divine/daily-fortune`、`/divine/tarot`。
-- 已更新 Cloudflare Pages Function：`/api/divine/skills` 返回扩展后的 skill 列表；新增 skill 的 POST 会带上专用术法提示词并转发到最接近的现有后端通道，避免旧 Netlify API 不认识新 skill。
-- 验证：`npm run build` 通过；本地 `/`、`/divine/ziwei`、`/divine/meihua`、`/divine/daliuren`、`/divine/xiaoliuren`、`/divine/tarot`、`/divine/fengshui`、`/divine/hehun`、`/zhouyi` 均返回 200。
-- Cloudflare 部署：`https://yulesuangua.pages.dev/` 已更新；`/api/divine/skills` 包含紫微斗数、梅花易数、大六壬、小六壬、塔罗牌阵、风水阳宅、合婚配对；`POST /api/divine/ziwei`、`/tarot`、`/fengshui` 均可返回流式 `data:` 内容。
+- 已确认用户意图：截图里的专业大表格适合八字，但其它术法应使用各自专业盘面，而不是全部套同一张表。
+- 已修改 `frontend/src/views/Divine.vue`：
+  - 八字改为四柱专业表格。
+  - 紫微改为十二宫盘。
+  - 奇门和风水改为九宫盘。
+  - 六爻改为六爻线盘。
+  - 梅花改为本卦/互卦/变卦/体用盘。
+  - 塔罗改为牌阵卡牌。
+  - 大六壬、小六壬、姻缘、合婚、佛学、每日运势保留通用结构化盘面。
+- 已修正提交时机：用户点击“提交问事”后立即插入带盘面的结果卡，AI 流式文字再更新同一张卡；后端失败时保留盘面并显示错误信息。
+- 已补充响应式样式：移动端九宫/十二宫/塔罗/梅花等自动改单列或双列；八字表格限制在结果卡内部滚动，不造成整页横向溢出。
+- 验证通过：
+  - `npm run build` 成功。
+  - 本地预览路由 `/divine/bazi`、`/divine/ziwei`、`/divine/qimen`、`/divine/liuyao`、`/divine/meihua`、`/divine/fengshui`、`/divine/tarot` 全部返回 200。
+  - 使用 Edge 浏览器提交验证后，上述 7 个术法均能显示对应专业盘面。
+  - 移动端 390px 宽度抽查 `/divine/bazi`、`/divine/ziwei`、`/divine/tarot`，盘面可见且无页面级横向溢出。
+  - 常见乱码和旧设计残留扫描未命中。
+
+## 当前剩余风险
+
+- 盘面中的命理字段仍是前端展示层的结构化占位，不是真正算法排盘。真实八字、紫微、奇门、六爻等算法需要后续接入专业排盘引擎或后端计算。
+- 本地 Vite 预览没有 Cloudflare Pages Functions，因此本地后端请求可能失败；线上 Cloudflare 仍通过 `/api/*` 代理到现有 Netlify API。
+- Playwright 默认浏览器缓存未安装在本机默认路径，本次浏览器验证使用了系统已有 Edge。
