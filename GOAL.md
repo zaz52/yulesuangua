@@ -57,6 +57,9 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Updated `scripts/start-backend.ps1` to load `backend\.env` before starting FastAPI.
 - Switched local provider configuration to NVIDIA NIM (`https://integrate.api.nvidia.com/v1`) and selected the tested model `meta/llama-3.1-8b-instruct`.
 - Fixed `backend/llm_client.py` so external OpenAI-compatible mode uses `LLM_MODEL` from the environment instead of accidentally sending the SDK-only default model name.
+- Investigated the reported mismatch on `https://suanguan.netlify.app/`.
+- Fixed Netlify deployment configuration so Netlify builds from `frontend`, runs `npm run build`, and publishes `frontend/dist`.
+- Removed public-facing design-system demo sections from the homepage. The homepage now keeps only the real product hero, divination entrances, and a concise usage flow. The design tokens/classes remain in CSS for reuse, but demo UI no longer appears as extra user content.
 
 ## Verification Log
 
@@ -77,6 +80,11 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Done: NVIDIA API key is loaded by the backend; `/api/health` returns `llm_mode: external`.
 - Done: direct NVIDIA chat completion test succeeds with `meta/llama-3.1-8b-instruct`.
 - Done: real backend SSE endpoint `POST /api/divine/bazi` returns streamed `data:` chunks.
+- Done: reran `npm run build` after the Netlify/homepage cleanup.
+- Done: cleaned stale ignored `frontend/dist` output and rebuilt so old design-system demo bundles no longer remain locally.
+- Done: scanned source and rebuilt assets for old public demo strings (`Design System`, `Components`, `#system`, `#components`, `查看设计系统`) and found none.
+- Done: started local Vite preview on `http://127.0.0.1:4190`; `/` and `/divine/bazi` both return HTTP 200.
+- Done: `git diff --check` reports no whitespace errors.
 
 ## Review Notes
 
