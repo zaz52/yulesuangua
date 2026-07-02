@@ -88,6 +88,9 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Done: committed and pushed `9c88dcd fix: align Netlify homepage deployment` to `origin/main`.
 - Done: verified GitHub remote `main` points to `9c88dcd`.
 - Note: `https://suanguan.netlify.app/` still served the previous asset file during post-push verification, so Netlify had not completed or had not triggered a deploy from the updated GitHub commit at that time.
+- Done: authorized Netlify CLI via user-approved ticket and deployed production site `suanguan` with deploy ID `6a464e7c55707306e2bc188a`.
+- Done: verified production URL `https://suanguan.netlify.app/` now serves the rebuilt asset containing the new homepage copy (`选择你的测算方式`, `三步完成一次问卦`) and no old demo strings (`Design System`, `Components`, `查看设计系统`).
+- Done: verified `https://suanguan.netlify.app/divine/bazi` returns HTTP 200 after production deploy.
 
 ## Review Notes
 
