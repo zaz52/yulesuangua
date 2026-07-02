@@ -127,6 +127,10 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Done: kept the existing four AI routes intact and mapped extra modules to either local interactions or existing AI pages.
 - Done: `npm run build` passes; source scan found no common mojibake/demo leftovers; local preview `/` returns HTTP 200.
 - Done: verified the built JS contains `九宫功能入口`, `在线上香`, `今日黄历`, `移动端快捷导航`, and `起一局奇门`.
+- Done: committed and pushed `0164e83 feat: redesign homepage as oracle dashboard` to `origin/main`.
+- Done: deployed to Netlify production with deploy ID `6a465bad59697b2642de9397`.
+- Done: verified production homepage returns HTTP 200 and the production bundle contains `问事有盘，解卦有据`, `九宫功能入口`, `在线上香`, `今日黄历`, and `移动端快捷导航`.
+- Done: verified production `/api/health` still returns external Netlify Functions mode, and `/divine/bazi`, `/divine/qimen` both return HTTP 200.
 
 ## Review Notes
 
