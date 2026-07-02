@@ -85,6 +85,9 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Done: scanned source and rebuilt assets for old public demo strings (`Design System`, `Components`, `#system`, `#components`, `查看设计系统`) and found none.
 - Done: started local Vite preview on `http://127.0.0.1:4190`; `/` and `/divine/bazi` both return HTTP 200.
 - Done: `git diff --check` reports no whitespace errors.
+- Done: committed and pushed `9c88dcd fix: align Netlify homepage deployment` to `origin/main`.
+- Done: verified GitHub remote `main` points to `9c88dcd`.
+- Note: `https://suanguan.netlify.app/` still served the previous asset file during post-push verification, so Netlify had not completed or had not triggered a deploy from the updated GitHub commit at that time.
 
 ## Review Notes
 
