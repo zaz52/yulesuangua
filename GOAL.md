@@ -92,6 +92,14 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Done: verified production URL `https://suanguan.netlify.app/` now serves the rebuilt asset containing the new homepage copy (`选择你的测算方式`, `三步完成一次问卦`) and no old demo strings (`Design System`, `Components`, `查看设计系统`).
 - Done: verified `https://suanguan.netlify.app/divine/bazi` returns HTTP 200 after production deploy.
 - Done: performed a content/completeness audit of the production site. Key gap found: `https://suanguan.netlify.app/api/health` returns the frontend HTML fallback rather than backend JSON, so the production site currently opens correctly but does not have a live backend API wired to the frontend.
+- New work started: fill the content gaps found in the audit by adding production-facing disclaimer copy, privacy/trust notes, richer method guidance, SEO/social metadata, and clearer backend-unavailable messaging. Then verify and redeploy the Netlify frontend. Backend deployment will be attempted separately if a deploy target can be accessed from the current environment.
+- Done: added SEO metadata, keywords, Open Graph/Twitter metadata, and corrected favicon/title text in `frontend/index.html`.
+- Done: added homepage guidance for what to ask, required preparation, privacy boundaries, and a clear rational-use disclaimer.
+- Done: added divination-page privacy note and disclaimer card, and clarified the production backend-unavailable response.
+- Done: `npm run build` passes after the content additions.
+- Done: deployed the updated frontend to Netlify production with deploy ID `6a46510509565810ad266d67`.
+- Done: verified production contains the new SEO/guide/privacy/disclaimer copy and does not contain old mojibake fragments in the active JS bundle.
+- Blocked for now: backend deployment cannot be completed from the current environment without an accessible backend hosting target or CLI/API credentials for Render/Railway/Fly/etc. Current production frontend still needs `VITE_API_BASE_URL` pointed at a deployed FastAPI backend before real AI推演 works online.
 
 ## Review Notes
 

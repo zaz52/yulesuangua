@@ -19,10 +19,10 @@ export async function fetchSkills() {
   if (!available) {
     return {
       skills: [
-        { id: 'bazi', name: '四柱八字', description: '通过出生时间排出四柱八字，分析命理运势。', icon: '乾' },
-        { id: 'yinyuan', name: '姻缘测算', description: '合盘、桃花、关系节奏与情感问题解读。', icon: '缘' },
-        { id: 'fojiao', name: '佛学开示', description: '以经典智慧回应困惑，提供心性指引。', icon: '悟' },
-        { id: 'qimen', name: '奇门遁甲', description: '按时间与问题排盘，辅助判断时机与方向。', icon: '门' },
+        { id: 'bazi', name: '四柱八字', description: '通过出生时间排出四柱八字，分析命理节奏与阶段重点。', icon: '乾' },
+        { id: 'yinyuan', name: '姻缘测算', description: '围绕关系状态、相处模式、桃花机缘与长期稳定性解读。', icon: '缘' },
+        { id: 'fojiao', name: '佛学开示', description: '以经典智慧回应困惑，提供心性整理与行动提醒。', icon: '慧' },
+        { id: 'qimen', name: '奇门遁甲', description: '按时间与问题排盘，辅助观察时机、方位与行动策略。', icon: '门' },
       ],
     }
   }
@@ -48,7 +48,7 @@ export async function solarToLunar(dateStr) {
 export async function divineStream(skill, message, history = [], extra = {}, onChunk, onDone) {
   const available = await checkBackend()
   if (!available) {
-    onChunk?.('后端服务未连接，暂时无法进行 AI 推演。\n\n前端界面可继续预览；如需真实测算，请启动 Python FastAPI 后端，或在部署环境中配置 VITE_API_BASE_URL。')
+    onChunk?.('当前生产站点还没有连接后端 API，暂时无法进行真实 AI 推演。\n\n你仍然可以浏览界面与填写表单；待后端部署完成后，这里会直接返回流式测算结果。')
     onDone?.()
     return
   }

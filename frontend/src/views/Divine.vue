@@ -35,6 +35,11 @@
             <strong>{{ item.name }}</strong>
           </button>
         </div>
+
+        <div class="notice-card ds-card">
+          <strong>使用说明</strong>
+          <p>结果仅供传统文化娱乐与自我观察参考，不构成医疗、法律、财务、婚恋等现实决策建议。</p>
+        </div>
       </aside>
 
       <section class="workbench">
@@ -78,7 +83,7 @@
             <div class="lunar-box">
               <strong>阴历换算</strong>
               <span v-if="lunarResult">{{ lunarResult.lunar_full }} · {{ lunarResult.ganzhi_year }}年 · {{ lunarResult.shengxiao }}生肖</span>
-              <span v-else>选择阳历生日后自动换算；后端离线时可继续提交阳历信息。</span>
+              <span v-else>选择阳历生日后自动换算；后端未连接时会直接使用阳历信息。</span>
             </div>
           </div>
         </div>
@@ -122,6 +127,8 @@
               @keydown.ctrl.enter="sendMessage"
             ></textarea>
           </div>
+
+          <p class="privacy-note">当前页面不会在浏览器之外主动保存你的姓名、生日、地点或提问内容。</p>
 
           <div class="chat-actions">
             <button class="ds-button primary" type="button" :disabled="loading || !canSend" @click="sendMessage">
@@ -191,7 +198,7 @@ const skillList = [
   },
   {
     id: 'fojiao',
-    icon: '悟',
+    icon: '慧',
     name: '佛学开示',
     caption: '心性指引',
     description: '以经典义理和修行视角回应困惑，强调清明、慈悲和可执行的行动。',
@@ -427,6 +434,7 @@ async function sendMessage() {
 
 .side-card,
 .side-menu,
+.notice-card,
 .form-panel,
 .chat-panel,
 .empty-state,
@@ -435,12 +443,14 @@ async function sendMessage() {
   z-index: 1;
 }
 
-.side-card {
+.side-card,
+.notice-card {
   padding: 22px;
 }
 
 .side-card > *,
 .side-menu > *,
+.notice-card > *,
 .form-panel > *,
 .chat-panel > *,
 .empty-state > *,
@@ -458,9 +468,19 @@ async function sendMessage() {
   line-height: 1.1;
 }
 
-.side-card p {
+.side-card p,
+.notice-card p,
+.privacy-note {
   margin: 12px 0 0;
   color: var(--ink-soft);
+}
+
+.notice-card strong {
+  color: var(--gold-deep);
+}
+
+.privacy-note {
+  font-size: 13px;
 }
 
 .side-tags {

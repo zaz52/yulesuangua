@@ -7,7 +7,8 @@
       </a>
       <nav class="nav-links" aria-label="主导航">
         <a href="#services">测算</a>
-        <a href="#flow">流程</a>
+        <a href="#guide">指南</a>
+        <a href="#trust">说明</a>
       </nav>
       <button class="ds-button ghost nav-action" type="button" @click="goDivine('bazi')">开始问卦</button>
     </header>
@@ -16,7 +17,7 @@
       <div class="hero-copy">
         <span class="section-kicker">复古科技命理平台</span>
         <h1>乾坤之道</h1>
-        <p class="hero-subtitle">以东方术数为骨，以现代界面为形，为八字、姻缘、佛学、奇门提供清爽可信的 AI 测算体验。</p>
+        <p class="hero-subtitle">以东方术数为骨，以现代界面为形，为八字、姻缘、佛学、奇门提供清爽可信的 AI 问卦体验。</p>
         <div class="hero-actions">
           <button class="ds-button primary" type="button" @click="goDivine('bazi')">立即测算</button>
           <a class="ds-button" href="#services">选择术法</a>
@@ -56,7 +57,7 @@
         </div>
         <div v-if="!backendOk" class="offline ds-card">
           <strong>后端未连接</strong>
-          <span>页面可正常预览；真实 AI 推演需要启动或部署后端服务。</span>
+          <span>页面可正常预览；真实 AI 推演需要部署后端 API 后启用。</span>
         </div>
       </div>
 
@@ -79,18 +80,33 @@
       </div>
     </section>
 
-    <section id="flow" class="app-shell flow-section">
+    <section id="guide" class="app-shell guide-section">
       <div class="section-head compact">
         <div>
-          <span class="section-kicker">Flow</span>
-          <h2 class="section-title">三步完成一次问卦</h2>
+          <span class="section-kicker">Guide</span>
+          <h2 class="section-title">问之前，可以这样准备</h2>
         </div>
       </div>
-      <div class="flow-grid">
-        <article v-for="item in flow" :key="item.title" class="flow-card ds-card">
+      <div class="guide-grid">
+        <article v-for="item in guide" :key="item.title" class="guide-card ds-card">
           <span>{{ item.step }}</span>
           <h3>{{ item.title }}</h3>
           <p>{{ item.copy }}</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="trust" class="app-shell trust-section">
+      <div class="trust-grid">
+        <article class="trust-card ds-card">
+          <span class="section-kicker">Privacy</span>
+          <h2>隐私与使用边界</h2>
+          <p>页面不会在浏览器之外主动保存你的姓名、生日、地点或问题内容。上线后端后，服务端仅为生成结果处理当次请求，后续如增加记录功能会单独提示。</p>
+        </article>
+        <article class="trust-card ds-card">
+          <span class="section-kicker">Notice</span>
+          <h2>理性参考</h2>
+          <p>测算结果仅供传统文化娱乐与自我观察参考，不构成医疗、法律、财务、婚恋等现实决策建议。涉及重大事项时，请结合现实信息和专业意见判断。</p>
         </article>
       </div>
     </section>
@@ -107,10 +123,10 @@ const backendOk = ref(true)
 const apiSkills = ref([])
 
 const fallbackSkills = [
-  { id: 'bazi', name: '四柱八字', shortName: '八字', description: '排出四柱命盘，分析性格、事业、财运与流年节奏。', icon: '乾', badge: '命理核心', tone: 'blue' },
-  { id: 'yinyuan', name: '姻缘测算', shortName: '姻缘', description: '合盘、桃花、关系节奏与情感问题的温和解读。', icon: '缘', badge: '关系洞察', tone: 'red' },
-  { id: 'fojiao', name: '佛学开示', shortName: '开示', description: '以经典智慧回应困惑，强调正念、慈悲与行动。', icon: '慧', badge: '心性指引', tone: 'gold' },
-  { id: 'qimen', name: '奇门遁甲', shortName: '奇门', description: '按时局排盘，辅助判断方位、时机与行动策略。', icon: '门', badge: '时空决策', tone: 'green' },
+  { id: 'bazi', name: '四柱八字', shortName: '八字', description: '适合看个人节奏、性格倾向、事业财运与阶段重点。', icon: '乾', badge: '命理核心', tone: 'blue' },
+  { id: 'yinyuan', name: '姻缘测算', shortName: '姻缘', description: '适合梳理关系状态、相处模式、桃花机缘与情感困惑。', icon: '缘', badge: '关系洞察', tone: 'red' },
+  { id: 'fojiao', name: '佛学开示', shortName: '开示', description: '适合在焦虑、犹豫、执着时整理心念与行动方向。', icon: '慧', badge: '心性指引', tone: 'gold' },
+  { id: 'qimen', name: '奇门遁甲', shortName: '奇门', description: '适合围绕具体事情观察时机、方位、取舍与行动策略。', icon: '门', badge: '时空决策', tone: 'green' },
 ]
 
 const toneById = {
@@ -120,10 +136,10 @@ const toneById = {
   qimen: 'green',
 }
 
-const flow = [
-  { step: '01', title: '选择术法', copy: '根据问题类型进入八字、姻缘、佛学或奇门。' },
-  { step: '02', title: '补全信息', copy: '填写生日、时辰、地点或当前问题背景。' },
-  { step: '03', title: '获取推演', copy: 'AI 结合术法上下文生成可阅读的分析结果。' },
+const guide = [
+  { step: '01', title: '明确问题', copy: '把问题写成一句具体的话，例如事业变化、关系走向或某个合作是否推进。' },
+  { step: '02', title: '补全信息', copy: '八字需要生日和时辰；奇门适合提供时间、地点与所问之事。' },
+  { step: '03', title: '理性阅读', copy: '结果用于辅助观察与复盘，不把任何推演当成必须服从的命令。' },
 ]
 
 const skills = computed(() => {
@@ -359,19 +375,33 @@ function goDivine(skillId) {
 }
 
 .service-section,
-.flow-section {
+.guide-section,
+.trust-section {
   padding: 72px 0 0;
 }
 
 .service-grid,
-.flow-grid {
+.guide-grid,
+.trust-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
 }
 
+.service-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.guide-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.trust-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .service-card,
-.flow-card {
+.guide-card,
+.trust-card {
   z-index: 1;
   display: grid;
   gap: 12px;
@@ -385,7 +415,8 @@ function goDivine(skillId) {
 }
 
 .service-card > *,
-.flow-card > * {
+.guide-card > *,
+.trust-card > * {
   position: relative;
   z-index: 1;
 }
@@ -414,7 +445,8 @@ function goDivine(skillId) {
 }
 
 .service-card h3,
-.flow-card h3 {
+.guide-card h3,
+.trust-card h2 {
   margin: 6px 0 0;
   font-family: var(--font-display);
   font-size: 28px;
@@ -422,17 +454,14 @@ function goDivine(skillId) {
 }
 
 .service-card p,
-.flow-card p {
+.guide-card p,
+.trust-card p {
   margin: 0;
   color: var(--ink-soft);
   font-size: 14px;
 }
 
-.flow-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.flow-card span {
+.guide-card span {
   color: var(--gold-deep);
   font-size: 13px;
   font-weight: 700;
@@ -467,7 +496,8 @@ function goDivine(skillId) {
   }
 
   .service-grid,
-  .flow-grid {
+  .guide-grid,
+  .trust-grid {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -499,7 +529,8 @@ function goDivine(skillId) {
   }
 
   .service-grid,
-  .flow-grid {
+  .guide-grid,
+  .trust-grid {
     grid-template-columns: 1fr;
   }
 }
