@@ -91,6 +91,7 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Done: authorized Netlify CLI via user-approved ticket and deployed production site `suanguan` with deploy ID `6a464e7c55707306e2bc188a`.
 - Done: verified production URL `https://suanguan.netlify.app/` now serves the rebuilt asset containing the new homepage copy (`选择你的测算方式`, `三步完成一次问卦`) and no old demo strings (`Design System`, `Components`, `查看设计系统`).
 - Done: verified `https://suanguan.netlify.app/divine/bazi` returns HTTP 200 after production deploy.
+- Done: performed a content/completeness audit of the production site. Key gap found: `https://suanguan.netlify.app/api/health` returns the frontend HTML fallback rather than backend JSON, so the production site currently opens correctly but does not have a live backend API wired to the frontend.
 
 ## Review Notes
 
