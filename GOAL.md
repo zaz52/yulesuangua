@@ -141,6 +141,12 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Done: verified production `/`, `/tools/huangli`, `/tools/lingqian`, `/tools/jiemeng`, `/tools/qiming`, `/tools/xianghuo`, `/tools/liuyao`, and `/divine/bazi` all return HTTP 200.
 - Done: verified production bundle contains `独立功能页`, `灵签占问`, `梦境解析`, `宝宝起名`, `祈福上香`, `六爻占卜`, and `/tools/:tool`.
 - Done: verified production `/api/health` still returns external Netlify Functions mode.
+- New work started: integrate the Zhouyi ritual UI into the existing website instead of creating a standalone app. The PDF lives on C drive and is intentionally not read because the user previously instructed not to touch C drive; implementation uses the full specification provided in chat. The page should be reachable from the production site via `/zhouyi` and `/tools/liuyao`.
+- Done: removed the mistakenly created standalone `zhouyi-ritual/` scaffold and integrated the feature into the existing Vue/Vite frontend.
+- Done: added `frontend/src/views/ZhouyiRitual.vue` with the full ritual flow: meditation intro, question input, ritual preparation, animated coin casting, six-line hexagram building, hexagram reveal, and scroll-style result card.
+- Done: wired `/zhouyi` and `/tools/liuyao` to the new ritual page, and renamed the home tool entrance to `周易起卦`.
+- Done: `npm run build` passes, and local preview returns HTTP 200 for `/`, `/zhouyi`, `/tools/liuyao`, and `/divine/bazi`.
+- Done: verified the built bundle contains key ritual copy including `周易起卦`, `静心三息`, `投掷铜钱`, `卦象已成`, `展开解卦`, `乾为天`, and `天风姤`.
 
 ## Review Notes
 

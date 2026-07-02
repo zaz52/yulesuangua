@@ -100,7 +100,7 @@ const extraTools = [
   { id: 'jiemeng', icon: '梦', name: '梦境解析', badge: '梦象记录', description: '输入梦境、情绪和现实背景，生成象意提示。' },
   { id: 'qiming', icon: '名', name: '宝宝起名', badge: '姓名方案', description: '填写姓氏、性别、生日和偏好，生成名字方向。' },
   { id: 'xianghuo', icon: '香', name: '祈福上香', badge: '心愿记录', description: '写下心愿、选择对象，完成本地祈福记录。' },
-  { id: 'liuyao', icon: '爻', name: '六爻占卜', badge: '三铜起卦', description: '输入问题后掷六爻，生成本卦和变爻提示。' },
+  { id: 'liuyao', icon: '易', name: '周易起卦', badge: '动态仪式', description: '静心、默念、投掷铜钱，完整生成六爻卦象与卷轴解卦。' },
 ]
 
 function goDivine(id) {
