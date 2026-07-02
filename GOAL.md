@@ -44,3 +44,6 @@
 - 验证：扫描 `frontend/src`、`frontend/index.html`、`frontend/dist`，未发现常见乱码片段或旧设计系统 demo 文案。
 - 验证：`git diff --check` 通过，仅有 Windows 换行提示。
 - 限制：Playwright 包可用，但浏览器二进制缺失；按“不碰 C 盘”约束，尝试把 Chromium 下载到 `E:\ms-playwright`，120 秒内未完成，因此未执行截图级浏览器验证。
+- 已提交并推送到 GitHub：`2b28fe8 feat: rebuild site with zhouyi ritual UI`，远端 `origin/main` 已确认指向该提交。
+- 部署状态：Netlify CLI 执行生产部署时返回 `Forbidden`，说明当前本机 CLI 凭据没有部署权限或已失效。随后检查 `https://suanguan.netlify.app/`，主要路由返回 200，`/api/health` 仍为外部 LLM 模式，但线上首页 HTML 与首页首屏 bundle 文案尚未完全切到最新提交。
+- 最终 review：本地代码、构建、主要路由、乱码扫描、后端契约均已达到本次代码层面的验收；线上发布仍需 Netlify 权限恢复或 Netlify 后台手动触发最新 GitHub commit 部署。
