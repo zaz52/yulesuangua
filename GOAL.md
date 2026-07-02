@@ -50,3 +50,12 @@
 - Cloudflare 迁移：已登录 Wrangler，创建 Cloudflare Pages 项目 `yulesuangua`，生产地址为 `https://yulesuangua.pages.dev/`。
 - Cloudflare 部署：已添加 Pages Function `frontend/functions/api/[[path]].js`，将 `/api/*` 代理到现有 Netlify API，避免 Netlify 额度阻塞前端新地址上线。
 - Cloudflare 验证：`https://yulesuangua.pages.dev/`、`/zhouyi`、`/tools/liuyao`、`/divine/bazi`、`/api/health`、`/api/divine/skills` 均返回 200；`POST /api/divine/bazi` 可返回流式 `data:` 内容。
+
+### 2026-07-03
+
+- 根据用户提供的 14 个玄学 Skills 仓库清单，对照现有网站能力：已有八字、姻缘、佛学、奇门、周易起卦、黄历、灵签、解梦、起名、香火；缺少紫微斗数、梅花易数、大六壬、小六壬、塔罗、风水阳宅、生肖合婚、每日运势等入口。
+- 已重写首页交互为“玄学 Skills 能力库”，新增分类筛选：全部、命理、占问、关系、风水、西式，并在卡片上标识“已有/新增”和参考来源。
+- 已重写 `Divine.vue` 的术法矩阵，新增 `/divine/ziwei`、`/divine/liuyao`、`/divine/meihua`、`/divine/daliuren`、`/divine/xiaoliuren`、`/divine/hehun`、`/divine/fengshui`、`/divine/daily-fortune`、`/divine/tarot`。
+- 已更新 Cloudflare Pages Function：`/api/divine/skills` 返回扩展后的 skill 列表；新增 skill 的 POST 会带上专用术法提示词并转发到最接近的现有后端通道，避免旧 Netlify API 不认识新 skill。
+- 验证：`npm run build` 通过；本地 `/`、`/divine/ziwei`、`/divine/meihua`、`/divine/daliuren`、`/divine/xiaoliuren`、`/divine/tarot`、`/divine/fengshui`、`/divine/hehun`、`/zhouyi` 均返回 200。
+- Cloudflare 部署：`https://yulesuangua.pages.dev/` 已更新；`/api/divine/skills` 包含紫微斗数、梅花易数、大六壬、小六壬、塔罗牌阵、风水阳宅、合婚配对；`POST /api/divine/ziwei`、`/tarot`、`/fengshui` 均可返回流式 `data:` 内容。
