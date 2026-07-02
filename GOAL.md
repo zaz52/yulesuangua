@@ -136,6 +136,11 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Done: simplified `Home.vue` into a portal page with AI core entrances and separate tool entrances instead of putting every module on one page.
 - Done: each new tool route now has concrete interaction: Huangli display, Lingqian draw, Dream form/result, Naming form/result, Wish/incense local storage, and Liuyao random six-line casting.
 - Done: `npm run build` passes; local preview returned HTTP 200 for `/`, all `/tools/*` routes, and `/divine/bazi`.
+- Done: committed and pushed `09586ff feat: split tools into dedicated pages` to `origin/main`.
+- Done: deployed to Netlify production with deploy ID `6a465e0b49016130373ee54d`.
+- Done: verified production `/`, `/tools/huangli`, `/tools/lingqian`, `/tools/jiemeng`, `/tools/qiming`, `/tools/xianghuo`, `/tools/liuyao`, and `/divine/bazi` all return HTTP 200.
+- Done: verified production bundle contains `独立功能页`, `灵签占问`, `梦境解析`, `宝宝起名`, `祈福上香`, `六爻占卜`, and `/tools/:tool`.
+- Done: verified production `/api/health` still returns external Netlify Functions mode.
 
 ## Review Notes
 
