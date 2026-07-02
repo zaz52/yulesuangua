@@ -19,6 +19,7 @@ __pycache__/
 .turbo
 .vercel
 .netlify/
+.wrangler/
 .parcel-cache
 .cache
 coverage

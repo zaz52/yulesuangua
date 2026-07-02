@@ -47,3 +47,6 @@
 - 已提交并推送到 GitHub：`2b28fe8 feat: rebuild site with zhouyi ritual UI`，远端 `origin/main` 已确认指向该提交。
 - 部署状态：Netlify CLI 执行生产部署时返回 `Forbidden`，说明当前本机 CLI 凭据没有部署权限或已失效。随后检查 `https://suanguan.netlify.app/`，主要路由返回 200，`/api/health` 仍为外部 LLM 模式，但线上首页 HTML 与首页首屏 bundle 文案尚未完全切到最新提交。
 - 最终 review：本地代码、构建、主要路由、乱码扫描、后端契约均已达到本次代码层面的验收；线上发布仍需 Netlify 权限恢复或 Netlify 后台手动触发最新 GitHub commit 部署。
+- Cloudflare 迁移：已登录 Wrangler，创建 Cloudflare Pages 项目 `yulesuangua`，生产地址为 `https://yulesuangua.pages.dev/`。
+- Cloudflare 部署：已添加 Pages Function `frontend/functions/api/[[path]].js`，将 `/api/*` 代理到现有 Netlify API，避免 Netlify 额度阻塞前端新地址上线。
+- Cloudflare 验证：`https://yulesuangua.pages.dev/`、`/zhouyi`、`/tools/liuyao`、`/divine/bazi`、`/api/health`、`/api/divine/skills` 均返回 200；`POST /api/divine/bazi` 可返回流式 `data:` 内容。
