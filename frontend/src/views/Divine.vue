@@ -51,7 +51,6 @@
             </div>
             <span class="ds-badge red">必填姓名、日期、时辰</span>
           </div>
-
           <div class="form-grid">
             <div class="ds-field">
               <label for="name">姓名</label>
@@ -88,6 +87,108 @@
           </div>
         </div>
 
+        <div v-if="skillId === 'yinyuan'" class="form-panel ds-card">
+          <div class="panel-head">
+            <div>
+              <span class="section-kicker">Relationship</span>
+              <h2>姻缘信息</h2>
+            </div>
+            <span class="ds-badge red">至少填写关系状态和关注点</span>
+          </div>
+          <div class="form-grid">
+            <div class="ds-field">
+              <label for="yy-name">你的称呼</label>
+              <input id="yy-name" v-model.trim="yinyuanForm.name" placeholder="例如：小林" />
+            </div>
+            <div class="ds-field">
+              <label for="yy-gender">你的性别</label>
+              <select id="yy-gender" v-model="yinyuanForm.gender">
+                <option>女</option>
+                <option>男</option>
+                <option>不便说明</option>
+              </select>
+            </div>
+            <div class="ds-field">
+              <label for="yy-birthday">你的生日</label>
+              <input id="yy-birthday" v-model="yinyuanForm.birthday" type="date" />
+            </div>
+            <div class="ds-field">
+              <label for="partner">对方信息</label>
+              <input id="partner" v-model.trim="yinyuanForm.partner" placeholder="姓名、生日或大致情况" />
+            </div>
+            <div class="ds-field">
+              <label for="relation-status">关系状态</label>
+              <select id="relation-status" v-model="yinyuanForm.status">
+                <option value="">请选择</option>
+                <option>单身，想看正缘</option>
+                <option>暧昧中，想看走向</option>
+                <option>恋爱中，想看稳定性</option>
+                <option>分开后，想看是否复合</option>
+                <option>婚姻中，想看相处问题</option>
+              </select>
+            </div>
+            <div class="ds-field">
+              <label for="relation-focus">关注点</label>
+              <select id="relation-focus" v-model="yinyuanForm.focus">
+                <option value="">请选择</option>
+                <option>正缘时间</option>
+                <option>对方是否合适</option>
+                <option>关系阻碍</option>
+                <option>沟通与相处</option>
+                <option>未来半年趋势</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="skillId === 'fojiao'" class="form-panel ds-card">
+          <div class="panel-head">
+            <div>
+              <span class="section-kicker">Mind Practice</span>
+              <h2>请益背景</h2>
+            </div>
+            <span class="ds-badge red">至少填写困惑类型和当前心境</span>
+          </div>
+          <div class="form-grid">
+            <div class="ds-field">
+              <label for="fo-topic">困惑类型</label>
+              <select id="fo-topic" v-model="fojiaoForm.topic">
+                <option value="">请选择</option>
+                <option>情绪焦虑</option>
+                <option>人际关系</option>
+                <option>工作压力</option>
+                <option>家庭牵挂</option>
+                <option>修行疑问</option>
+                <option>人生取舍</option>
+              </select>
+            </div>
+            <div class="ds-field">
+              <label for="fo-mood">当前心境</label>
+              <select id="fo-mood" v-model="fojiaoForm.mood">
+                <option value="">请选择</option>
+                <option>焦虑不安</option>
+                <option>犹豫反复</option>
+                <option>执着放不下</option>
+                <option>疲惫麻木</option>
+                <option>想要安定</option>
+              </select>
+            </div>
+            <div class="ds-field">
+              <label for="fo-practice">佛学基础</label>
+              <select id="fo-practice" v-model="fojiaoForm.practice">
+                <option>初学，只想听温和开示</option>
+                <option>了解一些经典概念</option>
+                <option>有念佛/禅修习惯</option>
+                <option>希望偏行动建议</option>
+              </select>
+            </div>
+            <div class="ds-field wide">
+              <label for="fo-context">事情背景</label>
+              <input id="fo-context" v-model.trim="fojiaoForm.context" placeholder="简单说说发生了什么，或你卡在哪里" />
+            </div>
+          </div>
+        </div>
+
         <div v-if="skillId === 'qimen'" class="form-panel ds-card">
           <div class="panel-head">
             <div>
@@ -96,7 +197,7 @@
             </div>
             <span class="ds-badge gold">默认当前时间</span>
           </div>
-          <div class="form-grid two">
+          <div class="form-grid">
             <div class="ds-field">
               <label for="qimen-time">排盘时间</label>
               <input id="qimen-time" v-model="qimenForm.datetime" type="datetime-local" />
@@ -104,6 +205,17 @@
             <div class="ds-field">
               <label for="city">所在城市</label>
               <input id="city" v-model.trim="qimenForm.city" placeholder="例如：杭州" />
+            </div>
+            <div class="ds-field">
+              <label for="qimen-type">事情类型</label>
+              <select id="qimen-type" v-model="qimenForm.topic">
+                <option>合作/项目</option>
+                <option>出行/迁移</option>
+                <option>求职/事业</option>
+                <option>感情/关系</option>
+                <option>财务/交易</option>
+                <option>其他</option>
+              </select>
             </div>
           </div>
         </div>
@@ -142,7 +254,7 @@
           <div v-if="responses.length === 0 && !loading" class="empty-state ds-card">
             <span class="taiji-mark"></span>
             <h2>{{ skillInfo.greeting }}</h2>
-            <p>填写信息后提交，结果会以卷轴卡片形式保留在当前页面。</p>
+            <p>{{ skillInfo.emptyCopy }}</p>
           </div>
 
           <div v-if="loading" class="loading-state ds-card">
@@ -184,6 +296,7 @@ const skillList = [
     questionLabel: '补充问题',
     askHint: '例如：我想重点看未来三年的事业变化。',
     greeting: '请先补全出生信息',
+    emptyCopy: '八字需要姓名、生日和时辰。补全后可继续写一个具体关注点。',
   },
   {
     id: 'yinyuan',
@@ -192,9 +305,10 @@ const skillList = [
     caption: '关系洞察',
     description: '围绕关系状态、相处模式、桃花机缘与长期稳定性给出温和建议。',
     tags: ['合盘', '桃花', '关系'],
-    questionLabel: '姻缘问题',
-    askHint: '描述你想了解的关系问题，可包含双方生日或当前状态。',
-    greeting: '写下你的情感问题',
+    questionLabel: '补充描述',
+    askHint: '例如：我们最近联系变少，我想知道是否还适合继续推进。',
+    greeting: '请补全关系信息',
+    emptyCopy: '姻缘测算需要关系状态、关注点和必要背景，对方生日不确定也可以填写大致情况。',
   },
   {
     id: 'fojiao',
@@ -203,9 +317,10 @@ const skillList = [
     caption: '心性指引',
     description: '以经典义理和修行视角回应困惑，强调清明、慈悲和可执行的行动。',
     tags: ['开示', '正念', '经典'],
-    questionLabel: '困惑或请益',
-    askHint: '例如：最近心绪不宁，应如何安顿自己？',
+    questionLabel: '请益内容',
+    askHint: '例如：最近总是为一件事反复内耗，应如何安顿自己？',
     greeting: '写下你此刻的困惑',
+    emptyCopy: '佛学开示需要困惑类型、当前心境和事情背景，回答会偏向心性整理与行动提醒。',
   },
   {
     id: 'qimen',
@@ -217,6 +332,7 @@ const skillList = [
     questionLabel: '所问之事',
     askHint: '例如：这周是否适合推进某个合作？',
     greeting: '填写排盘时间并描述所问之事',
+    emptyCopy: '奇门更适合具体问题。请填写排盘时间、城市、事情类型和明确问题。',
   },
 ]
 
@@ -228,7 +344,9 @@ const loading = ref(false)
 const responses = ref([])
 const lunarResult = ref(null)
 const baziForm = ref({ name: '', gender: '男', solarDate: '', shichen: '', place: '' })
-const qimenForm = ref({ datetime: '', city: '' })
+const yinyuanForm = ref({ name: '', gender: '女', birthday: '', partner: '', status: '', focus: '' })
+const fojiaoForm = ref({ topic: '', mood: '', practice: '初学，只想听温和开示', context: '' })
+const qimenForm = ref({ datetime: '', city: '', topic: '合作/项目' })
 
 const shichenList = [
   { name: '子时', range: '23:00-01:00' },
@@ -248,6 +366,15 @@ const shichenList = [
 const canSend = computed(() => {
   if (skillId.value === 'bazi') {
     return Boolean(baziForm.value.name && baziForm.value.solarDate && baziForm.value.shichen)
+  }
+  if (skillId.value === 'yinyuan') {
+    return Boolean(yinyuanForm.value.status && yinyuanForm.value.focus)
+  }
+  if (skillId.value === 'fojiao') {
+    return Boolean(fojiaoForm.value.topic && fojiaoForm.value.mood)
+  }
+  if (skillId.value === 'qimen') {
+    return Boolean(qimenForm.value.datetime && userInput.value)
   }
   return Boolean(userInput.value)
 })
@@ -309,10 +436,7 @@ function clearChat() {
   responses.value = []
 }
 
-async function sendMessage() {
-  if (!canSend.value || loading.value) return
-
-  let message = userInput.value
+function buildMessage() {
   if (skillId.value === 'bazi') {
     const form = baziForm.value
     const parts = [
@@ -328,9 +452,52 @@ async function sendMessage() {
       parts.push(`生肖：${lunarResult.value.shengxiao}`)
     }
     if (userInput.value) parts.push(`补充问题：${userInput.value}`)
-    message = parts.join('，')
+    return parts.join('，')
   }
 
+  if (skillId.value === 'yinyuan') {
+    const form = yinyuanForm.value
+    const parts = [
+      `我的称呼：${form.name || '未填写'}`,
+      `我的性别：${form.gender}`,
+      `我的生日：${form.birthday || '未填写'}`,
+      `对方信息：${form.partner || '未填写'}`,
+      `关系状态：${form.status}`,
+      `关注点：${form.focus}`,
+    ]
+    if (userInput.value) parts.push(`补充描述：${userInput.value}`)
+    return parts.join('，')
+  }
+
+  if (skillId.value === 'fojiao') {
+    const form = fojiaoForm.value
+    const parts = [
+      `困惑类型：${form.topic}`,
+      `当前心境：${form.mood}`,
+      `佛学基础：${form.practice}`,
+      `事情背景：${form.context || '未填写'}`,
+    ]
+    if (userInput.value) parts.push(`请益内容：${userInput.value}`)
+    return parts.join('，')
+  }
+
+  if (skillId.value === 'qimen') {
+    const form = qimenForm.value
+    const parts = [
+      `事情类型：${form.topic}`,
+      `所在城市：${form.city || '未填写'}`,
+      `所问之事：${userInput.value}`,
+    ]
+    return parts.join('，')
+  }
+
+  return userInput.value
+}
+
+async function sendMessage() {
+  if (!canSend.value || loading.value) return
+
+  const message = buildMessage()
   const extra = {}
   if (skillId.value === 'qimen') {
     if (qimenForm.value.datetime) extra.datetime_str = qimenForm.value.datetime.replace('T', ' ')
@@ -562,8 +729,8 @@ async function sendMessage() {
   gap: 14px;
 }
 
-.form-grid.two {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.ds-field.wide {
+  grid-column: span 2;
 }
 
 .lunar-box {
@@ -679,8 +846,7 @@ async function sendMessage() {
     display: none;
   }
 
-  .form-grid,
-  .form-grid.two {
+  .form-grid {
     grid-template-columns: 1fr 1fr;
   }
 }
@@ -704,8 +870,9 @@ async function sendMessage() {
   }
 
   .form-grid,
-  .form-grid.two {
+  .ds-field.wide {
     grid-template-columns: 1fr;
+    grid-column: auto;
   }
 
   .panel-head {

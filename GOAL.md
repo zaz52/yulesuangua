@@ -100,6 +100,11 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Done: deployed the updated frontend to Netlify production with deploy ID `6a46510509565810ad266d67`.
 - Done: verified production contains the new SEO/guide/privacy/disclaimer copy and does not contain old mojibake fragments in the active JS bundle.
 - Blocked for now: backend deployment cannot be completed from the current environment without an accessible backend hosting target or CLI/API credentials for Render/Railway/Fly/etc. Current production frontend still needs `VITE_API_BASE_URL` pointed at a deployed FastAPI backend before real AI推演 works online.
+- Done: upgraded the divination workflow so every method has its own information form: Bazi birth profile, Yinyuan relationship profile, Fojiao consultation background, and Qimen event profile.
+- Done: form submission now composes method-specific messages while preserving the existing `/api/divine/{skill}` backend contract.
+- Done: `npm run build` passes after the per-method forms.
+- Done: deployed the updated frontend to Netlify production with deploy ID `6a465388818d7500a7ae638d`.
+- Done: verified production bundle contains all four method-specific form sections and no old mojibake fragments; `/divine/bazi`, `/divine/yinyuan`, `/divine/fojiao`, and `/divine/qimen` all return HTTP 200.
 
 ## Review Notes
 
