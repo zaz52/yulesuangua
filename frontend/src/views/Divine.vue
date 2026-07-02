@@ -128,7 +128,7 @@
 <script setup>
 import { computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { divineStream, solarToLunar } from '../api/divine'
+import { calculateChart, divineStream, solarToLunar } from '../api/divine'
 
 const route = useRoute()
 const router = useRouter()
@@ -243,7 +243,17 @@ function buildMessage() {
   return [`术法：${name}`, `事件类型：${f.topic}`, `起局时间：${f.datetime}`, `地点/方位：${f.place || '未填写'}`, `所问之事：${userInput.value}`].join('；')
 }
 
-function buildBoard() {
+function buildBoard(chartResult = null) {
+  if (chartResult?.ok && chartResult.data) {
+    return {
+      type: skillId.value,
+      title: `${skillInfo.value.name}盘面`,
+      badge: '真实排盘',
+      data: chartResult.data,
+      source: chartResult.source,
+    }
+  }
+
   const birthYear = profile.value.birthDate?.slice(0, 4) || '待定'
   const birthMonth = profile.value.birthDate?.slice(5, 7) || '待定'
   const birthDay = profile.value.birthDate?.slice(8, 10) || '待定'
@@ -320,7 +330,14 @@ function buildBoard() {
 async function sendMessage() {
   if (!canSend.value || loading.value) return
   const message = buildMessage()
-  const board = buildBoard()
+  const chartPayload = buildChartPayload(message)
+  let chartResult = null
+  try {
+    chartResult = await calculateChart(skillId.value, chartPayload)
+  } catch {
+    chartResult = null
+  }
+  const board = buildBoard(chartResult)
   const extra = {}
   if (skillId.value === 'qimen' && eventForm.value.datetime) extra.datetime_str = eventForm.value.datetime.replace('T', ' ')
 
@@ -351,11 +368,34 @@ async function sendMessage() {
   }
 }
 
+function buildChartPayload(message) {
+  return {
+    message,
+    question: message,
+    profile: profile.value,
+    relation: relation.value,
+    mind: mind.value,
+    space: space.value,
+    tarot: tarot.value,
+    spread: tarot.value.spread,
+    datetime: eventForm.value.datetime || nowDatetimeLocal(),
+    place: eventForm.value.place,
+    topic: eventForm.value.topic,
+    context: tarot.value.context || userInput.value,
+  }
+}
+
 const VisualBoard = defineComponent({
   props: { board: Object },
   setup(props) {
     return () => h('div', { class: ['visual-board', 'pro-board', `board-${props.board.type}`] }, [
-      h('div', { class: 'board-head' }, [h('h3', props.board.title), h('span', { class: 'ds-badge gold' }, props.board.badge)]),
+      h('div', { class: 'board-head' }, [
+        h('h3', props.board.title),
+        h('div', { class: 'board-badges' }, [
+          props.board.source ? h('span', { class: 'ds-badge green' }, props.board.source) : null,
+          h('span', { class: 'ds-badge gold' }, props.board.badge),
+        ]),
+      ]),
       renderBoard(props.board),
     ])
   },

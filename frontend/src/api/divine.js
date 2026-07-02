@@ -45,6 +45,20 @@ export async function solarToLunar(dateStr) {
   return res.json()
 }
 
+export async function calculateChart(skill, payload = {}) {
+  const available = await checkBackend()
+  if (!available) throw new Error('后端服务未连接')
+
+  const res = await fetch(`${API_BASE}/metaphysics/calculate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ skill, ...payload }),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok || data.ok === false) throw new Error(data.error || `排盘失败：${res.status}`)
+  return data
+}
+
 export async function divineStream(skill, message, history = [], extra = {}, onChunk, onDone) {
   const available = await checkBackend()
   if (!available) {

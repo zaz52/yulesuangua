@@ -4,6 +4,8 @@
 
 把 `yulesuangua` 从旧工具站改成沉浸式玄学问事产品，并继续完善各个术法页面的结果表达。当前重点是：不同术法“算出来”的盘面不能都长成同一种卡片网格，而要按术法本身的专业表达呈现。
 
+当前追加目标：接入用户提供的真实术数算法能力，使前端专业盘面优先来自算法排盘，而不是纯展示占位。
+
 ## 成功标准
 
 - 八字结果使用接近专业命盘的四柱表格，包含年柱、月柱、日柱、时柱，以及天干、地支、藏干、十神、五行、纳音、长生、合冲刑害等行。
@@ -18,6 +20,8 @@
 - 桌面端和移动端都能打开主要页面，没有页面级横向溢出。
 - `npm run build` 必须通过；主要路由和浏览器提交验证必须通过。
 - 不提交密钥，不触碰用户未要求的 Obsidian 同步。
+- 八字、紫微、奇门、六爻、梅花、小六壬、塔罗优先调用 `mingyu-core` 生成真实结构化盘面。
+- 算法失败或暂不支持时，前端保留当前兜底盘面，不让用户流程中断。
 
 ## 架构思路
 
@@ -26,6 +30,8 @@
 - `buildBoard()` 生成按 `skillId` 分流的结构化盘面数据。
 - `VisualBoard` 不再渲染单一 `board-grid`，而是分发到各术法专属 renderer。
 - CSS 使用当前暗色周易仪式风格，补充专业盘面类名：`bazi-pro-table`、`ziwei-palace-grid`、`qimen-nine-grid`、`liuyao-pro-lines`、`meihua-pro-grid`、`fengshui-nine-grid`、`tarot-spread`。
+- `frontend/functions/api/[[path]].js` 承担 Cloudflare Pages Functions 算法接口，新增 `/api/metaphysics/calculate`。
+- 前端通过 `calculateChart(skill, payload)` 调用统一排盘接口，返回数据直接映射到 `VisualBoard`。
 
 ## 进度记录
 
@@ -49,8 +55,24 @@
   - 移动端 390px 宽度抽查 `/divine/bazi`、`/divine/ziwei`、`/divine/tarot`，盘面可见且无页面级横向溢出。
   - 常见乱码和旧设计残留扫描未命中。
 
+### 2026-07-03 真实算法接入
+
+- 已确认 `mingyu-core@0.1.8` 是 MIT 许可证 npm 算法包，覆盖八字、紫微、奇门、六爻、梅花、小六壬、塔罗等能力。
+- 已安装 `mingyu-core` 和紫微所需 peer dependency `iztro`。
+- 已在 Cloudflare Pages Function 中新增 `/api/metaphysics/calculate`：
+  - `bazi` 调用 `baziCalculator.calculateBazi()`。
+  - `ziwei` 调用 `buildAstrolabeFromInput()`。
+  - `qimen` 调用 `generateQimen()`。
+  - `liuyao` 调用 `generateLiuyao()`。
+  - `meihua` 调用 `generateMeihua()`。
+  - `xiaoliuren` 调用 `generateXiaoliuren()`。
+  - `tarot` 调用 `drawSpreadCards()`。
+- 已新增前端 API `calculateChart()`，并在提交问事时优先请求真实排盘数据；失败时保留原来的兜底盘面。
+- 本地接口级验证通过：八字、紫微、奇门、六爻、梅花、小六壬、塔罗均返回 `mingyu-core@0.1.8` 结构化数据。
+- `npm run build` 验证通过。
+
 ## 当前剩余风险
 
-- 盘面中的命理字段仍是前端展示层的结构化占位，不是真正算法排盘。真实八字、紫微、奇门、六爻等算法需要后续接入专业排盘引擎或后端计算。
+- 风水阳宅、合婚、大六壬、每日运势等页面仍有部分是结构化展示或 AI 解读，没有完全接入专门算法盘。
 - 本地 Vite 预览没有 Cloudflare Pages Functions，因此本地后端请求可能失败；线上 Cloudflare 仍通过 `/api/*` 代理到现有 Netlify API。
 - Playwright 默认浏览器缓存未安装在本机默认路径，本次浏览器验证使用了系统已有 Edge。
