@@ -1,305 +1,120 @@
 <template>
-  <main class="oracle-page">
-    <header class="oracle-nav">
-      <button class="ds-button ghost" type="button" @click="goBack">返回首页</button>
-      <div class="oracle-title">
-        <span class="taiji-mark small" aria-hidden="true"></span>
+  <main class="divine-page ritual-page">
+    <header class="page-nav app-shell">
+      <button class="ds-button ghost" type="button" @click="router.push('/')">返回首页</button>
+      <div class="title-center">
+        <span class="round-mark small">{{ skillInfo.icon }}</span>
         <div>
           <strong>{{ skillInfo.name }}</strong>
-          <span>{{ skillInfo.caption }}</span>
+          <em>{{ skillInfo.caption }}</em>
         </div>
       </div>
       <span class="ds-badge green">AI 推演</span>
     </header>
 
-    <section class="oracle-shell app-shell">
-      <aside class="side-panel">
-        <div class="side-card ds-card">
-          <span class="section-kicker">当前术法</span>
-          <h1>{{ skillInfo.name }}</h1>
-          <p>{{ skillInfo.description }}</p>
-          <div class="side-tags">
-            <span v-for="tag in skillInfo.tags" :key="tag" class="ds-badge gold">{{ tag }}</span>
-          </div>
+    <section class="divine-shell app-shell">
+      <aside class="method-panel ds-card">
+        <span class="section-kicker">当前术法</span>
+        <h1>{{ skillInfo.name }}</h1>
+        <p>{{ skillInfo.description }}</p>
+        <div class="method-tags">
+          <span v-for="tag in skillInfo.tags" :key="tag" class="ds-badge gold">{{ tag }}</span>
         </div>
-
-        <div class="side-menu ds-card">
-          <button
-            v-for="item in skillList"
-            :key="item.id"
-            type="button"
-            :class="{ active: item.id === skillId }"
-            @click="switchSkill(item.id)"
-          >
+        <div class="method-menu">
+          <button v-for="item in skillList" :key="item.id" type="button" :class="{ active: item.id === skillId }" @click="switchSkill(item.id)">
             <span>{{ item.icon }}</span>
             <strong>{{ item.name }}</strong>
           </button>
         </div>
-
-        <div class="notice-card ds-card">
-          <strong>使用说明</strong>
-          <p>结果仅供传统文化娱乐与自我观察参考，不构成医疗、法律、财务、婚恋等现实决策建议。</p>
-        </div>
       </aside>
 
       <section class="workbench">
-        <div v-if="skillId === 'bazi'" class="form-panel ds-card">
+        <article class="form-panel ds-card">
           <div class="panel-head">
             <div>
-              <span class="section-kicker">Birth Profile</span>
-              <h2>出生信息</h2>
+              <span class="section-kicker">{{ skillInfo.formKicker }}</span>
+              <h2>{{ skillInfo.formTitle }}</h2>
             </div>
-            <span class="ds-badge red">必填姓名、日期、时辰</span>
+            <span class="ds-badge" :class="canSend ? 'green' : 'red'">{{ canSend ? '可提交' : '待补全' }}</span>
           </div>
-          <div class="form-grid">
-            <div class="ds-field">
-              <label for="name">姓名</label>
-              <input id="name" v-model.trim="baziForm.name" placeholder="请输入姓名" />
-            </div>
-            <div class="ds-field">
-              <label for="gender">性别</label>
-              <select id="gender" v-model="baziForm.gender">
-                <option>男</option>
-                <option>女</option>
-                <option>不便说明</option>
-              </select>
-            </div>
-            <div class="ds-field">
-              <label for="solar-date">阳历生日</label>
-              <input id="solar-date" v-model="baziForm.solarDate" type="date" @change="convertLunar" />
-            </div>
-            <div class="ds-field">
-              <label for="shichen">出生时辰</label>
-              <select id="shichen" v-model="baziForm.shichen">
-                <option value="">请选择</option>
-                <option v-for="item in shichenList" :key="item.name" :value="item.name">{{ item.name }}（{{ item.range }}）</option>
-              </select>
-            </div>
-            <div class="ds-field">
-              <label for="place">出生地</label>
-              <input id="place" v-model.trim="baziForm.place" placeholder="例如：北京" />
-            </div>
-            <div class="lunar-box">
-              <strong>阴历换算</strong>
-              <span v-if="lunarResult">{{ lunarResult.lunar_full }} · {{ lunarResult.ganzhi_year }}年 · {{ lunarResult.shengxiao }}生肖</span>
-              <span v-else>选择阳历生日后自动换算；后端未连接时会直接使用阳历信息。</span>
-            </div>
-          </div>
-        </div>
 
-        <div v-if="skillId === 'yinyuan'" class="form-panel ds-card">
-          <div class="panel-head">
-            <div>
-              <span class="section-kicker">Relationship</span>
-              <h2>姻缘信息</h2>
-            </div>
-            <span class="ds-badge red">至少填写关系状态和关注点</span>
+          <div v-if="skillId === 'bazi'" class="form-grid">
+            <label class="ds-field"><span>姓名</span><input v-model.trim="baziForm.name" placeholder="请输入姓名" /></label>
+            <label class="ds-field"><span>性别</span><select v-model="baziForm.gender"><option>男</option><option>女</option><option>不便说明</option></select></label>
+            <label class="ds-field"><span>阳历生日</span><input v-model="baziForm.solarDate" type="date" @change="convertLunar" /></label>
+            <label class="ds-field"><span>出生时辰</span><select v-model="baziForm.shichen"><option value="">请选择</option><option v-for="item in shichenList" :key="item.name" :value="item.name">{{ item.name }}（{{ item.range }}）</option></select></label>
+            <label class="ds-field"><span>出生地</span><input v-model.trim="baziForm.place" placeholder="例如：杭州" /></label>
+            <div class="info-chip">{{ lunarResult ? `${lunarResult.lunar_full} · ${lunarResult.ganzhi_year}年 · ${lunarResult.shengxiao}生肖` : '选择阳历生日后尝试换算农历；后端不可用时会直接使用阳历信息。' }}</div>
           </div>
-          <div class="form-grid">
-            <div class="ds-field">
-              <label for="yy-name">你的称呼</label>
-              <input id="yy-name" v-model.trim="yinyuanForm.name" placeholder="例如：小林" />
-            </div>
-            <div class="ds-field">
-              <label for="yy-gender">你的性别</label>
-              <select id="yy-gender" v-model="yinyuanForm.gender">
-                <option>女</option>
-                <option>男</option>
-                <option>不便说明</option>
-              </select>
-            </div>
-            <div class="ds-field">
-              <label for="yy-birthday">你的生日</label>
-              <input id="yy-birthday" v-model="yinyuanForm.birthday" type="date" />
-            </div>
-            <div class="ds-field">
-              <label for="partner">对方信息</label>
-              <input id="partner" v-model.trim="yinyuanForm.partner" placeholder="姓名、生日或大致情况" />
-            </div>
-            <div class="ds-field">
-              <label for="relation-status">关系状态</label>
-              <select id="relation-status" v-model="yinyuanForm.status">
-                <option value="">请选择</option>
-                <option>单身，想看正缘</option>
-                <option>暧昧中，想看走向</option>
-                <option>恋爱中，想看稳定性</option>
-                <option>分开后，想看是否复合</option>
-                <option>婚姻中，想看相处问题</option>
-              </select>
-            </div>
-            <div class="ds-field">
-              <label for="relation-focus">关注点</label>
-              <select id="relation-focus" v-model="yinyuanForm.focus">
-                <option value="">请选择</option>
-                <option>正缘时间</option>
-                <option>对方是否合适</option>
-                <option>关系阻碍</option>
-                <option>沟通与相处</option>
-                <option>未来半年趋势</option>
-              </select>
-            </div>
-          </div>
-        </div>
 
-        <div v-if="skillId === 'fojiao'" class="form-panel ds-card">
-          <div class="panel-head">
-            <div>
-              <span class="section-kicker">Mind Practice</span>
-              <h2>请益背景</h2>
-            </div>
-            <span class="ds-badge red">至少填写困惑类型和当前心境</span>
+          <div v-else-if="skillId === 'yinyuan'" class="form-grid">
+            <label class="ds-field"><span>你的称呼</span><input v-model.trim="yinyuanForm.name" placeholder="例如：小林" /></label>
+            <label class="ds-field"><span>你的生日</span><input v-model="yinyuanForm.birthday" type="date" /></label>
+            <label class="ds-field wide"><span>对方信息</span><input v-model.trim="yinyuanForm.partner" placeholder="姓名、生日或大致情况" /></label>
+            <label class="ds-field"><span>关系状态</span><select v-model="yinyuanForm.status"><option value="">请选择</option><option>单身，想看正缘</option><option>暧昧中，想看走向</option><option>恋爱中，想看稳定性</option><option>分开后，想看是否复合</option><option>婚姻中，想看相处问题</option></select></label>
+            <label class="ds-field"><span>关注点</span><select v-model="yinyuanForm.focus"><option value="">请选择</option><option>正缘时间</option><option>对方是否合适</option><option>关系阻碍</option><option>沟通与相处</option><option>未来半年趋势</option></select></label>
           </div>
-          <div class="form-grid">
-            <div class="ds-field">
-              <label for="fo-topic">困惑类型</label>
-              <select id="fo-topic" v-model="fojiaoForm.topic">
-                <option value="">请选择</option>
-                <option>情绪焦虑</option>
-                <option>人际关系</option>
-                <option>工作压力</option>
-                <option>家庭牵挂</option>
-                <option>修行疑问</option>
-                <option>人生取舍</option>
-              </select>
-            </div>
-            <div class="ds-field">
-              <label for="fo-mood">当前心境</label>
-              <select id="fo-mood" v-model="fojiaoForm.mood">
-                <option value="">请选择</option>
-                <option>焦虑不安</option>
-                <option>犹豫反复</option>
-                <option>执着放不下</option>
-                <option>疲惫麻木</option>
-                <option>想要安定</option>
-              </select>
-            </div>
-            <div class="ds-field">
-              <label for="fo-practice">佛学基础</label>
-              <select id="fo-practice" v-model="fojiaoForm.practice">
-                <option>初学，只想听温和开示</option>
-                <option>了解一些经典概念</option>
-                <option>有念佛/禅修习惯</option>
-                <option>希望偏行动建议</option>
-              </select>
-            </div>
-            <div class="ds-field wide">
-              <label for="fo-context">事情背景</label>
-              <input id="fo-context" v-model.trim="fojiaoForm.context" placeholder="简单说说发生了什么，或你卡在哪里" />
-            </div>
-          </div>
-        </div>
 
-        <div v-if="skillId === 'qimen'" class="form-panel ds-card">
-          <div class="panel-head">
-            <div>
-              <span class="section-kicker">Qimen Board</span>
-              <h2>排盘信息</h2>
-            </div>
-            <span class="ds-badge gold">默认当前时间</span>
+          <div v-else-if="skillId === 'fojiao'" class="form-grid">
+            <label class="ds-field"><span>困惑类型</span><select v-model="fojiaoForm.topic"><option value="">请选择</option><option>情绪焦虑</option><option>人际关系</option><option>工作压力</option><option>家庭牵挂</option><option>修行疑问</option><option>人生取舍</option></select></label>
+            <label class="ds-field"><span>当前心境</span><select v-model="fojiaoForm.mood"><option value="">请选择</option><option>焦虑不安</option><option>犹豫反复</option><option>执着放不下</option><option>疲惫麻木</option><option>想要安定</option></select></label>
+            <label class="ds-field wide"><span>事情背景</span><input v-model.trim="fojiaoForm.context" placeholder="简单说说发生了什么，或你卡在哪里" /></label>
           </div>
-          <div class="form-grid">
-            <div class="ds-field">
-              <label for="qimen-time">排盘时间</label>
-              <input id="qimen-time" v-model="qimenForm.datetime" type="datetime-local" />
-            </div>
-            <div class="ds-field">
-              <label for="city">所在城市</label>
-              <input id="city" v-model.trim="qimenForm.city" placeholder="例如：杭州" />
-            </div>
-            <div class="ds-field">
-              <label for="qimen-type">事情类型</label>
-              <select id="qimen-type" v-model="qimenForm.topic">
-                <option>合作/项目</option>
-                <option>出行/迁移</option>
-                <option>求职/事业</option>
-                <option>感情/关系</option>
-                <option>财务/交易</option>
-                <option>其他</option>
-              </select>
-            </div>
-          </div>
-        </div>
 
-        <div class="chat-panel ds-card">
+          <div v-else class="form-grid">
+            <label class="ds-field"><span>排盘时间</span><input v-model="qimenForm.datetime" type="datetime-local" /></label>
+            <label class="ds-field"><span>所在城市</span><input v-model.trim="qimenForm.city" placeholder="例如：杭州" /></label>
+            <label class="ds-field"><span>事情类型</span><select v-model="qimenForm.topic"><option>合作/项目</option><option>出行/迁移</option><option>求职/事业</option><option>感情/关系</option><option>财务/交易</option><option>其他</option></select></label>
+          </div>
+        </article>
+
+        <article class="ask-panel ds-card">
           <div class="panel-head">
             <div>
               <span class="section-kicker">Ask</span>
-              <h2>问卦内容</h2>
+              <h2>{{ skillInfo.questionLabel }}</h2>
             </div>
-            <span class="ds-badge" :class="{ green: canSend, red: !canSend }">{{ canSend ? '可提交' : '待补全' }}</span>
           </div>
-
-          <div class="ds-field">
-            <label for="question">{{ skillInfo.questionLabel }}</label>
-            <textarea
-              id="question"
-              v-model.trim="userInput"
-              :placeholder="skillInfo.askHint"
-              :disabled="loading"
-              @keydown.ctrl.enter="sendMessage"
-            ></textarea>
+          <label class="ds-field">
+            <span>所问内容</span>
+            <textarea v-model.trim="userInput" :placeholder="skillInfo.askHint" :disabled="loading" @keydown.ctrl.enter="sendMessage"></textarea>
+          </label>
+          <p class="privacy-note">页面不会在浏览器之外主动保存你的姓名、生日、地点或提问内容。</p>
+          <div class="actions">
+            <button class="ds-button primary" type="button" :disabled="loading || !canSend" @click="sendMessage">{{ loading ? '推演中...' : '提交问事' }}</button>
+            <button class="ds-button ghost" type="button" :disabled="loading" @click="responses = []">清空记录</button>
           </div>
+        </article>
 
-          <p class="privacy-note">当前页面不会在浏览器之外主动保存你的姓名、生日、地点或提问内容。</p>
-
-          <div class="chat-actions">
-            <button class="ds-button primary" type="button" :disabled="loading || !canSend" @click="sendMessage">
-              {{ loading ? '推演中...' : '提交问卦' }}
-            </button>
-            <button class="ds-button ghost" type="button" :disabled="loading" @click="clearChat">清空记录</button>
-          </div>
-        </div>
-
-        <div class="result-panel">
-          <div v-if="responses.length === 0 && !loading" class="empty-state ds-card">
-            <span class="taiji-mark"></span>
+        <section class="result-list">
+          <article v-if="responses.length === 0 && !loading" class="empty-card ds-card">
+            <span class="round-mark">{{ skillInfo.icon }}</span>
             <h2>{{ skillInfo.greeting }}</h2>
             <p>{{ skillInfo.emptyCopy }}</p>
-          </div>
+          </article>
 
-          <div v-if="loading" class="loading-state ds-card">
-            <span></span>
-            <strong>正在推演</strong>
-            <p>正在连接术法知识与当前问题，请稍候。</p>
-          </div>
+          <article v-if="loading" class="empty-card ds-card">
+            <span class="loading-ring"></span>
+            <h2>正在推演</h2>
+            <p>正在连接后端和术法提示词，请稍候。</p>
+          </article>
 
           <article v-for="(resp, index) in responses" :key="index" class="answer-card ds-card">
             <div class="answer-head">
               <span class="ds-badge gold">第 {{ index + 1 }} 卦</span>
               <time>{{ today }}</time>
             </div>
-            <div v-if="typeof resp !== 'string' && resp.board" class="analysis-board" :class="`board-${resp.board.type}`">
-              <div class="board-head">
-                <div>
-                  <span class="section-kicker">{{ resp.board.kicker }}</span>
-                  <h3>{{ resp.board.title }}</h3>
-                </div>
-                <span class="ds-badge green">{{ resp.board.badge }}</span>
-              </div>
-              <div class="board-grid">
-                <div v-for="item in resp.board.items" :key="item.label" class="board-cell">
-                  <span>{{ item.label }}</span>
-                  <strong>{{ item.value }}</strong>
-                  <em>{{ item.note }}</em>
-                </div>
-              </div>
-              <div class="detail-grid">
-                <section v-for="detail in resp.board.details" :key="detail.title" class="detail-card">
-                  <strong>{{ detail.title }}</strong>
-                  <p>{{ detail.copy }}</p>
-                </section>
-              </div>
-            </div>
+            <VisualBoard v-if="typeof resp !== 'string' && resp.board" :board="resp.board" />
             <pre>{{ typeof resp === 'string' ? resp : resp.text }}</pre>
           </article>
-        </div>
+        </section>
       </section>
     </section>
   </main>
 </template>
 
 <script setup>
-import { computed, nextTick, onMounted, ref, watch } from 'vue'
+import { computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { divineStream, solarToLunar } from '../api/divine'
 
@@ -308,102 +123,39 @@ const router = useRouter()
 const skillId = computed(() => route.params.skill || 'bazi')
 
 const skillList = [
-  {
-    id: 'bazi',
-    icon: '乾',
-    name: '四柱八字',
-    caption: '命理核心',
-    description: '以出生年月日时排出四柱，观察五行、十神、大运与流年节奏。',
-    tags: ['四柱', '五行', '大运'],
-    questionLabel: '补充问题',
-    askHint: '例如：我想重点看未来三年的事业变化。',
-    greeting: '请先补全出生信息',
-    emptyCopy: '八字需要姓名、生日和时辰。补全后可继续写一个具体关注点。',
-  },
-  {
-    id: 'yinyuan',
-    icon: '缘',
-    name: '姻缘测算',
-    caption: '关系洞察',
-    description: '围绕关系状态、相处模式、桃花机缘与长期稳定性给出温和建议。',
-    tags: ['合盘', '桃花', '关系'],
-    questionLabel: '补充描述',
-    askHint: '例如：我们最近联系变少，我想知道是否还适合继续推进。',
-    greeting: '请补全关系信息',
-    emptyCopy: '姻缘测算需要关系状态、关注点和必要背景，对方生日不确定也可以填写大致情况。',
-  },
-  {
-    id: 'fojiao',
-    icon: '慧',
-    name: '佛学开示',
-    caption: '心性指引',
-    description: '以经典义理和修行视角回应困惑，强调清明、慈悲和可执行的行动。',
-    tags: ['开示', '正念', '经典'],
-    questionLabel: '请益内容',
-    askHint: '例如：最近总是为一件事反复内耗，应如何安顿自己？',
-    greeting: '写下你此刻的困惑',
-    emptyCopy: '佛学开示需要困惑类型、当前心境和事情背景，回答会偏向心性整理与行动提醒。',
-  },
-  {
-    id: 'qimen',
-    icon: '门',
-    name: '奇门遁甲',
-    caption: '时空决策',
-    description: '结合时间、地点和所问之事，用盘局辅助判断方向、时机与策略。',
-    tags: ['排盘', '方位', '择时'],
-    questionLabel: '所问之事',
-    askHint: '例如：这周是否适合推进某个合作？',
-    greeting: '填写排盘时间并描述所问之事',
-    emptyCopy: '奇门更适合具体问题。请填写排盘时间、城市、事情类型和明确问题。',
-  },
+  { id: 'bazi', icon: '命', name: '四柱八字', caption: '命理核心', formKicker: 'Birth Profile', formTitle: '出生信息', description: '以出生年月日时排出四柱，观察五行、阶段节奏与关注方向。', tags: ['四柱', '五行', '大运'], questionLabel: '补充问题', askHint: '例如：我想重点看未来三年的事业变化。', greeting: '请先补全出生信息', emptyCopy: '八字需要姓名、生日和时辰。补全后可继续写一个具体关注点。' },
+  { id: 'yinyuan', icon: '缘', name: '姻缘测算', caption: '关系洞察', formKicker: 'Relationship', formTitle: '姻缘信息', description: '围绕关系状态、相处模式、桃花机缘与长期稳定性给出建议。', tags: ['合盘', '桃花', '关系'], questionLabel: '补充描述', askHint: '例如：我们最近联系变少，我想知道是否还适合继续推进。', greeting: '请补全关系信息', emptyCopy: '姻缘测算需要关系状态、关注点和必要背景。' },
+  { id: 'fojiao', icon: '禅', name: '佛学开示', caption: '心性指引', formKicker: 'Mind Practice', formTitle: '请益背景', description: '以经典义理和修行视角回应困惑，强调清明、慈悲和可执行行动。', tags: ['开示', '正念', '观照'], questionLabel: '请益内容', askHint: '例如：最近总为一件事反复内耗，应如何安顿自己？', greeting: '写下此刻的困惑', emptyCopy: '佛学开示需要困惑类型、当前心境和事情背景。' },
+  { id: 'qimen', icon: '门', name: '奇门遁甲', caption: '时空决策', formKicker: 'Qimen Board', formTitle: '排盘信息', description: '结合时间、地点和所问之事，用盘局辅助判断方向、时机与策略。', tags: ['排盘', '方位', '择时'], questionLabel: '所问之事', askHint: '例如：这周是否适合推进某个合作？', greeting: '填写排盘时间并描述所问之事', emptyCopy: '奇门更适合具体问题，请填写时间、城市、事情类型和明确问题。' },
+]
+
+const shichenList = [
+  { name: '子时', range: '23:00-01:00' }, { name: '丑时', range: '01:00-03:00' }, { name: '寅时', range: '03:00-05:00' }, { name: '卯时', range: '05:00-07:00' },
+  { name: '辰时', range: '07:00-09:00' }, { name: '巳时', range: '09:00-11:00' }, { name: '午时', range: '11:00-13:00' }, { name: '未时', range: '13:00-15:00' },
+  { name: '申时', range: '15:00-17:00' }, { name: '酉时', range: '17:00-19:00' }, { name: '戌时', range: '19:00-21:00' }, { name: '亥时', range: '21:00-23:00' },
 ]
 
 const skillInfo = computed(() => skillList.find((item) => item.id === skillId.value) || skillList[0])
 const today = new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit' }).format(new Date())
-
 const userInput = ref('')
 const loading = ref(false)
 const responses = ref([])
 const lunarResult = ref(null)
 const baziForm = ref({ name: '', gender: '男', solarDate: '', shichen: '', place: '' })
-const yinyuanForm = ref({ name: '', gender: '女', birthday: '', partner: '', status: '', focus: '' })
-const fojiaoForm = ref({ topic: '', mood: '', practice: '初学，只想听温和开示', context: '' })
+const yinyuanForm = ref({ name: '', birthday: '', partner: '', status: '', focus: '' })
+const fojiaoForm = ref({ topic: '', mood: '', context: '' })
 const qimenForm = ref({ datetime: '', city: '', topic: '合作/项目' })
 
-const shichenList = [
-  { name: '子时', range: '23:00-01:00' },
-  { name: '丑时', range: '01:00-03:00' },
-  { name: '寅时', range: '03:00-05:00' },
-  { name: '卯时', range: '05:00-07:00' },
-  { name: '辰时', range: '07:00-09:00' },
-  { name: '巳时', range: '09:00-11:00' },
-  { name: '午时', range: '11:00-13:00' },
-  { name: '未时', range: '13:00-15:00' },
-  { name: '申时', range: '15:00-17:00' },
-  { name: '酉时', range: '17:00-19:00' },
-  { name: '戌时', range: '19:00-21:00' },
-  { name: '亥时', range: '21:00-23:00' },
-]
-
 const canSend = computed(() => {
-  if (skillId.value === 'bazi') {
-    return Boolean(baziForm.value.name && baziForm.value.solarDate && baziForm.value.shichen)
-  }
-  if (skillId.value === 'yinyuan') {
-    return Boolean(yinyuanForm.value.status && yinyuanForm.value.focus)
-  }
-  if (skillId.value === 'fojiao') {
-    return Boolean(fojiaoForm.value.topic && fojiaoForm.value.mood)
-  }
-  if (skillId.value === 'qimen') {
-    return Boolean(qimenForm.value.datetime && userInput.value)
-  }
-  return Boolean(userInput.value)
+  if (skillId.value === 'bazi') return Boolean(baziForm.value.name && baziForm.value.solarDate && baziForm.value.shichen)
+  if (skillId.value === 'yinyuan') return Boolean(yinyuanForm.value.status && yinyuanForm.value.focus)
+  if (skillId.value === 'fojiao') return Boolean(fojiaoForm.value.topic && fojiaoForm.value.mood)
+  return Boolean(qimenForm.value.datetime && userInput.value)
 })
 
 onMounted(() => {
-  baziForm.value.shichen = getCurrentShichen()
-  qimenForm.value.datetime = getNowDatetimeLocal()
+  baziForm.value.shichen = currentShichen()
+  qimenForm.value.datetime = nowDatetimeLocal()
 })
 
 watch(skillId, () => {
@@ -412,23 +164,17 @@ watch(skillId, () => {
   lunarResult.value = null
 })
 
-function getCurrentShichen() {
-  const h = new Date().getHours()
-  if (h >= 23 || h < 1) return '子时'
-  if (h < 3) return '丑时'
-  if (h < 5) return '寅时'
-  if (h < 7) return '卯时'
-  if (h < 9) return '辰时'
-  if (h < 11) return '巳时'
-  if (h < 13) return '午时'
-  if (h < 15) return '未时'
-  if (h < 17) return '申时'
-  if (h < 19) return '酉时'
-  if (h < 21) return '戌时'
-  return '亥时'
+function switchSkill(id) {
+  router.push(`/divine/${id}`)
 }
 
-function getNowDatetimeLocal() {
+function currentShichen() {
+  const h = new Date().getHours()
+  if (h >= 23 || h < 1) return '子时'
+  return shichenList[Math.floor((h + 1) / 2)]?.name || '亥时'
+}
+
+function nowDatetimeLocal() {
   const d = new Date()
   const pad = (value) => String(value).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
@@ -446,372 +192,200 @@ async function convertLunar() {
   }
 }
 
-function goBack() {
-  router.push('/')
-}
-
-function switchSkill(id) {
-  router.push(`/divine/${id}`)
-}
-
-function clearChat() {
-  responses.value = []
-}
-
 function buildMessage() {
   if (skillId.value === 'bazi') {
-    const form = baziForm.value
-    const parts = [
-      `姓名：${form.name}`,
-      `性别：${form.gender}`,
-      `阳历生日：${form.solarDate}`,
-      `出生时辰：${form.shichen}`,
-    ]
-    if (form.place) parts.push(`出生地：${form.place}`)
-    if (lunarResult.value) {
-      parts.push(`阴历生日：${lunarResult.value.lunar_full}`)
-      parts.push(`年柱：${lunarResult.value.ganzhi_year}`)
-      parts.push(`生肖：${lunarResult.value.shengxiao}`)
-    }
-    if (userInput.value) parts.push(`补充问题：${userInput.value}`)
-    return parts.join('，')
+    const f = baziForm.value
+    return [`姓名：${f.name}`, `性别：${f.gender}`, `阳历生日：${f.solarDate}`, `出生时辰：${f.shichen}`, f.place && `出生地：${f.place}`, lunarResult.value && `农历：${lunarResult.value.lunar_full}`, userInput.value && `补充问题：${userInput.value}`].filter(Boolean).join('；')
   }
-
   if (skillId.value === 'yinyuan') {
-    const form = yinyuanForm.value
-    const parts = [
-      `我的称呼：${form.name || '未填写'}`,
-      `我的性别：${form.gender}`,
-      `我的生日：${form.birthday || '未填写'}`,
-      `对方信息：${form.partner || '未填写'}`,
-      `关系状态：${form.status}`,
-      `关注点：${form.focus}`,
-    ]
-    if (userInput.value) parts.push(`补充描述：${userInput.value}`)
-    return parts.join('，')
+    const f = yinyuanForm.value
+    return [`我的称呼：${f.name || '未填写'}`, `我的生日：${f.birthday || '未填写'}`, `对方信息：${f.partner || '未填写'}`, `关系状态：${f.status}`, `关注点：${f.focus}`, userInput.value && `补充描述：${userInput.value}`].filter(Boolean).join('；')
   }
-
   if (skillId.value === 'fojiao') {
-    const form = fojiaoForm.value
-    const parts = [
-      `困惑类型：${form.topic}`,
-      `当前心境：${form.mood}`,
-      `佛学基础：${form.practice}`,
-      `事情背景：${form.context || '未填写'}`,
-    ]
-    if (userInput.value) parts.push(`请益内容：${userInput.value}`)
-    return parts.join('，')
+    const f = fojiaoForm.value
+    return [`困惑类型：${f.topic}`, `当前心境：${f.mood}`, `事情背景：${f.context || '未填写'}`, userInput.value && `请益内容：${userInput.value}`].filter(Boolean).join('；')
   }
-
-  if (skillId.value === 'qimen') {
-    const form = qimenForm.value
-    const parts = [
-      `事情类型：${form.topic}`,
-      `所在城市：${form.city || '未填写'}`,
-      `所问之事：${userInput.value}`,
-    ]
-    return parts.join('，')
-  }
-
-  return userInput.value
+  const f = qimenForm.value
+  return [`事情类型：${f.topic}`, `所在城市：${f.city || '未填写'}`, `所问之事：${userInput.value}`].join('；')
 }
 
 function buildBoard() {
-  if (skillId.value === 'bazi') {
-    const form = baziForm.value
-    return {
-      type: 'bazi',
-      kicker: 'BaZi Board',
-      title: '四柱盘面解析',
-      badge: form.shichen || '时辰',
-      items: [
-        { label: '年柱', value: form.solarDate ? form.solarDate.slice(0, 4) : '待定', note: '看早年根基、家族环境与外部起点。' },
-        { label: '月柱', value: form.solarDate ? form.solarDate.slice(5, 7) + '月' : '待定', note: '看事业节奏、社会位置与阶段压力。' },
-        { label: '日柱', value: form.name || '本人', note: '看自我状态、关系核心与主观选择。' },
-        { label: '时柱', value: form.shichen || '待定', note: '看后续发展、执行力与长远结果。' },
-      ],
-      details: [
-        { title: '命盘重点', copy: '先看四柱是否齐全，再结合补充问题判断关注方向。' },
-        { title: '需要校准', copy: '真实八字排盘需要精确出生地、日期和时辰，AI 解读仅作文化参考。' },
-        { title: '阅读方式', copy: '先看盘面结构，再看 AI 对事业、财运、关系或流年的分项说明。' },
-      ],
-    }
+  const boardMap = {
+    bazi: { title: '四柱盘面', badge: baziForm.value.shichen || '时辰', items: [['年柱', baziForm.value.solarDate?.slice(0, 4) || '待定'], ['月柱', baziForm.value.solarDate?.slice(5, 7) || '待定'], ['日主', baziForm.value.name || '本人'], ['时柱', baziForm.value.shichen || '待定']] },
+    yinyuan: { title: '姻缘关系盘', badge: yinyuanForm.value.focus || '关注点', items: [['关系', yinyuanForm.value.status || '待定'], ['关注', yinyuanForm.value.focus || '待定'], ['对方', yinyuanForm.value.partner || '未填'], ['阶段', '观察沟通']] },
+    fojiao: { title: '心性观照盘', badge: fojiaoForm.value.mood || '心境', items: [['困惑', fojiaoForm.value.topic || '待定'], ['心境', fojiaoForm.value.mood || '待定'], ['执着点', '先照见'], ['行动', '小步安顿']] },
+    qimen: { title: '奇门九宫盘', badge: qimenForm.value.topic, items: [['巽四', '东南'], ['离九', '南'], ['坤二', '西南'], ['震三', '东'], ['中五', qimenForm.value.topic], ['兑七', '西'], ['艮八', '东北'], ['坎一', '北'], ['乾六', '西北']] },
   }
-
-  if (skillId.value === 'yinyuan') {
-    const form = yinyuanForm.value
-    return {
-      type: 'yinyuan',
-      kicker: 'Relation Board',
-      title: '姻缘关系盘',
-      badge: form.focus || '关注点',
-      items: [
-        { label: '关系状态', value: form.status || '待定', note: '决定解读是看正缘、推进、稳定还是修复。' },
-        { label: '你的状态', value: form.gender || '未填', note: '用于整理你在关系中的表达方式和需求。' },
-        { label: '对方信息', value: form.partner || '未填', note: '信息越具体，关系画像越容易收敛。' },
-        { label: '关注点', value: form.focus || '待定', note: '决定重点解释时机、合适度、阻碍或沟通。' },
-      ],
-      details: [
-        { title: '缘分观察', copy: '关系盘先看双方状态是否清楚，再看当前互动是否有持续推进的条件。' },
-        { title: '相处建议', copy: '重点不是制造宿命感，而是帮助你看见沟通、边界和选择。' },
-        { title: '风险提醒', copy: '任何感情建议都不应替代现实沟通，也不鼓励纠缠或控制。' },
-      ],
-    }
-  }
-
-  if (skillId.value === 'fojiao') {
-    const form = fojiaoForm.value
-    return {
-      type: 'fojiao',
-      kicker: 'Mind Board',
-      title: '心性观照盘',
-      badge: form.mood || '心境',
-      items: [
-        { label: '困惑类型', value: form.topic || '待定', note: '对应烦恼来源，先分清外境与内心反应。' },
-        { label: '当前心境', value: form.mood || '待定', note: '观察此刻最强的情绪，而不是急着压下去。' },
-        { label: '修学基础', value: form.practice || '未填', note: '决定开示是偏入门、经典还是日常练习。' },
-        { label: '事情背景', value: fojiaoForm.value.context ? '已填写' : '未填写', note: '背景越清楚，建议越能落到具体行动。' },
-      ],
-      details: [
-        { title: '观照方向', copy: '先承认情绪，再看执着点，最后落实到一个可执行的小练习。' },
-        { title: '开示边界', copy: '佛学开示不替代心理治疗或医疗诊断，严重痛苦应寻求专业帮助。' },
-        { title: '日常练习', copy: '适合输出短时静坐、念佛、觉察语言和关系中止损等建议。' },
-      ],
-    }
-  }
-
-  const form = qimenForm.value
-  return {
-    type: 'qimen',
-    kicker: 'Qimen Board',
-    title: '奇门九宫盘',
-    badge: form.topic || '事情类型',
-    items: [
-      { label: '巽四', value: '东南', note: '观察资源、人脉、风向变化。' },
-      { label: '离九', value: '南', note: '观察曝光、名声、表达与文书。' },
-      { label: '坤二', value: '西南', note: '观察承载、协作、稳定性。' },
-      { label: '震三', value: '东', note: '观察启动、行动、突然变化。' },
-      { label: '中五', value: form.topic || '所问事', note: '本次问题的核心焦点。' },
-      { label: '兑七', value: '西', note: '观察沟通、谈判、收益与口舌。' },
-      { label: '艮八', value: '东北', note: '观察阻碍、停顿、边界与收束。' },
-      { label: '坎一', value: '北', note: '观察风险、隐情、流动和压力。' },
-      { label: '乾六', value: '西北', note: '观察规则、权威、贵人与决断。' },
-    ],
-    details: [
-      { title: '盘面中心', copy: '中宫代表本次所问之事，先看事情类型和问题是否足够具体。' },
-      { title: '九宫阅读', copy: '九宫用于辅助观察方向、风险和行动取舍，不代表绝对结果。' },
-      { title: '行动建议', copy: '奇门更适合问具体事件，例如合作、出行、求职、交易是否推进。' },
-    ],
-  }
+  return { type: skillId.value, ...boardMap[skillId.value] }
 }
 
 async function sendMessage() {
   if (!canSend.value || loading.value) return
-
   const message = buildMessage()
   const board = buildBoard()
   const extra = {}
   if (skillId.value === 'qimen') {
-    if (qimenForm.value.datetime) extra.datetime_str = qimenForm.value.datetime.replace('T', ' ')
+    extra.datetime_str = qimenForm.value.datetime.replace('T', ' ')
     if (qimenForm.value.city) extra.city = qimenForm.value.city
   }
 
   loading.value = true
   userInput.value = ''
   let answer = ''
-
   await nextTick()
 
   try {
-    await divineStream(
-      skillId.value,
-      message,
-      [],
-      extra,
-      (chunk) => {
-        answer += chunk
-        if (responses.value.length && responses.value[responses.value.length - 1].streaming) {
-          responses.value[responses.value.length - 1].text = answer
-        } else {
-          responses.value.push({ text: answer, streaming: true, board })
-        }
-      },
-      () => {
-        if (responses.value.length) {
-          const last = responses.value[responses.value.length - 1]
-          if (typeof last === 'string') {
-            responses.value[responses.value.length - 1] = last || answer
-          } else {
-            responses.value[responses.value.length - 1] = {
-              ...last,
-              text: last.text || answer,
-              streaming: false,
-            }
-          }
-        }
-        loading.value = false
-      },
-    )
+    await divineStream(skillId.value, message, [], extra, (chunk) => {
+      answer += chunk
+      const last = responses.value[responses.value.length - 1]
+      if (last?.streaming) last.text = answer
+      else responses.value.push({ text: answer, streaming: true, board })
+    }, () => {
+      const last = responses.value[responses.value.length - 1]
+      if (last && typeof last !== 'string') responses.value[responses.value.length - 1] = { ...last, text: last.text || answer, streaming: false }
+      loading.value = false
+    })
   } catch (error) {
     responses.value.push(`暂时无法完成推演：${error.message}`)
     loading.value = false
   }
 }
+
+const VisualBoard = defineComponent({
+  props: { board: Object },
+  setup(props) {
+    return () => h('div', { class: ['visual-board', `board-${props.board.type}`] }, [
+      h('div', { class: 'board-head' }, [h('h3', props.board.title), h('span', { class: 'ds-badge gold' }, props.board.badge)]),
+      h('div', { class: 'board-grid' }, props.board.items.map(([label, value]) => h('div', { class: 'board-cell' }, [h('span', label), h('strong', value), h('em', boardNote(props.board.type, label))]))),
+    ])
+  },
+})
+
+function boardNote(type, label) {
+  if (type === 'qimen') return label === '中五' ? '本次所问核心' : '观察方位与策略'
+  if (type === 'bazi') return '用于定位命盘结构'
+  if (type === 'yinyuan') return '用于观察关系状态'
+  return '用于安顿当下心念'
+}
 </script>
 
 <style scoped>
-.oracle-page {
-  min-height: 100vh;
-  padding: 18px 0 42px;
+.divine-page {
+  padding: 18px 0 54px;
 }
 
-.oracle-nav {
-  position: sticky;
-  top: 12px;
-  z-index: 20;
-  display: grid;
-  width: min(var(--max), calc(100% - 40px));
-  grid-template-columns: 140px 1fr 110px;
-  gap: 16px;
+.title-center {
+  display: flex;
   align-items: center;
-  margin: 0 auto;
-  padding: 10px 14px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius-md);
-  background: rgba(251, 246, 239, 0.84);
-  box-shadow: 0 14px 40px rgba(63, 45, 23, 0.08);
-  backdrop-filter: blur(18px);
-}
-
-.oracle-title {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   gap: 10px;
+  text-align: left;
 }
 
-.oracle-title strong,
-.oracle-title span {
+.title-center strong,
+.title-center em {
   display: block;
-  line-height: 1.35;
+  line-height: 1.25;
 }
 
-.oracle-title strong {
+.title-center strong {
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 400;
 }
 
-.oracle-title span {
-  color: var(--ink-soft);
+.title-center em {
+  color: rgba(245, 234, 212, 0.58);
   font-size: 12px;
+  font-style: normal;
 }
 
-.oracle-shell {
+.round-mark.small {
+  width: 34px;
+  height: 34px;
+  font-size: 18px;
+}
+
+.divine-shell {
+  position: relative;
+  z-index: 1;
   display: grid;
-  grid-template-columns: 290px minmax(0, 1fr);
-  gap: 20px;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 18px;
   padding-top: 24px;
 }
 
-.side-panel {
-  display: grid;
-  gap: 14px;
-  align-content: start;
-}
-
-.side-card,
-.side-menu,
-.notice-card,
+.method-panel,
 .form-panel,
-.chat-panel,
-.empty-state,
-.loading-state,
+.ask-panel,
+.empty-card,
 .answer-card {
-  z-index: 1;
-}
-
-.side-card,
-.notice-card {
   padding: 22px;
 }
 
-.side-card > *,
-.side-menu > *,
-.notice-card > *,
+.method-panel > *,
 .form-panel > *,
-.chat-panel > *,
-.empty-state > *,
-.loading-state > *,
+.ask-panel > *,
+.empty-card > *,
 .answer-card > * {
   position: relative;
   z-index: 1;
 }
 
-.side-card h1 {
+.method-panel h1,
+.panel-head h2,
+.empty-card h2 {
   margin: 10px 0 0;
   font-family: var(--font-display);
-  font-size: 42px;
+  font-size: 36px;
   font-weight: 400;
-  line-height: 1.1;
+  line-height: 1.08;
 }
 
-.side-card p,
-.notice-card p,
-.privacy-note {
-  margin: 12px 0 0;
-  color: var(--ink-soft);
+.method-panel p,
+.privacy-note,
+.empty-card p {
+  color: var(--paper-dim);
 }
 
-.notice-card strong {
-  color: var(--gold-deep);
-}
-
-.privacy-note {
-  font-size: 13px;
-}
-
-.side-tags {
+.method-tags,
+.actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 18px;
+  margin-top: 16px;
 }
 
-.side-menu {
+.method-menu {
   display: grid;
   gap: 8px;
-  padding: 10px;
+  margin-top: 22px;
 }
 
-.side-menu button {
+.method-menu button {
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 100%;
-  padding: 12px;
-  border: 1px solid transparent;
+  padding: 11px;
+  border: 1px solid rgba(215, 179, 95, 0.14);
   border-radius: var(--radius-xs);
-  color: var(--ink-soft);
-  background: transparent;
+  color: var(--paper-dim);
+  background: rgba(255, 247, 231, 0.04);
   text-align: left;
 }
 
-.side-menu button span {
+.method-menu button.active,
+.method-menu button:hover {
+  color: var(--gold-bright);
+  border-color: rgba(240, 217, 132, 0.42);
+}
+
+.method-menu span {
   display: grid;
   width: 30px;
   height: 30px;
   place-items: center;
   border: 1px solid var(--line);
   border-radius: 50%;
-  font-family: var(--font-display);
-}
-
-.side-menu button.active,
-.side-menu button:hover {
-  border-color: var(--line);
-  color: var(--ink);
-  background: rgba(255, 250, 242, 0.72);
 }
 
 .workbench {
@@ -820,274 +394,118 @@ async function sendMessage() {
   align-content: start;
 }
 
-.form-panel,
-.chat-panel,
-.empty-state,
-.loading-state,
-.answer-card {
-  padding: 22px;
-}
-
-.panel-head {
+.panel-head,
+.answer-head,
+.board-head {
   display: flex;
-  align-items: start;
+  align-items: flex-start;
   justify-content: space-between;
-  gap: 16px;
-  margin-bottom: 18px;
-}
-
-.panel-head h2 {
-  margin: 8px 0 0;
-  font-family: var(--font-display);
-  font-size: 30px;
-  font-weight: 400;
-  line-height: 1.1;
+  gap: 14px;
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+  gap: 12px;
 }
 
-.ds-field.wide {
+.wide {
   grid-column: span 2;
 }
 
-.lunar-box {
+.info-chip {
   display: grid;
-  gap: 4px;
-  min-height: 42px;
+  align-items: center;
+  min-height: 44px;
   padding: 10px 12px;
-  border: 1px solid rgba(212, 175, 55, 0.26);
+  border: 1px solid rgba(215, 179, 95, 0.24);
   border-radius: var(--radius-xs);
-  background: rgba(212, 175, 55, 0.08);
+  color: var(--paper-dim);
+  background: rgba(215, 179, 95, 0.08);
 }
 
-.lunar-box strong {
-  color: var(--gold-deep);
+.privacy-note {
+  margin: 10px 0 0;
   font-size: 13px;
 }
 
-.lunar-box span {
-  color: var(--ink-soft);
-  font-size: 13px;
-}
-
-.chat-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 14px;
-}
-
-.result-panel {
+.result-list {
   display: grid;
   gap: 14px;
 }
 
-.empty-state,
-.loading-state {
+.empty-card {
   display: grid;
   min-height: 260px;
   place-items: center;
   text-align: center;
 }
 
-.empty-state h2,
-.loading-state strong {
-  margin: 10px 0 0;
+.loading-ring {
+  width: 48px;
+  height: 48px;
+  border: 2px solid rgba(215, 179, 95, 0.26);
+  border-top-color: var(--seal);
+  border-radius: 50%;
+  animation: slow-rotate 1s linear infinite;
+}
+
+.visual-board {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid rgba(215, 179, 95, 0.2);
+  border-radius: var(--radius-sm);
+  background: rgba(13, 9, 7, 0.32);
+}
+
+.board-head h3 {
+  margin: 0;
   font-family: var(--font-display);
   font-size: 30px;
   font-weight: 400;
 }
 
-.empty-state p,
-.loading-state p {
-  max-width: 420px;
-  margin: 4px auto 0;
-  color: var(--ink-soft);
-}
-
-.loading-state span {
-  width: 46px;
-  height: 46px;
-  border: 2px solid rgba(212, 175, 55, 0.24);
-  border-top-color: var(--seal);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-.answer-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 14px;
-}
-
-.answer-head time {
-  color: var(--ink-soft);
-  font-size: 12px;
-}
-
-.analysis-board {
-  position: relative;
-  display: grid;
-  gap: 14px;
-  margin: 0 0 18px;
-  padding: 18px;
-  overflow: hidden;
-  border: 1px solid rgba(45, 107, 93, 0.18);
-  border-radius: var(--radius-sm);
-  background:
-    linear-gradient(135deg, rgba(255, 250, 242, 0.94), rgba(235, 246, 239, 0.78)),
-    radial-gradient(circle at 12% 18%, rgba(212, 175, 55, 0.16), transparent 30%);
-}
-
-.analysis-board::before {
-  position: absolute;
-  inset: 12px;
-  pointer-events: none;
-  border: 1px solid rgba(212, 175, 55, 0.16);
-  border-radius: calc(var(--radius-sm) - 4px);
-  content: '';
-}
-
-.analysis-board::after {
-  position: absolute;
-  right: -44px;
-  bottom: -58px;
-  width: 150px;
-  height: 150px;
-  pointer-events: none;
-  border: 1px solid rgba(45, 107, 93, 0.2);
-  border-radius: 50%;
-  background:
-    linear-gradient(90deg, transparent 49%, rgba(45, 107, 93, 0.14) 50%, transparent 51%),
-    linear-gradient(0deg, transparent 49%, rgba(45, 107, 93, 0.14) 50%, transparent 51%);
-  opacity: 0.72;
-  content: '';
-}
-
-.board-head {
-  position: relative;
-  z-index: 1;
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 14px;
-}
-
-.board-head h3 {
-  margin: 6px 0 0;
-  font-family: var(--font-display);
-  font-size: 28px;
-  font-weight: 400;
-  line-height: 1.1;
-}
-
-.board-grid,
-.detail-grid {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  gap: 10px;
-}
-
 .board-grid {
+  display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .board-qimen .board-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.board-cell,
-.detail-card {
-  border: 1px solid rgba(63, 45, 23, 0.1);
-  border-radius: var(--radius-xs);
-  background: rgba(255, 252, 246, 0.76);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74);
-}
-
 .board-cell {
   display: grid;
-  min-height: 132px;
+  min-height: 116px;
   align-content: start;
-  gap: 7px;
-  padding: 13px;
+  gap: 6px;
+  padding: 12px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.05);
 }
 
 .board-cell span {
   color: var(--seal);
-  font-size: 12px;
   font-weight: 700;
+  font-size: 12px;
 }
 
 .board-cell strong {
-  color: var(--ink);
+  color: var(--gold-bright);
   font-family: var(--font-display);
-  font-size: 24px;
+  font-size: 25px;
   font-weight: 400;
-  line-height: 1.15;
+  line-height: 1.1;
 }
 
 .board-cell em {
-  color: var(--ink-soft);
+  color: var(--paper-dim);
   font-size: 13px;
   font-style: normal;
-  line-height: 1.65;
-}
-
-.board-qimen .board-cell {
-  min-height: 118px;
-}
-
-.board-qimen .board-cell:nth-child(5) {
-  border-color: rgba(178, 54, 45, 0.32);
-  background: rgba(178, 54, 45, 0.08);
-}
-
-.detail-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-}
-
-.detail-card {
-  padding: 13px;
-}
-
-.detail-card strong {
-  display: block;
-  color: var(--gold-deep);
-  font-size: 14px;
-}
-
-.detail-card p {
-  margin: 7px 0 0;
-  color: var(--ink-soft);
-  font-size: 13px;
-  line-height: 1.75;
-}
-
-.board-yinyuan {
-  border-color: rgba(178, 54, 45, 0.18);
-  background:
-    linear-gradient(135deg, rgba(255, 250, 242, 0.94), rgba(255, 239, 235, 0.76)),
-    radial-gradient(circle at 12% 18%, rgba(178, 54, 45, 0.12), transparent 30%);
-}
-
-.board-fojiao {
-  border-color: rgba(125, 137, 76, 0.2);
-  background:
-    linear-gradient(135deg, rgba(255, 250, 242, 0.94), rgba(240, 245, 224, 0.8)),
-    radial-gradient(circle at 12% 18%, rgba(125, 137, 76, 0.14), transparent 30%);
-}
-
-.board-qimen {
-  border-color: rgba(42, 74, 112, 0.18);
-  background:
-    linear-gradient(135deg, rgba(255, 250, 242, 0.94), rgba(232, 241, 246, 0.78)),
-    radial-gradient(circle at 12% 18%, rgba(42, 74, 112, 0.12), transparent 30%);
 }
 
 .answer-card pre {
@@ -1095,100 +513,55 @@ async function sendMessage() {
   overflow-x: auto;
   white-space: pre-wrap;
   word-break: break-word;
-  color: var(--ink);
+  color: var(--paper);
   font-family: var(--font-serif);
   line-height: 2;
 }
 
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (max-width: 960px) {
-  .oracle-shell {
+@media (max-width: 980px) {
+  .divine-shell {
     grid-template-columns: 1fr;
   }
 
-  .side-panel {
-    grid-template-columns: 1fr;
+  .method-menu {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
-  .side-menu {
-    grid-template-columns: repeat(4, 1fr);
-  }
-
-  .side-menu button {
-    justify-content: center;
-  }
-
-  .side-menu button strong {
+  .method-menu strong {
     display: none;
   }
 
-  .form-grid {
-    grid-template-columns: 1fr 1fr;
+  .method-menu button {
+    justify-content: center;
   }
 
-  .board-grid,
-  .detail-grid {
+  .form-grid,
+  .board-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .board-qimen .board-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 
 @media (max-width: 680px) {
-  .oracle-nav {
-    width: min(100% - 28px, var(--max));
-    grid-template-columns: 1fr auto;
-  }
-
-  .oracle-nav > .ds-badge {
+  .page-nav > .ds-badge,
+  .title-center div {
     display: none;
   }
 
-  .oracle-title {
-    justify-content: end;
-  }
-
-  .oracle-title div {
-    display: none;
-  }
-
+  .method-menu,
   .form-grid,
-  .ds-field.wide {
+  .board-grid,
+  .board-qimen .board-grid {
     grid-template-columns: 1fr;
+  }
+
+  .wide {
     grid-column: auto;
   }
 
-  .panel-head {
-    display: grid;
-  }
-
-  .side-menu {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .analysis-board {
-    padding: 14px;
-  }
-
+  .panel-head,
+  .answer-head,
   .board-head {
     display: grid;
-  }
-
-  .board-grid,
-  .board-qimen .board-grid,
-  .detail-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .board-cell {
-    min-height: auto;
   }
 }
 </style>

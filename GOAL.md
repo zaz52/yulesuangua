@@ -1,162 +1,46 @@
-# UI Design System Goal
+# 全站周易仪式化重构目标
 
-## Task
+## 任务
 
-Redesign the Yule Suangua frontend into a production-grade UI system inspired by the provided reference board, with a blended visual direction:
+将现有 `yulesuangua` 网站的旧 UI 推翻重做，不做独立项目，不在原页面上小修小补。保留现有 Vue 3 + Vite、路由、Netlify Functions 后端契约，把首页、AI 占问页、独立工具页、周易起卦页统一重构为“东方玄学 + 周易文化 + 古风仪式感 + 复古科技感”的沉浸式产品。
 
-- Retro: paper texture, seal red, old gold, serif rhythm, restrained borders.
-- Technology: geometric grids, luminous tracks, precise controls, data panels.
-- Youth: lighter spacing, clear calls to action, approachable cards, mobile-first flows.
-- Nature: ink mountains, bamboo/leaf motifs, jade green, soft air and water gradients.
+## 成功标准
 
-The implementation must cover the actual app screens, not just a static mockup:
+- 首页不再堆满所有功能，而是作为清晰入口，突出“周易起卦”和四类 AI 问事。
+- `/zhouyi` 与 `/tools/liuyao` 是完整动态起卦流程：静心、默念、准备、投掷、六爻、定格、解卦。
+- `/divine/:skill` 保留后端 API 调用，界面改为统一的暗色仪式工作台，表单、盘面、结果都可读。
+- `/tools/:tool` 每个工具有独立页面和可交互内容，不再依赖首页堆叠。
+- 全局样式使用统一 design tokens：墨黑、深棕、暗金、朱红、宣纸白、青铜、烟雾、粒子、卷轴、印章按钮。
+- 桌面端与移动端都可用，不出现明显遮挡、横向溢出、乱码或旧 demo 内容。
+- `npm run build` 通过，主要路由本地预览返回 200。
+- 不读取 C 盘文件，不同步 Obsidian，除非用户明确说“同步”。
 
-- Web home page.
-- Mobile home layout.
-- Divination/chat workflow page.
-- Card patterns.
-- Form controls.
-- Buttons and states.
-- Reusable visual tokens and component classes.
+## 架构思路
 
-## Success Criteria
+- 继续使用 Vue 3 + Vite，避免把现有项目迁成独立 React 项目。
+- 用 `frontend/src/style.css` 承担全局主题、材质、按钮、卡片、表单、动效基础。
+- 各页面保留业务逻辑但重写布局和文案：
+  - `Home.vue`：沉浸入口、核心问事、独立工具、理性边界。
+  - `Divine.vue`：方法侧栏、信息表单、视觉盘面、流式结果。
+  - `ToolPage.vue`：黄历、灵签、解梦、起名、香火等独立交互。
+  - `ZhouyiRitual.vue`：完整周易起卦仪式。
+- 后端 API 不改动：继续调用 `/api/health`、`/api/divine/:skill`、`/api/divine/lunar`。
 
-- App builds with `npm run build`.
-- Main pages render without broken Chinese text or malformed template syntax.
-- UI tokens are centralized enough for future reuse.
-- Desktop and mobile layouts are responsive and usable.
-- Buttons, forms, cards, badges, nav, empty/loading/error states share one coherent design language.
-- No Obsidian sync is performed unless the user explicitly asks for sync.
-- Project work is kept on E drive; final exported artifacts, if any, can be copied to the Codex outputs directory only when needed.
-
-## Architecture Direction
-
-- Keep the current Vue 3 + Vite stack.
-- Avoid introducing a large UI library; implement a focused app-specific design system in CSS and Vue views.
-- Use CSS custom properties for color, spacing, radius, typography, shadows, and motion.
-- Use semantic component classes such as `.ds-button`, `.ds-card`, `.ds-field`, `.ds-badge`, `.oracle-shell`.
-- Preserve existing API integration points in `src/api/divine.js`.
-- Make backend offline mode graceful so the frontend can still be reviewed locally.
-
-## Progress Log
+## 进度记录
 
 ### 2026-07-02
 
-- Cloned `zaz52/yulesuangua` to `E:\CodexWork\yulesuangua-ui\yulesuangua` to avoid putting project work on C drive.
-- Identified frontend stack: Vue 3, Vite, vue-router.
-- Found two main screens: `src/views/Home.vue` and `src/views/Divine.vue`.
-- Risk found: existing Chinese UI text appears mojibaked in source/output and must be replaced with valid Chinese copy.
-- Rebuilt the global CSS design system in `frontend/src/style.css`.
-- Rebuilt `frontend/src/views/Home.vue` into a combined web homepage and design-system showcase covering palette, typography, motifs, cards, controls, buttons, states, and mobile preview.
-- Rebuilt `frontend/src/views/Divine.vue` into a responsive divination workbench with side navigation, forms, chat input, loading, empty, and result states.
-- Replaced broken API fallback copy in `frontend/src/api/divine.js`.
-- Fixed missing Vue style closing tags found by the production build.
-- Added Vite dev/preview proxy configuration so `/api` requests from the frontend are forwarded to `http://127.0.0.1:5000` by default. This fixes the local-preview case where the UI showed "backend disconnected" even when a backend can run separately.
-- Created project scripts `scripts/start-backend.ps1` and `scripts/start-frontend.ps1` so local services can be started without relying on the broken system `python` launcher.
-- Added `backend\.env.example` and an ignored local `backend\.env` configured for OpenRouter's free models router by default. The user still must provide their own legitimate API key in `LLM_API_KEY`.
-- Updated `scripts/start-backend.ps1` to load `backend\.env` before starting FastAPI.
-- Switched local provider configuration to NVIDIA NIM (`https://integrate.api.nvidia.com/v1`) and selected the tested model `meta/llama-3.1-8b-instruct`.
-- Fixed `backend/llm_client.py` so external OpenAI-compatible mode uses `LLM_MODEL` from the environment instead of accidentally sending the SDK-only default model name.
-- Investigated the reported mismatch on `https://suanguan.netlify.app/`.
-- Fixed Netlify deployment configuration so Netlify builds from `frontend`, runs `npm run build`, and publishes `frontend/dist`.
-- Removed public-facing design-system demo sections from the homepage. The homepage now keeps only the real product hero, divination entrances, and a concise usage flow. The design tokens/classes remain in CSS for reuse, but demo UI no longer appears as extra user content.
-
-## Verification Log
-
-- Done: installed frontend dependencies with `npm install`.
-- Done: `npm run build` passes.
-- Done: browser smoke test on `http://127.0.0.1:4189` for desktop home, mobile home, desktop divination, and mobile divination.
-- Done: browser checks confirmed no mojibake, no horizontal overflow, and no console errors in the main render paths.
-- Done: interaction test from home to `/divine/bazi`, filling form and submitting, returns a clear offline-backend message without 404 noise.
-- Done: visual screenshot sanity check for desktop homepage and mobile divination page.
-- Done: source scan found no common mojibake fragments in edited frontend files.
-- Done: verified the new Vite preview proxy with a temporary local mock API on port 5000; `/api/health` through the frontend preview returned JSON and the divination page no longer showed the disconnected-backend message.
-- Note: system `python` still points to a broken C-drive Python launcher path, so backend startup uses the non-C-drive Python runtime below instead.
-- Done: found usable non-C-drive Python runtime at `E:\uv-python\cpython-3.12.12-windows-x86_64-none\python.exe`.
-- Done: created `backend\.venv`, installed the minimal backend dependency set, and started FastAPI on `http://127.0.0.1:5000`.
-- Done: `http://127.0.0.1:5000/api/health` returns `{"status":"ok","llm_mode":"unavailable"}`.
-- Done: `http://127.0.0.1:5173/api/health` proxies to the backend successfully.
-- Done: browser check on `http://127.0.0.1:5173/divine/bazi` opens the page and no longer shows the disconnected-backend text.
-- Done: NVIDIA API key is loaded by the backend; `/api/health` returns `llm_mode: external`.
-- Done: direct NVIDIA chat completion test succeeds with `meta/llama-3.1-8b-instruct`.
-- Done: real backend SSE endpoint `POST /api/divine/bazi` returns streamed `data:` chunks.
-- Done: reran `npm run build` after the Netlify/homepage cleanup.
-- Done: cleaned stale ignored `frontend/dist` output and rebuilt so old design-system demo bundles no longer remain locally.
-- Done: scanned source and rebuilt assets for old public demo strings (`Design System`, `Components`, `#system`, `#components`, `查看设计系统`) and found none.
-- Done: started local Vite preview on `http://127.0.0.1:4190`; `/` and `/divine/bazi` both return HTTP 200.
-- Done: `git diff --check` reports no whitespace errors.
-- Done: committed and pushed `9c88dcd fix: align Netlify homepage deployment` to `origin/main`.
-- Done: verified GitHub remote `main` points to `9c88dcd`.
-- Note: `https://suanguan.netlify.app/` still served the previous asset file during post-push verification, so Netlify had not completed or had not triggered a deploy from the updated GitHub commit at that time.
-- Done: authorized Netlify CLI via user-approved ticket and deployed production site `suanguan` with deploy ID `6a464e7c55707306e2bc188a`.
-- Done: verified production URL `https://suanguan.netlify.app/` now serves the rebuilt asset containing the new homepage copy (`选择你的测算方式`, `三步完成一次问卦`) and no old demo strings (`Design System`, `Components`, `查看设计系统`).
-- Done: verified `https://suanguan.netlify.app/divine/bazi` returns HTTP 200 after production deploy.
-- Done: performed a content/completeness audit of the production site. Key gap found: `https://suanguan.netlify.app/api/health` returns the frontend HTML fallback rather than backend JSON, so the production site currently opens correctly but does not have a live backend API wired to the frontend.
-- New work started: fill the content gaps found in the audit by adding production-facing disclaimer copy, privacy/trust notes, richer method guidance, SEO/social metadata, and clearer backend-unavailable messaging. Then verify and redeploy the Netlify frontend. Backend deployment will be attempted separately if a deploy target can be accessed from the current environment.
-- Done: added SEO metadata, keywords, Open Graph/Twitter metadata, and corrected favicon/title text in `frontend/index.html`.
-- Done: added homepage guidance for what to ask, required preparation, privacy boundaries, and a clear rational-use disclaimer.
-- Done: added divination-page privacy note and disclaimer card, and clarified the production backend-unavailable response.
-- Done: `npm run build` passes after the content additions.
-- Done: deployed the updated frontend to Netlify production with deploy ID `6a46510509565810ad266d67`.
-- Done: verified production contains the new SEO/guide/privacy/disclaimer copy and does not contain old mojibake fragments in the active JS bundle.
-- Blocked for now: backend deployment cannot be completed from the current environment without an accessible backend hosting target or CLI/API credentials for Render/Railway/Fly/etc. Current production frontend still needs `VITE_API_BASE_URL` pointed at a deployed FastAPI backend before real AI推演 works online.
-- Done: upgraded the divination workflow so every method has its own information form: Bazi birth profile, Yinyuan relationship profile, Fojiao consultation background, and Qimen event profile.
-- Done: form submission now composes method-specific messages while preserving the existing `/api/divine/{skill}` backend contract.
-- Done: `npm run build` passes after the per-method forms.
-- Done: deployed the updated frontend to Netlify production with deploy ID `6a465388818d7500a7ae638d`.
-- Done: verified production bundle contains all four method-specific form sections and no old mojibake fragments; `/divine/bazi`, `/divine/yinyuan`, `/divine/fojiao`, and `/divine/qimen` all return HTTP 200.
-- Done: added a Netlify Functions API backend under `frontend/netlify/functions/api.mjs` and routed `/api/*` to it before the SPA fallback.
-- Done: configured Netlify production environment variables for the NVIDIA OpenAI-compatible endpoint and redeployed with deploy ID `6a4655e4f8c42b105ac50720`.
-- Done: verified production `/api/health` returns JSON `{"status":"ok","llm_mode":"external","runtime":"netlify-functions"}` instead of HTML.
-- Done: verified production `/api/divine/skills` returns the skill list and `POST /api/divine/bazi` returns `text/event-stream` content.
-- New work started: add visual divination boards so results are not pure text. Each method should show a structured board first, then detailed AI interpretation text. Bazi needs a four-pillar board, Yinyuan a relationship board, Fojiao a mind-observation board, and Qimen a nine-palace board.
-- In progress: added board rendering to result cards and styled the board system with responsive grids, method-specific color tones, and a highlighted Qimen center palace.
-- Review finding fixed: the streaming completion callback previously collapsed the response object into a plain string, which would remove the visual board after the AI answer finished. The callback now preserves `{ text, board }` and only marks `streaming: false`.
-- Done: `npm run build` passes after the board work.
-- Done: scanned frontend source for common mojibake/demo leftovers and found none.
-- Done: verified the production bundle contains `四柱盘面解析`, `姻缘关系盘`, `心性观照盘`, `奇门九宫盘`, and the responsive board CSS.
-- Done: local preview returns HTTP 200 for `/divine/bazi` and `/divine/qimen`.
-- Done: committed and pushed `9e9fec9 feat: add visual divination boards` to `origin/main`.
-- Done: deployed to Netlify production with deploy ID `6a4658af3bde6d16bcc4c537`.
-- Done: verified production `/api/health` returns `{"status":"ok","llm_mode":"external","runtime":"netlify-functions"}`.
-- Done: verified production `/divine/bazi` and `/divine/qimen` return HTTP 200.
-- Done: verified production bundle contains all four board titles and the final streaming state keeps the object shape.
-- Done: verified production `POST /api/divine/bazi` returns `text/event-stream`.
-- New work started: redesign the site based on the reference `https://putiyuan.pages.dev/` while keeping the Yule Suangua brand and API contract. The target is a darker temple/oracle-inspired dashboard with visible utility modules, mobile bottom navigation, richer feature cards, and quick devotional/fortune interactions instead of a sparse landing page.
-- Done: rebuilt `frontend/src/views/Home.vue` into a dark temple/oracle dashboard with status chips, nine feature gates, daily almanac, selected-tool detail panel, local wish storage, online incense interaction, and mobile bottom tabs.
-- Done: kept the existing four AI routes intact and mapped extra modules to either local interactions or existing AI pages.
-- Done: `npm run build` passes; source scan found no common mojibake/demo leftovers; local preview `/` returns HTTP 200.
-- Done: verified the built JS contains `九宫功能入口`, `在线上香`, `今日黄历`, `移动端快捷导航`, and `起一局奇门`.
-- Done: committed and pushed `0164e83 feat: redesign homepage as oracle dashboard` to `origin/main`.
-- Done: deployed to Netlify production with deploy ID `6a465bad59697b2642de9397`.
-- Done: verified production homepage returns HTTP 200 and the production bundle contains `问事有盘，解卦有据`, `九宫功能入口`, `在线上香`, `今日黄历`, and `移动端快捷导航`.
-- Done: verified production `/api/health` still returns external Netlify Functions mode, and `/divine/bazi`, `/divine/qimen` both return HTTP 200.
-- New work started: split the one-page oracle dashboard into a real multi-page product. Home should become a concise portal, while Huangli, Lingqian, Jiemeng, Qiming, Xianghuo, and Liuyao each get their own route and usable form/interaction. The four AI divination methods continue to use `/divine/:skill`.
-- Done: added `frontend/src/views/ToolPage.vue` and routed `/tools/:tool` for Huangli, Lingqian, Jiemeng, Qiming, Xianghuo, and Liuyao.
-- Done: simplified `Home.vue` into a portal page with AI core entrances and separate tool entrances instead of putting every module on one page.
-- Done: each new tool route now has concrete interaction: Huangli display, Lingqian draw, Dream form/result, Naming form/result, Wish/incense local storage, and Liuyao random six-line casting.
-- Done: `npm run build` passes; local preview returned HTTP 200 for `/`, all `/tools/*` routes, and `/divine/bazi`.
-- Done: committed and pushed `09586ff feat: split tools into dedicated pages` to `origin/main`.
-- Done: deployed to Netlify production with deploy ID `6a465e0b49016130373ee54d`.
-- Done: verified production `/`, `/tools/huangli`, `/tools/lingqian`, `/tools/jiemeng`, `/tools/qiming`, `/tools/xianghuo`, `/tools/liuyao`, and `/divine/bazi` all return HTTP 200.
-- Done: verified production bundle contains `独立功能页`, `灵签占问`, `梦境解析`, `宝宝起名`, `祈福上香`, `六爻占卜`, and `/tools/:tool`.
-- Done: verified production `/api/health` still returns external Netlify Functions mode.
-- New work started: integrate the Zhouyi ritual UI into the existing website instead of creating a standalone app. The PDF lives on C drive and is intentionally not read because the user previously instructed not to touch C drive; implementation uses the full specification provided in chat. The page should be reachable from the production site via `/zhouyi` and `/tools/liuyao`.
-- Done: removed the mistakenly created standalone `zhouyi-ritual/` scaffold and integrated the feature into the existing Vue/Vite frontend.
-- Done: added `frontend/src/views/ZhouyiRitual.vue` with the full ritual flow: meditation intro, question input, ritual preparation, animated coin casting, six-line hexagram building, hexagram reveal, and scroll-style result card.
-- Done: wired `/zhouyi` and `/tools/liuyao` to the new ritual page, and renamed the home tool entrance to `周易起卦`.
-- Done: `npm run build` passes, and local preview returns HTTP 200 for `/`, `/zhouyi`, `/tools/liuyao`, and `/divine/bazi`.
-- Done: verified the built bundle contains key ritual copy including `周易起卦`, `静心三息`, `投掷铜钱`, `卦象已成`, `展开解卦`, `乾为天`, and `天风姤`.
-- Done: committed and pushed `9baeb81 feat: integrate zhouyi ritual flow` to `origin/main`.
-- Done: deployed to Netlify production with deploy ID `6a4663ebc48b3448f1a957ff`.
-- Done: verified production `/`, `/zhouyi`, `/tools/liuyao`, and `/divine/bazi` all return HTTP 200.
-- Done: verified production bundle contains the key Zhouyi ritual copy and production `/api/health` still returns external Netlify Functions mode.
-
-## Review Notes
-
-- Obsidian sync intentionally skipped until the user explicitly requests it.
-- Current implementation keeps backend API contracts unchanged.
-- Final review found the only working-tree changes are the intended frontend files plus `GOAL.md`.
-- The `/api` proxy target can be overridden with `VITE_DEV_API_TARGET`, for example `VITE_DEV_API_TARGET=https://your-backend.example.com`.
-- Current backend health is connected and external LLM mode is active.
-- No public/shared API keys were added. Only legitimate provider configuration templates were added.
+- 确认用户最新意图：不是在原 UI 基础上修改，而是全站推翻重做。
+- 确认当前主要页面存在乱码和旧浅色设计系统残留，需要直接重写。
+- 约束确认：不触碰 C 盘 PDF，不进行 Obsidian 同步，工作继续保持在 E 盘仓库内。
+- 已重写 `frontend/src/style.css`，把旧浅色设计系统替换为暗色周易仪式主题，并统一卡片、按钮、表单、徽章、烟雾粒子和六爻线条基础样式。
+- 已重写 `frontend/index.html` 与 `frontend/src/api/divine.js`，恢复正常中文 SEO 文案、标题、favicon 和后端不可用提示。
+- 已重写 `Home.vue`，首页变为沉浸式门户，第一屏突出“静心起卦，观象问事”，并将 AI 问事和独立工具拆成清晰入口。
+- 已重写 `Divine.vue`，保留后端流式 API 调用，改成暗色仪式工作台，包含方法侧栏、项目信息表单、视觉盘面和结果区。
+- 已重写 `ToolPage.vue`，黄历、灵签、解梦、起名、香火均有独立交互；六爻继续由 `/tools/liuyao` 路由进入完整周易起卦。
+- 已重写 `ZhouyiRitual.vue`，实现静心引导、默念问题、起卦准备、铜钱投掷、六爻生成、卦象定格、卷轴解卦的完整流程。
+- 验证：`npm run build` 已通过，构建产物生成成功。
+- 验证：本地预览 `http://127.0.0.1:4196` 下 `/`、`/zhouyi`、`/tools/huangli`、`/tools/lingqian`、`/tools/jiemeng`、`/tools/qiming`、`/tools/xianghuo`、`/tools/liuyao`、`/divine/bazi`、`/divine/qimen` 均返回 HTTP 200。
+- 验证：扫描 `frontend/src`、`frontend/index.html`、`frontend/dist`，未发现常见乱码片段或旧设计系统 demo 文案。
+- 验证：`git diff --check` 通过，仅有 Windows 换行提示。
+- 限制：Playwright 包可用，但浏览器二进制缺失；按“不碰 C 盘”约束，尝试把 Chromium 下载到 `E:\ms-playwright`，120 秒内未完成，因此未执行截图级浏览器验证。
