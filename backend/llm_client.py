@@ -15,6 +15,7 @@ from typing import Iterator
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
 
 logger = logging.getLogger(__name__)
+DEFAULT_SDK_MODEL = "doubao-seed-1-8-251228"
 
 # 检测运行模式：有 LLM_API_KEY 则走外部部署模式
 _USE_EXTERNAL = bool(os.environ.get("LLM_API_KEY"))
@@ -223,7 +224,7 @@ def chat_stream(
     system_prompt: str,
     user_message: str,
     history: list[dict] | None = None,
-    model: str = "doubao-seed-1-8-251228",
+    model: str = DEFAULT_SDK_MODEL,
     temperature: float = 0.8,
 ) -> Iterator[str]:
     """
@@ -237,7 +238,8 @@ def chat_stream(
         temperature: 随机性 (0-2)
     """
     if _USE_EXTERNAL or not _SDK_AVAILABLE:
-        yield from _external_stream(system_prompt, user_message, history, model, temperature)
+        external_model = None if model == DEFAULT_SDK_MODEL else model
+        yield from _external_stream(system_prompt, user_message, history, external_model, temperature)
     else:
         yield from _sdk_stream(system_prompt, user_message, history, model, temperature)
 
@@ -246,14 +248,15 @@ def chat_invoke(
     system_prompt: str,
     user_message: str,
     history: list[dict] | None = None,
-    model: str = "doubao-seed-1-8-251228",
+    model: str = DEFAULT_SDK_MODEL,
     temperature: float = 0.8,
 ) -> str:
     """
     非流式调用 LLM，一次性返回完整结果。自动检测运行模式。
     """
     if _USE_EXTERNAL or not _SDK_AVAILABLE:
-        return _external_invoke(system_prompt, user_message, history, model, temperature)
+        external_model = None if model == DEFAULT_SDK_MODEL else model
+        return _external_invoke(system_prompt, user_message, history, external_model, temperature)
     else:
         return _sdk_invoke(system_prompt, user_message, history, model, temperature)
 

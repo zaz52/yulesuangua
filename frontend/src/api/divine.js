@@ -1,20 +1,13 @@
-/**
- * 后端 API 调用模块
- * 
- * API 地址配置：
- * - 本地开发/同源部署：不用配置，默认 /api
- * - 后端独立部署（如 Render）：设置环境变量 VITE_API_BASE_URL = https://你的后端地址/api
- */
 const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
-// 检测后端是否可用
 let backendAvailable = null
 
 async function checkBackend() {
   if (backendAvailable !== null) return backendAvailable
   try {
     const res = await fetch(`${API_BASE}/health`, { signal: AbortSignal.timeout(5000) })
-    backendAvailable = res.ok
+    const contentType = res.headers.get('content-type') || ''
+    backendAvailable = res.ok && contentType.includes('application/json')
   } catch {
     backendAvailable = false
   }
@@ -24,14 +17,16 @@ async function checkBackend() {
 export async function fetchSkills() {
   const available = await checkBackend()
   if (!available) {
-    // 后端不可用，返回默认技能列表
-    return { skills: [
-      { id: 'bazi', name: '四柱八字', description: '通过出生时间排出四柱八字，分析命理运势', icon: '☰' },
-      { id: 'yinyuan', name: '姻缘测算', description: '八字合婚、生肖配对、紫微夫妻宫、签诗占卜', icon: '💝' },
-      { id: 'fojiao', name: '佛学开示', description: '高僧大德智慧开示，佛经典籍解读', icon: '☸' },
-      { id: 'qimen', name: '奇门遁甲', description: '时家奇门排盘、解盘、择时、方位判断', icon: '☯' },
-    ] }
+    return {
+      skills: [
+        { id: 'bazi', name: '四柱八字', description: '通过出生时间排出四柱八字，分析命理运势。', icon: '乾' },
+        { id: 'yinyuan', name: '姻缘测算', description: '合盘、桃花、关系节奏与情感问题解读。', icon: '缘' },
+        { id: 'fojiao', name: '佛学开示', description: '以经典智慧回应困惑，提供心性指引。', icon: '悟' },
+        { id: 'qimen', name: '奇门遁甲', description: '按时间与问题排盘，辅助判断时机与方向。', icon: '门' },
+      ],
+    }
   }
+
   const res = await fetch(`${API_BASE}/divine/skills`)
   if (!res.ok) throw new Error('获取技能列表失败')
   return res.json()
@@ -41,35 +36,30 @@ export function isBackendAvailable() {
   return backendAvailable
 }
 
-/**
- * 阳历转阴历
- */
 export async function solarToLunar(dateStr) {
+  const available = await checkBackend()
+  if (!available) throw new Error('后端服务未连接')
+
   const res = await fetch(`${API_BASE}/divine/lunar?date=${dateStr}`)
   if (!res.ok) throw new Error('日期转换失败')
   return res.json()
 }
 
-/**
- * 流式调用算卦接口
- */
 export async function divineStream(skill, message, history = [], extra = {}, onChunk, onDone) {
   const available = await checkBackend()
   if (!available) {
-    onChunk?.('后端服务未启动，无法进行算卦推演。\n\n本项目需要 Python FastAPI 后端运行才能使用 AI 算卦功能。\n\n部署方式请参考 GitHub 仓库中的 README.md。')
+    onChunk?.('后端服务未连接，暂时无法进行 AI 推演。\n\n前端界面可继续预览；如需真实测算，请启动 Python FastAPI 后端，或在部署环境中配置 VITE_API_BASE_URL。')
     onDone?.()
     return
   }
 
-  const body = { message, history, ...extra }
-
   const res = await fetch(`${API_BASE}/divine/${skill}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ message, history, ...extra }),
   })
 
-  if (!res.ok) throw new Error(`请求失败: ${res.status}`)
+  if (!res.ok) throw new Error(`请求失败：${res.status}`)
 
   const reader = res.body.getReader()
   const decoder = new TextDecoder()
@@ -86,11 +76,14 @@ export async function divineStream(skill, message, history = [], extra = {}, onC
     for (const line of lines) {
       if (line.startsWith('data: ')) {
         const data = line.slice(6)
-        if (data === '[DONE]') { onDone?.(); return }
-        // 反转义后端转义的换行符
+        if (data === '[DONE]') {
+          onDone?.()
+          return
+        }
         onChunk?.(data.replace(/\\n/g, '\n'))
       }
     }
   }
+
   onDone?.()
 }
