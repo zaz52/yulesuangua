@@ -147,6 +147,10 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Done: wired `/zhouyi` and `/tools/liuyao` to the new ritual page, and renamed the home tool entrance to `周易起卦`.
 - Done: `npm run build` passes, and local preview returns HTTP 200 for `/`, `/zhouyi`, `/tools/liuyao`, and `/divine/bazi`.
 - Done: verified the built bundle contains key ritual copy including `周易起卦`, `静心三息`, `投掷铜钱`, `卦象已成`, `展开解卦`, `乾为天`, and `天风姤`.
+- Done: committed and pushed `9baeb81 feat: integrate zhouyi ritual flow` to `origin/main`.
+- Done: deployed to Netlify production with deploy ID `6a4663ebc48b3448f1a957ff`.
+- Done: verified production `/`, `/zhouyi`, `/tools/liuyao`, and `/divine/bazi` all return HTTP 200.
+- Done: verified production bundle contains the key Zhouyi ritual copy and production `/api/health` still returns external Netlify Functions mode.
 
 ## Review Notes
 
