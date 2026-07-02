@@ -121,10 +121,11 @@ async function calculateZiweiBoard(payload) {
   const profile = payload.profile || {}
   const astrolabe = await buildAstrolabeFromInput({
     name: profile.name || '命主',
-    dateType: 'solar',
+    dateType: 'lunar',
     birthDate: profile.birthDate,
     birthTimeIndex: shichenToIndex(profile.shichen),
     gender: profile.gender === '女' ? '女' : '男',
+    isLeapMonth: Boolean(profile.isLeapMonth),
   })
   const palaces = (astrolabe.palaces || []).map((palace) => ({
     name: palace.name || '宫位',
@@ -161,6 +162,8 @@ function calculateBaziBoard(payload) {
     day: date.day,
     timeIndex: shichenToIndex(profile.shichen),
     gender,
+    isLunar: true,
+    isLeapMonth: Boolean(profile.isLeapMonth),
   })
   const p = result.pillars || {}
   const hidden = result.hiddenStems || {}
@@ -185,10 +188,11 @@ function calculateBaziBoard(payload) {
       ['神煞', ...order.map((key) => joinValue(shensha[key], '无'))],
     ],
     highlights: [
+      `农历：${formatLunarDate(result.lunarDate, profile.birthDate)}`,
       `日主：${result.dayMaster?.gan || '待定'} ${result.dayMaster?.element || ''}`,
       `生肖：${result.zodiac || '待定'}`,
-      `格局：${result.analysis?.mingGe?.name || result.analysis?.mingGe || '待分析'}`,
-      `用神：${result.analysis?.usefulGod?.primary || result.analysis?.usefulGod || '待分析'}`,
+      `格局：${valueText(result.analysis?.mingGe?.name || result.analysis?.mingGe, '待分析')}`,
+      `用神：${valueText(result.analysis?.usefulGod?.primary || result.analysis?.usefulGod, '待分析')}`,
     ],
     raw: compactRaw(result),
   }
@@ -329,11 +333,17 @@ function joinValue(value, fallback = '待定') {
   return valueText(value, fallback)
 }
 
+function formatLunarDate(value, fallback = '待定') {
+  if (!value) return fallback
+  if (typeof value === 'string') return value
+  return `${value.year || ''}年${value.monthName || value.month || ''}月${value.dayName || value.day || ''}`.replace('月月', '月') || fallback
+}
+
 function valueText(value, fallback = '待定') {
   if (value === null || value === undefined || value === '') return fallback
   if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') return String(value)
   if (Array.isArray(value)) return joinValue(value, fallback)
-  if (typeof value === 'object') return value.name || value.ganZhi || value.value || JSON.stringify(value)
+  if (typeof value === 'object') return value.name || value.ganZhi || value.value || value.primary || value.summary || Object.values(value).filter((item) => typeof item === 'string' || typeof item === 'number').slice(0, 3).join(' / ') || fallback
   return String(value)
 }
 

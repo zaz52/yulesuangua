@@ -41,15 +41,15 @@
           <div v-if="skillId === 'bazi' || skillId === 'ziwei'" class="form-grid">
             <label class="ds-field"><span>姓名/称呼</span><input v-model.trim="profile.name" placeholder="请输入称呼" /></label>
             <label class="ds-field"><span>性别</span><select v-model="profile.gender"><option>男</option><option>女</option><option>不便说明</option></select></label>
-            <label class="ds-field"><span>阳历生日</span><input v-model="profile.birthDate" type="date" @change="convertLunar" /></label>
+            <label class="ds-field"><span>农历生日</span><input v-model.trim="profile.birthDate" placeholder="例如：1996-05-01" /></label>
             <label class="ds-field"><span>出生时辰</span><select v-model="profile.shichen"><option value="">请选择</option><option v-for="item in shichenList" :key="item.name" :value="item.name">{{ item.name }}（{{ item.range }}）</option></select></label>
             <label class="ds-field"><span>出生地</span><input v-model.trim="profile.place" placeholder="例如：杭州" /></label>
-            <div class="info-chip">{{ lunarResult ? `${lunarResult.lunar_full} · ${lunarResult.ganzhi_year}年 · ${lunarResult.shengxiao}` : '生日可用于农历换算；后端不可用时直接使用阳历信息。' }}</div>
+            <div class="info-chip">按阴历生日排盘。请填写农历年月日，闰月后续会单独加开关；当前默认非闰月。</div>
           </div>
 
           <div v-else-if="skillId === 'yinyuan' || skillId === 'hehun'" class="form-grid">
             <label class="ds-field"><span>你的称呼</span><input v-model.trim="relation.name" placeholder="例如：小林" /></label>
-            <label class="ds-field"><span>你的生日</span><input v-model="relation.birthday" type="date" /></label>
+            <label class="ds-field"><span>你的农历生日</span><input v-model.trim="relation.birthday" placeholder="例如：1996-05-01 / 属鼠" /></label>
             <label class="ds-field wide"><span>对方信息</span><input v-model.trim="relation.partner" placeholder="姓名、生日、生肖或大致情况" /></label>
             <label class="ds-field"><span>关系状态</span><select v-model="relation.status"><option value="">请选择</option><option>单身，想看正缘</option><option>暧昧中，想看走向</option><option>恋爱中，想看稳定性</option><option>分开后，想看是否复合</option><option>婚姻中，想看相处问题</option></select></label>
             <label class="ds-field"><span>关注点</span><select v-model="relation.focus"><option value="">请选择</option><option>正缘时间</option><option>对方是否合适</option><option>关系阻碍</option><option>生肖合婚</option><option>未来半年趋势</option></select></label>
@@ -74,9 +74,10 @@
           </div>
 
           <div v-else class="form-grid">
-            <label class="ds-field"><span>起局时间</span><input v-model="eventForm.datetime" type="datetime-local" /></label>
+            <label class="ds-field"><span>起课时间</span><input v-model="eventForm.datetime" type="datetime-local" /></label>
             <label class="ds-field"><span>地点/方位</span><input v-model.trim="eventForm.place" placeholder="例如：杭州 / 东南 / 不确定" /></label>
             <label class="ds-field"><span>事件类型</span><select v-model="eventForm.topic"><option>合作/项目</option><option>出行/迁移</option><option>求职/事业</option><option>感情/关系</option><option>财务/交易</option><option>健康/心态</option><option>其他</option></select></label>
+            <div class="info-chip wide">起课仍以你选择的现实时间定位，算法内部会换算农历、节气、干支和时辰后排盘。</div>
           </div>
         </article>
 
@@ -117,7 +118,7 @@
               <time>{{ today }}</time>
             </div>
             <VisualBoard v-if="typeof resp !== 'string' && resp.board" :board="resp.board" />
-            <pre>{{ typeof resp === 'string' ? resp : resp.text }}</pre>
+            <AnswerText :text="typeof resp === 'string' ? resp : resp.text" />
           </article>
         </section>
       </section>
@@ -128,7 +129,7 @@
 <script setup>
 import { computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { calculateChart, divineStream, solarToLunar } from '../api/divine'
+import { calculateChart, divineStream } from '../api/divine'
 
 const route = useRoute()
 const router = useRouter()
@@ -161,7 +162,6 @@ const today = new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit
 const userInput = ref('')
 const loading = ref(false)
 const responses = ref([])
-const lunarResult = ref(null)
 const profile = ref({ name: '', gender: '男', birthDate: '', shichen: '', place: '' })
 const relation = ref({ name: '', birthday: '', partner: '', status: '', focus: '' })
 const mind = ref({ topic: '', mood: '', context: '' })
@@ -186,7 +186,6 @@ onMounted(() => {
 watch(skillId, () => {
   userInput.value = ''
   responses.value = []
-  lunarResult.value = null
 })
 
 function switchSkill(id) {
@@ -205,23 +204,11 @@ function nowDatetimeLocal() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-async function convertLunar() {
-  if (!profile.value.birthDate) {
-    lunarResult.value = null
-    return
-  }
-  try {
-    lunarResult.value = await solarToLunar(profile.value.birthDate)
-  } catch {
-    lunarResult.value = null
-  }
-}
-
 function buildMessage() {
   const name = skillInfo.value.name
   if (['bazi', 'ziwei'].includes(skillId.value)) {
     const f = profile.value
-    return [`术法：${name}`, `姓名：${f.name}`, `性别：${f.gender}`, `阳历生日：${f.birthDate}`, `出生时辰：${f.shichen}`, f.place && `出生地：${f.place}`, lunarResult.value && `农历：${lunarResult.value.lunar_full}`, userInput.value && `补充问题：${userInput.value}`].filter(Boolean).join('；')
+    return [`术法：${name}`, `姓名：${f.name}`, `性别：${f.gender}`, `农历生日：${f.birthDate}`, `出生时辰：${f.shichen}`, f.place && `出生地：${f.place}`, userInput.value && `补充问题：${userInput.value}`].filter(Boolean).join('；')
   }
   if (['yinyuan', 'hehun'].includes(skillId.value)) {
     const f = relation.value
@@ -398,6 +385,20 @@ const VisualBoard = defineComponent({
       ]),
       renderBoard(props.board),
     ])
+  },
+})
+
+const AnswerText = defineComponent({
+  props: { text: String },
+  setup(props) {
+    return () => {
+      const lines = String(props.text || '').split(/\n+/).map((line) => line.trim()).filter(Boolean)
+      const visibleLines = lines.length ? lines : ['解读生成中...']
+      return h('section', { class: 'answer-text' }, [
+        h('div', { class: 'answer-text-head' }, [h('span', '解读'), h('strong', 'AI 文字仅作文化娱乐参考')]),
+        h('div', { class: 'answer-text-body' }, visibleLines.map((line) => h('p', { class: line.length > 28 ? 'answer-line' : 'answer-line is-short' }, line))),
+      ])
+    }
   },
 })
 
@@ -941,14 +942,53 @@ function renderGenericBoard(data) {
     rgba(255, 247, 231, 0.045);
 }
 
-.answer-card pre {
+.answer-text {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.04);
+}
+
+.answer-text-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.answer-text-head span {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 24px;
+}
+
+.answer-text-head strong {
+  color: rgba(245, 234, 212, 0.52);
+  font-size: 12px;
+  font-weight: 400;
+}
+
+.answer-text-body {
+  display: grid;
+  gap: 8px;
+}
+
+.answer-line {
   margin: 0;
-  overflow-x: auto;
-  white-space: pre-wrap;
-  word-break: break-word;
+  padding: 10px 12px;
+  border-left: 2px solid rgba(215, 179, 95, 0.35);
   color: var(--paper);
+  background: rgba(0, 0, 0, 0.12);
   font-family: var(--font-serif);
-  line-height: 2;
+  line-height: 1.8;
+  word-break: break-word;
+}
+
+.answer-line.is-short {
+  color: var(--gold-bright);
+  font-weight: 700;
 }
 
 @media (max-width: 980px) {

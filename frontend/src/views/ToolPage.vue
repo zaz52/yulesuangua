@@ -55,15 +55,15 @@
         </article>
 
         <article v-else-if="toolId === 'qiming'" class="work-card ds-card">
-          <PanelHead kicker="Naming" title="宝宝起名" badge="姓名方案" />
+          <PanelHead kicker="Naming" title="美称生成" badge="候选名册" />
           <div class="form-grid">
             <label class="ds-field"><span>姓氏</span><input v-model.trim="nameForm.familyName" placeholder="例如：林" /></label>
             <label class="ds-field"><span>性别</span><select v-model="nameForm.gender"><option>男</option><option>女</option><option>不限</option></select></label>
-            <label class="ds-field"><span>出生日期</span><input v-model="nameForm.birth" type="date" /></label>
+            <label class="ds-field"><span>农历生日</span><input v-model.trim="nameForm.birth" placeholder="例如：2024-04-16" /></label>
             <label class="ds-field wide"><span>偏好</span><input v-model.trim="nameForm.style" placeholder="例如：清雅、自然、有诗意、不要生僻字" /></label>
           </div>
-          <button class="ds-button primary" type="button" @click="generateNames">生成方向</button>
-          <ResultBlock title="起名方向" :copy="nameResult" />
+          <button class="ds-button primary" type="button" @click="generateNames">生成名册</button>
+          <NameBoard :names="nameCandidates" :summary="nameResult" />
         </article>
 
         <article v-else class="work-card ds-card">
@@ -98,6 +98,27 @@ const PanelHead = defineComponent({
   },
 })
 
+const NameBoard = defineComponent({
+  props: { names: Array, summary: String },
+  setup(props) {
+    return () => h('section', { class: 'name-board' }, [
+      h('div', { class: 'name-board-head' }, [
+        h('div', [h('span', '候选美称'), h('strong', props.summary)]),
+        h('em', '参考图样式：卡片候选，不再输出纯文字段落'),
+      ]),
+      h('div', { class: 'name-grid' }, (props.names || []).map((item) => h('article', { class: 'name-card' }, [
+        h('div', { class: 'name-main' }, [h('strong', item.full), h('span', item.pinyin)]),
+        h('p', item.meaning),
+        h('div', { class: 'name-tags' }, item.tags.map((tag) => h('span', tag))),
+        h('dl', [
+          h('div', [h('dt', '补益'), h('dd', item.element)]),
+          h('div', [h('dt', '气质'), h('dd', item.style)]),
+        ]),
+      ]))),
+    ])
+  },
+})
+
 const route = useRoute()
 const router = useRouter()
 const toolId = computed(() => route.params.tool || 'huangli')
@@ -123,7 +144,8 @@ const lot = computed(() => lots[lotIndex.value % lots.length])
 const dreamForm = ref({ dream: '', mood: '平静', context: '' })
 const dreamResult = ref('填写梦境后点击解析，会从象意、情绪和现实提醒三个角度生成提示。')
 const nameForm = ref({ familyName: '', gender: '不限', birth: '', style: '' })
-const nameResult = ref('填写姓氏和偏好后生成候选方向。正式定名建议先补全八字信息。')
+const nameResult = ref('填写姓氏、农历生日和偏好后生成候选名册。')
+const nameCandidates = ref(buildNameCandidates('林', '清雅、自然'))
 const wishForm = ref({ target: '自己', text: '' })
 const wishResult = ref('写下心愿后，点击上香会记录在当前浏览器中。')
 const incenseCount = ref(108)
@@ -145,9 +167,29 @@ function analyzeDream() {
 }
 
 function generateNames() {
-  const family = nameForm.value.familyName || '姓氏'
+  const family = nameForm.value.familyName || '林'
   const style = nameForm.value.style || '清雅、自然、易读'
-  nameResult.value = `可先按“${style}”方向取名。候选示例：${family}知宁、${family}景初、${family}予安。正式定名建议进入八字页补全出生信息，再结合喜忌细化。`
+  nameCandidates.value = buildNameCandidates(family, style)
+  nameResult.value = `${family}姓 · ${nameForm.value.gender} · 农历 ${nameForm.value.birth || '未填'} · ${style}`
+}
+
+function buildNameCandidates(family, style) {
+  const pool = [
+    ['知宁', 'zhi ning', '知止而后有定，宁静而致远。', '木火', '清雅', ['静气', '书卷', '平衡']],
+    ['景初', 'jing chu', '景行维贤，初心得守。', '木火', '明朗', ['开阔', '朝气', '有光']],
+    ['予安', 'yu an', '予人安定，也自守安宁。', '土金', '温和', ['安定', '易读', '亲和']],
+    ['云舒', 'yun shu', '云卷云舒，行止从容。', '水木', '自然', ['松弛', '灵动', '诗意']],
+    ['沐辰', 'mu chen', '如沐清光，辰星有序。', '水土', '清新', ['朝气', '清润', '稳重']],
+    ['若衡', 'ruo heng', '若水含章，衡心守正。', '木土', '端正', ['克制', '雅致', '格局']],
+  ]
+  return pool.map(([name, pinyin, meaning, element, fallbackStyle, tags]) => ({
+    full: `${family}${name}`,
+    pinyin,
+    meaning,
+    element,
+    style: style || fallbackStyle,
+    tags,
+  }))
 }
 
 function offerIncense() {
@@ -299,6 +341,131 @@ function offerIncense() {
   margin: 8px 0 0;
 }
 
+.name-board {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(215, 179, 95, 0.2);
+  border-radius: var(--radius-sm);
+  background:
+    radial-gradient(circle at 12% 0%, rgba(215, 179, 95, 0.12), transparent 30%),
+    rgba(13, 9, 7, 0.28);
+}
+
+.name-board-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.name-board-head span,
+.name-board-head strong {
+  display: block;
+}
+
+.name-board-head span {
+  color: var(--seal);
+  font-weight: 700;
+  font-size: 12px;
+}
+
+.name-board-head strong {
+  margin-top: 4px;
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+}
+
+.name-board-head em {
+  color: rgba(245, 234, 212, 0.54);
+  font-size: 12px;
+  font-style: normal;
+  text-align: right;
+}
+
+.name-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.name-card {
+  display: grid;
+  gap: 10px;
+  min-height: 210px;
+  padding: 14px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-xs);
+  background:
+    linear-gradient(145deg, rgba(255, 247, 231, 0.07), transparent),
+    rgba(0, 0, 0, 0.16);
+}
+
+.name-main {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.name-main strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 400;
+}
+
+.name-main span {
+  color: rgba(245, 234, 212, 0.52);
+  font-size: 12px;
+}
+
+.name-card p {
+  margin: 0;
+  color: var(--paper);
+  line-height: 1.7;
+}
+
+.name-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.name-tags span {
+  padding: 3px 8px;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: 999px;
+  color: var(--paper-dim);
+  font-size: 12px;
+}
+
+.name-card dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.name-card dl div {
+  padding: 8px;
+  border: 1px solid rgba(215, 179, 95, 0.12);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.04);
+}
+
+.name-card dt {
+  color: var(--seal);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.name-card dd {
+  margin: 3px 0 0;
+  color: var(--paper);
+}
+
 @media (max-width: 900px) {
   .tool-shell {
     grid-template-columns: 1fr;
@@ -313,9 +480,18 @@ function offerIncense() {
 
   .form-grid,
   .almanac-grid,
+  .name-grid,
   .panel-head {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .name-board-head {
+    display: grid;
+  }
+
+  .name-board-head em {
+    text-align: left;
   }
 }
 </style>
