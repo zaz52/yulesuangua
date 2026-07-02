@@ -105,6 +105,10 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Done: `npm run build` passes after the per-method forms.
 - Done: deployed the updated frontend to Netlify production with deploy ID `6a465388818d7500a7ae638d`.
 - Done: verified production bundle contains all four method-specific form sections and no old mojibake fragments; `/divine/bazi`, `/divine/yinyuan`, `/divine/fojiao`, and `/divine/qimen` all return HTTP 200.
+- Done: added a Netlify Functions API backend under `frontend/netlify/functions/api.mjs` and routed `/api/*` to it before the SPA fallback.
+- Done: configured Netlify production environment variables for the NVIDIA OpenAI-compatible endpoint and redeployed with deploy ID `6a4655e4f8c42b105ac50720`.
+- Done: verified production `/api/health` returns JSON `{"status":"ok","llm_mode":"external","runtime":"netlify-functions"}` instead of HTML.
+- Done: verified production `/api/divine/skills` returns the skill list and `POST /api/divine/bazi` returns `text/event-stream` content.
 
 ## Review Notes
 
