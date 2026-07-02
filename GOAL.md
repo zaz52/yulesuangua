@@ -109,6 +109,13 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Done: configured Netlify production environment variables for the NVIDIA OpenAI-compatible endpoint and redeployed with deploy ID `6a4655e4f8c42b105ac50720`.
 - Done: verified production `/api/health` returns JSON `{"status":"ok","llm_mode":"external","runtime":"netlify-functions"}` instead of HTML.
 - Done: verified production `/api/divine/skills` returns the skill list and `POST /api/divine/bazi` returns `text/event-stream` content.
+- New work started: add visual divination boards so results are not pure text. Each method should show a structured board first, then detailed AI interpretation text. Bazi needs a four-pillar board, Yinyuan a relationship board, Fojiao a mind-observation board, and Qimen a nine-palace board.
+- In progress: added board rendering to result cards and styled the board system with responsive grids, method-specific color tones, and a highlighted Qimen center palace.
+- Review finding fixed: the streaming completion callback previously collapsed the response object into a plain string, which would remove the visual board after the AI answer finished. The callback now preserves `{ text, board }` and only marks `streaming: false`.
+- Done: `npm run build` passes after the board work.
+- Done: scanned frontend source for common mojibake/demo leftovers and found none.
+- Done: verified the production bundle contains `四柱盘面解析`, `姻缘关系盘`, `心性观照盘`, `奇门九宫盘`, and the responsive board CSS.
+- Done: local preview returns HTTP 200 for `/divine/bazi` and `/divine/qimen`.
 
 ## Review Notes
 

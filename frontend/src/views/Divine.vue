@@ -268,6 +268,28 @@
               <span class="ds-badge gold">第 {{ index + 1 }} 卦</span>
               <time>{{ today }}</time>
             </div>
+            <div v-if="typeof resp !== 'string' && resp.board" class="analysis-board" :class="`board-${resp.board.type}`">
+              <div class="board-head">
+                <div>
+                  <span class="section-kicker">{{ resp.board.kicker }}</span>
+                  <h3>{{ resp.board.title }}</h3>
+                </div>
+                <span class="ds-badge green">{{ resp.board.badge }}</span>
+              </div>
+              <div class="board-grid">
+                <div v-for="item in resp.board.items" :key="item.label" class="board-cell">
+                  <span>{{ item.label }}</span>
+                  <strong>{{ item.value }}</strong>
+                  <em>{{ item.note }}</em>
+                </div>
+              </div>
+              <div class="detail-grid">
+                <section v-for="detail in resp.board.details" :key="detail.title" class="detail-card">
+                  <strong>{{ detail.title }}</strong>
+                  <p>{{ detail.copy }}</p>
+                </section>
+              </div>
+            </div>
             <pre>{{ typeof resp === 'string' ? resp : resp.text }}</pre>
           </article>
         </div>
@@ -494,10 +516,100 @@ function buildMessage() {
   return userInput.value
 }
 
+function buildBoard() {
+  if (skillId.value === 'bazi') {
+    const form = baziForm.value
+    return {
+      type: 'bazi',
+      kicker: 'BaZi Board',
+      title: '四柱盘面解析',
+      badge: form.shichen || '时辰',
+      items: [
+        { label: '年柱', value: form.solarDate ? form.solarDate.slice(0, 4) : '待定', note: '看早年根基、家族环境与外部起点。' },
+        { label: '月柱', value: form.solarDate ? form.solarDate.slice(5, 7) + '月' : '待定', note: '看事业节奏、社会位置与阶段压力。' },
+        { label: '日柱', value: form.name || '本人', note: '看自我状态、关系核心与主观选择。' },
+        { label: '时柱', value: form.shichen || '待定', note: '看后续发展、执行力与长远结果。' },
+      ],
+      details: [
+        { title: '命盘重点', copy: '先看四柱是否齐全，再结合补充问题判断关注方向。' },
+        { title: '需要校准', copy: '真实八字排盘需要精确出生地、日期和时辰，AI 解读仅作文化参考。' },
+        { title: '阅读方式', copy: '先看盘面结构，再看 AI 对事业、财运、关系或流年的分项说明。' },
+      ],
+    }
+  }
+
+  if (skillId.value === 'yinyuan') {
+    const form = yinyuanForm.value
+    return {
+      type: 'yinyuan',
+      kicker: 'Relation Board',
+      title: '姻缘关系盘',
+      badge: form.focus || '关注点',
+      items: [
+        { label: '关系状态', value: form.status || '待定', note: '决定解读是看正缘、推进、稳定还是修复。' },
+        { label: '你的状态', value: form.gender || '未填', note: '用于整理你在关系中的表达方式和需求。' },
+        { label: '对方信息', value: form.partner || '未填', note: '信息越具体，关系画像越容易收敛。' },
+        { label: '关注点', value: form.focus || '待定', note: '决定重点解释时机、合适度、阻碍或沟通。' },
+      ],
+      details: [
+        { title: '缘分观察', copy: '关系盘先看双方状态是否清楚，再看当前互动是否有持续推进的条件。' },
+        { title: '相处建议', copy: '重点不是制造宿命感，而是帮助你看见沟通、边界和选择。' },
+        { title: '风险提醒', copy: '任何感情建议都不应替代现实沟通，也不鼓励纠缠或控制。' },
+      ],
+    }
+  }
+
+  if (skillId.value === 'fojiao') {
+    const form = fojiaoForm.value
+    return {
+      type: 'fojiao',
+      kicker: 'Mind Board',
+      title: '心性观照盘',
+      badge: form.mood || '心境',
+      items: [
+        { label: '困惑类型', value: form.topic || '待定', note: '对应烦恼来源，先分清外境与内心反应。' },
+        { label: '当前心境', value: form.mood || '待定', note: '观察此刻最强的情绪，而不是急着压下去。' },
+        { label: '修学基础', value: form.practice || '未填', note: '决定开示是偏入门、经典还是日常练习。' },
+        { label: '事情背景', value: fojiaoForm.value.context ? '已填写' : '未填写', note: '背景越清楚，建议越能落到具体行动。' },
+      ],
+      details: [
+        { title: '观照方向', copy: '先承认情绪，再看执着点，最后落实到一个可执行的小练习。' },
+        { title: '开示边界', copy: '佛学开示不替代心理治疗或医疗诊断，严重痛苦应寻求专业帮助。' },
+        { title: '日常练习', copy: '适合输出短时静坐、念佛、觉察语言和关系中止损等建议。' },
+      ],
+    }
+  }
+
+  const form = qimenForm.value
+  return {
+    type: 'qimen',
+    kicker: 'Qimen Board',
+    title: '奇门九宫盘',
+    badge: form.topic || '事情类型',
+    items: [
+      { label: '巽四', value: '东南', note: '观察资源、人脉、风向变化。' },
+      { label: '离九', value: '南', note: '观察曝光、名声、表达与文书。' },
+      { label: '坤二', value: '西南', note: '观察承载、协作、稳定性。' },
+      { label: '震三', value: '东', note: '观察启动、行动、突然变化。' },
+      { label: '中五', value: form.topic || '所问事', note: '本次问题的核心焦点。' },
+      { label: '兑七', value: '西', note: '观察沟通、谈判、收益与口舌。' },
+      { label: '艮八', value: '东北', note: '观察阻碍、停顿、边界与收束。' },
+      { label: '坎一', value: '北', note: '观察风险、隐情、流动和压力。' },
+      { label: '乾六', value: '西北', note: '观察规则、权威、贵人与决断。' },
+    ],
+    details: [
+      { title: '盘面中心', copy: '中宫代表本次所问之事，先看事情类型和问题是否足够具体。' },
+      { title: '九宫阅读', copy: '九宫用于辅助观察方向、风险和行动取舍，不代表绝对结果。' },
+      { title: '行动建议', copy: '奇门更适合问具体事件，例如合作、出行、求职、交易是否推进。' },
+    ],
+  }
+}
+
 async function sendMessage() {
   if (!canSend.value || loading.value) return
 
   const message = buildMessage()
+  const board = buildBoard()
   const extra = {}
   if (skillId.value === 'qimen') {
     if (qimenForm.value.datetime) extra.datetime_str = qimenForm.value.datetime.replace('T', ' ')
@@ -521,12 +633,21 @@ async function sendMessage() {
         if (responses.value.length && responses.value[responses.value.length - 1].streaming) {
           responses.value[responses.value.length - 1].text = answer
         } else {
-          responses.value.push({ text: answer, streaming: true })
+          responses.value.push({ text: answer, streaming: true, board })
         }
       },
       () => {
         if (responses.value.length) {
-          responses.value[responses.value.length - 1] = responses.value[responses.value.length - 1].text || answer
+          const last = responses.value[responses.value.length - 1]
+          if (typeof last === 'string') {
+            responses.value[responses.value.length - 1] = last || answer
+          } else {
+            responses.value[responses.value.length - 1] = {
+              ...last,
+              text: last.text || answer,
+              streaming: false,
+            }
+          }
         }
         loading.value = false
       },
@@ -809,6 +930,166 @@ async function sendMessage() {
   font-size: 12px;
 }
 
+.analysis-board {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  margin: 0 0 18px;
+  padding: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(45, 107, 93, 0.18);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(135deg, rgba(255, 250, 242, 0.94), rgba(235, 246, 239, 0.78)),
+    radial-gradient(circle at 12% 18%, rgba(212, 175, 55, 0.16), transparent 30%);
+}
+
+.analysis-board::before {
+  position: absolute;
+  inset: 12px;
+  pointer-events: none;
+  border: 1px solid rgba(212, 175, 55, 0.16);
+  border-radius: calc(var(--radius-sm) - 4px);
+  content: '';
+}
+
+.analysis-board::after {
+  position: absolute;
+  right: -44px;
+  bottom: -58px;
+  width: 150px;
+  height: 150px;
+  pointer-events: none;
+  border: 1px solid rgba(45, 107, 93, 0.2);
+  border-radius: 50%;
+  background:
+    linear-gradient(90deg, transparent 49%, rgba(45, 107, 93, 0.14) 50%, transparent 51%),
+    linear-gradient(0deg, transparent 49%, rgba(45, 107, 93, 0.14) 50%, transparent 51%);
+  opacity: 0.72;
+  content: '';
+}
+
+.board-head {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.board-head h3 {
+  margin: 6px 0 0;
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.board-grid,
+.detail-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 10px;
+}
+
+.board-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.board-qimen .board-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.board-cell,
+.detail-card {
+  border: 1px solid rgba(63, 45, 23, 0.1);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 252, 246, 0.76);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.74);
+}
+
+.board-cell {
+  display: grid;
+  min-height: 132px;
+  align-content: start;
+  gap: 7px;
+  padding: 13px;
+}
+
+.board-cell span {
+  color: var(--seal);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.board-cell strong {
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.board-cell em {
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-style: normal;
+  line-height: 1.65;
+}
+
+.board-qimen .board-cell {
+  min-height: 118px;
+}
+
+.board-qimen .board-cell:nth-child(5) {
+  border-color: rgba(178, 54, 45, 0.32);
+  background: rgba(178, 54, 45, 0.08);
+}
+
+.detail-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.detail-card {
+  padding: 13px;
+}
+
+.detail-card strong {
+  display: block;
+  color: var(--gold-deep);
+  font-size: 14px;
+}
+
+.detail-card p {
+  margin: 7px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.75;
+}
+
+.board-yinyuan {
+  border-color: rgba(178, 54, 45, 0.18);
+  background:
+    linear-gradient(135deg, rgba(255, 250, 242, 0.94), rgba(255, 239, 235, 0.76)),
+    radial-gradient(circle at 12% 18%, rgba(178, 54, 45, 0.12), transparent 30%);
+}
+
+.board-fojiao {
+  border-color: rgba(125, 137, 76, 0.2);
+  background:
+    linear-gradient(135deg, rgba(255, 250, 242, 0.94), rgba(240, 245, 224, 0.8)),
+    radial-gradient(circle at 12% 18%, rgba(125, 137, 76, 0.14), transparent 30%);
+}
+
+.board-qimen {
+  border-color: rgba(42, 74, 112, 0.18);
+  background:
+    linear-gradient(135deg, rgba(255, 250, 242, 0.94), rgba(232, 241, 246, 0.78)),
+    radial-gradient(circle at 12% 18%, rgba(42, 74, 112, 0.12), transparent 30%);
+}
+
 .answer-card pre {
   margin: 0;
   overflow-x: auto;
@@ -849,6 +1130,15 @@ async function sendMessage() {
   .form-grid {
     grid-template-columns: 1fr 1fr;
   }
+
+  .board-grid,
+  .detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .board-qimen .board-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 680px) {
@@ -881,6 +1171,24 @@ async function sendMessage() {
 
   .side-menu {
     grid-template-columns: repeat(2, 1fr);
+  }
+
+  .analysis-board {
+    padding: 14px;
+  }
+
+  .board-head {
+    display: grid;
+  }
+
+  .board-grid,
+  .board-qimen .board-grid,
+  .detail-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .board-cell {
+    min-height: auto;
   }
 }
 </style>
