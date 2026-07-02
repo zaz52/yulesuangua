@@ -116,6 +116,12 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Done: scanned frontend source for common mojibake/demo leftovers and found none.
 - Done: verified the production bundle contains `四柱盘面解析`, `姻缘关系盘`, `心性观照盘`, `奇门九宫盘`, and the responsive board CSS.
 - Done: local preview returns HTTP 200 for `/divine/bazi` and `/divine/qimen`.
+- Done: committed and pushed `9e9fec9 feat: add visual divination boards` to `origin/main`.
+- Done: deployed to Netlify production with deploy ID `6a4658af3bde6d16bcc4c537`.
+- Done: verified production `/api/health` returns `{"status":"ok","llm_mode":"external","runtime":"netlify-functions"}`.
+- Done: verified production `/divine/bazi` and `/divine/qimen` return HTTP 200.
+- Done: verified production bundle contains all four board titles and the final streaming state keeps the object shape.
+- Done: verified production `POST /api/divine/bazi` returns `text/event-stream`.
 
 ## Review Notes
 
