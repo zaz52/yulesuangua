@@ -131,6 +131,11 @@ The implementation must cover the actual app screens, not just a static mockup:
 - Done: deployed to Netlify production with deploy ID `6a465bad59697b2642de9397`.
 - Done: verified production homepage returns HTTP 200 and the production bundle contains `问事有盘，解卦有据`, `九宫功能入口`, `在线上香`, `今日黄历`, and `移动端快捷导航`.
 - Done: verified production `/api/health` still returns external Netlify Functions mode, and `/divine/bazi`, `/divine/qimen` both return HTTP 200.
+- New work started: split the one-page oracle dashboard into a real multi-page product. Home should become a concise portal, while Huangli, Lingqian, Jiemeng, Qiming, Xianghuo, and Liuyao each get their own route and usable form/interaction. The four AI divination methods continue to use `/divine/:skill`.
+- Done: added `frontend/src/views/ToolPage.vue` and routed `/tools/:tool` for Huangli, Lingqian, Jiemeng, Qiming, Xianghuo, and Liuyao.
+- Done: simplified `Home.vue` into a portal page with AI core entrances and separate tool entrances instead of putting every module on one page.
+- Done: each new tool route now has concrete interaction: Huangli display, Lingqian draw, Dream form/result, Naming form/result, Wish/incense local storage, and Liuyao random six-line casting.
+- Done: `npm run build` passes; local preview returned HTTP 200 for `/`, all `/tools/*` routes, and `/divine/bazi`.
 
 ## Review Notes
 
