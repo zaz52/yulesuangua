@@ -444,3 +444,7 @@
 - 已创建 Cloudflare D1 数据库 `yulesuangua-prod`，数据库 ID：`5fd04a83-9678-4aa4-ac76-281a7e8d02e1`。
 - 已执行 `docs/startup-mvp-schema.sql`，创建 `consultations` 和 `product_events` 两张表及索引。
 - 已新增 `frontend/wrangler.toml`，将 D1 以 `DB` 绑定给 Pages Functions。
+- 已重新部署 D1 绑定版本，预览地址：`https://c6589389.yulesuangua.pages.dev`。
+- 已验证主站 `GET /api/health` 返回 `database: true`。
+- 已通过生产 API 完成咨询记录写入、详情读取、最近记录读取的冒烟测试，并删除测试记录。
+- 已验证 `https://yulesuangua.pages.dev/divine/qimen` 和 `https://yulesuangua.pages.dev/share/test-id` 均返回 HTTP 200。
