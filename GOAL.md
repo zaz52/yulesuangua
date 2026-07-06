@@ -507,3 +507,15 @@
   - `node --check frontend/functions/api/[[path]].js` 通过。
   - 本地 Cloudflare Pages 预览 `http://127.0.0.1:8788/` 返回 200。
   - Playwright 使用本机 Chrome 检查 `/divine/qimen`、`/tools/qiming`、`/tools/xianghuo` 的桌面端和 390px 移动端：无“最近记录”文本、无页面级横向溢出；上香交互后 `localStorage` 中没有 `qk_` key。
+
+### 2026-07-07 隐私保护策略修正
+
+- 用户明确说明核心目标是保护隐私，因此已将策略从“只删除最近记录和本地存储”升级为“默认不落本地、不落远端”。
+- 已移除 `/divine/:skill` 正常问卦完成后的自动 D1 写入调用；AI 解读结果只存在当前页面状态里。
+- 已从首页、术法页、工具页移除或改写“我的记录”“本地记录心愿”等容易误导用户的入口和文案。
+- 已新增 `docs/privacy-model.md`，明确后续只有在用户主动点击“保存/分享”并看到清晰提示时，才允许调用远端保存接口。
+- 验证结果：
+  - `npm run build` 通过。
+  - `node --check frontend/functions/api/[[path]].js` 通过。
+  - Playwright 使用本机 Chrome 提交 `/divine/qimen` 后，只捕捉到 `/api/health`、`/api/metaphysics/calculate`、`/api/divine/qimen`，没有 `/api/consultations`。
+  - 使用 `/divine/qimen` 和 `/tools/xianghuo` 后，`localStorage` 中没有任何 `qk_` key。

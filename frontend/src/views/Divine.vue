@@ -26,7 +26,6 @@
           <i>{{ item.icon }}</i>
           <span>{{ item.name }}</span>
         </button>
-        <button class="rail-link rail-record" type="button"><i>记</i><span>我的记录</span></button>
       </aside>
 
       <section class="workbench main-workspace">
@@ -106,7 +105,7 @@
               <textarea v-model.trim="userInput" :placeholder="skillInfo.askHint" :disabled="loading" @keydown.ctrl.enter="sendMessage"></textarea>
             </label>
 
-            <p class="privacy-note">页面不会在浏览器之外主动保存你的姓名、生日、地点或提问内容。</p>
+            <p class="privacy-note">隐私保护：本站不会在本地浏览器或远端数据库自动保存你的姓名、生日、地点、问题和解读结果。</p>
             <div class="actions">
               <button class="ds-button primary" type="button" :disabled="loading || !canSend" @click="sendMessage">{{ loading ? '推演中...' : '开始排盘' }}</button>
               <button class="ds-button ghost" type="button" :disabled="loading" @click="responses = []">重置</button>
@@ -137,10 +136,10 @@
             <span>所问内容</span>
             <textarea v-model.trim="userInput" :placeholder="skillInfo.askHint" :disabled="loading" @keydown.ctrl.enter="sendMessage"></textarea>
           </label>
-          <p class="privacy-note">页面不会在浏览器之外主动保存你的姓名、生日、地点或提问内容。</p>
+          <p class="privacy-note">隐私保护：本站不会在本地浏览器或远端数据库自动保存你的姓名、生日、地点、问题和解读结果。</p>
           <div class="actions">
             <button class="ds-button primary" type="button" :disabled="loading || !canSend" @click="sendMessage">{{ loading ? '推演中...' : '提交问事' }}</button>
-            <button class="ds-button ghost" type="button" :disabled="loading" @click="responses = []">清空记录</button>
+            <button class="ds-button ghost" type="button" :disabled="loading" @click="responses = []">清空本页结果</button>
           </div>
         </article>
 
@@ -203,7 +202,7 @@
 <script setup>
 import { computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { calculateChart, createConsultationRecord, divineStream } from '../api/divine'
+import { calculateChart, divineStream } from '../api/divine'
 import BaziBoard from '../components/BaziBoard.vue'
 import DaliurenBoard from '../components/DaliurenBoard.vue'
 import FengshuiBoard from '../components/FengshuiBoard.vue'
@@ -331,24 +330,6 @@ function nowDatetimeLocal() {
   const d = new Date()
   const pad = (value) => String(value).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
-
-async function persistConsultation({ title, message, board, reading }) {
-  const localId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(16).slice(2)}`
-
-  try {
-    await createConsultationRecord({
-      id: localId,
-      skill: skillId.value,
-      title,
-      question: message,
-      payload: buildChartPayload(message),
-      board,
-      reading,
-    })
-  } catch {
-    // Remote persistence is best-effort; local recent records are intentionally disabled.
-  }
 }
 
 function buildMessage() {
@@ -508,7 +489,6 @@ function ziweiElementClass() {
 async function sendMessage() {
   if (!canSend.value || loading.value) return
   const message = buildMessage()
-  const consultationTitle = `${skillInfo.value.name} · ${userInput.value || eventForm.value.topic || profile.value.name || '问事'}`
   const chartPayload = buildChartPayload(message)
   let chartResult = null
   try {
@@ -534,7 +514,6 @@ async function sendMessage() {
     }, () => {
       const last = responses.value[responses.value.length - 1]
       if (last && typeof last !== 'string') responses.value[responses.value.length - 1] = { ...last, text: last.text || answer, streaming: false }
-      persistConsultation({ title: consultationTitle, message, board, reading: answer || last?.text || '' })
       loading.value = false
     })
   } catch (error) {
@@ -544,7 +523,6 @@ async function sendMessage() {
     } else {
       responses.value.push({ text: `暂时无法完成推演：${error.message}`, streaming: false, error: true })
     }
-    persistConsultation({ title: consultationTitle, message, board, reading: answer || `暂时无法完成推演：${error.message}` })
     loading.value = false
   }
 }

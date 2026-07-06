@@ -27,7 +27,6 @@
             <i>{{ item.icon }}</i><span>{{ item.name }}</span>
           </button>
         </div>
-        <button class="rail-link rail-record" type="button"><i>记</i><span>我的记录</span></button>
       </aside>
 
       <section class="tool-main main-workspace">
@@ -72,7 +71,7 @@
         </article>
 
         <article v-else-if="toolId === 'jiemeng'" class="work-card oracle-card dream-ritual">
-          <PanelHead kicker="Dream Reading" title="梦境解析" badge="梦象记录" />
+          <PanelHead kicker="Dream Reading" title="梦境解析" badge="本页解析" />
           <p>请尽可能详细地描述您的梦境，包括场景、人物、事件、情绪感受等细节。</p>
           <label class="ds-field wide dream-textarea"><span>梦境内容</span><textarea v-model.trim="dreamForm.dream" placeholder="请输入您的梦境内容..."></textarea></label>
           <div class="dream-prompts">
@@ -106,7 +105,7 @@
             <label class="ds-field wide"><span>心愿</span><textarea v-model.trim="wishForm.text" placeholder="写下今天想安放的一句话"></textarea></label>
           </div>
           <button class="ds-button primary" type="button" @click="offerIncense">敬上三炷香</button>
-          <ResultBlock title="心愿记录" :copy="wishResult" />
+          <ResultBlock title="心愿回响" :copy="wishResult" />
         </article>
       </section>
 
@@ -177,9 +176,9 @@ const toolId = computed(() => route.params.tool || 'huangli')
 const tools = [
   { id: 'huangli', icon: '历', name: '今日黄历', kicker: 'Almanac', related: 'qimen', description: '查看今日宜忌、吉时、方位与行动提醒。' },
   { id: 'lingqian', icon: '签', name: '灵签占问', kicker: 'Lot', related: 'fojiao', description: '填写所问之事，抽取签文并获得一段解释。' },
-  { id: 'jiemeng', icon: '梦', name: '梦境解析', kicker: 'Dream', related: 'fojiao', description: '记录梦境、醒来情绪与现实背景，整理梦象提示。' },
+  { id: 'jiemeng', icon: '梦', name: '梦境解析', kicker: 'Dream', related: 'fojiao', description: '输入梦境、醒来情绪与现实背景，仅在当前页面整理梦象提示。' },
   { id: 'qiming', icon: '名', name: '宝宝起名', kicker: 'Naming', related: 'bazi', description: '填写姓氏、生日与偏好，生成命名方向和名字候选。' },
-  { id: 'xianghuo', icon: '香', name: '祈福上香', kicker: 'Wish', related: 'fojiao', description: '写下心愿并在本地记录香火，不上传个人愿望。' },
+  { id: 'xianghuo', icon: '香', name: '祈福上香', kicker: 'Wish', related: 'fojiao', description: '写下心愿并获得本页回响，不在本地或远端保存个人愿望。' },
 ]
 
 const tool = computed(() => tools.find((item) => item.id === toolId.value) || tools[0])

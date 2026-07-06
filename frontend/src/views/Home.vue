@@ -26,7 +26,6 @@
         <button class="rail-link active" type="button" @click="go('/')"><i>⌂</i><span>首页</span></button>
         <span class="rail-section-title">术数工具</span>
         <button v-for="item in railSkills" :key="item.id" class="rail-link" type="button" @click="go(item.path)"><i>{{ item.icon }}</i><span>{{ item.name }}</span></button>
-        <button class="rail-link rail-record" type="button"><i>记</i><span>我的记录</span></button>
       </aside>
 
       <section class="main-workspace">
@@ -182,7 +181,7 @@ const tools = [
   { id: 'lingqian', path: '/tools/lingqian', icon: '签', name: '灵签占问', description: '写下所问之事，抽签查看签文。' },
   { id: 'jiemeng', path: '/tools/jiemeng', icon: '梦', name: '梦境解析', description: '记录梦境、情绪和现实背景。' },
   { id: 'qiming', path: '/tools/qiming', icon: '名', name: '宝宝起名', description: '按姓氏、生日和偏好生成方向。' },
-  { id: 'xianghuo', path: '/tools/xianghuo', icon: '香', name: '祈福上香', description: '本地记录心愿和香火次数。' },
+  { id: 'xianghuo', path: '/tools/xianghuo', icon: '香', name: '祈福上香', description: '本页生成心愿回响，不保存个人愿望。' },
 ]
 
 const visibleSkills = computed(() => activeGroup.value === 'all' ? skills : skills.filter((item) => item.group === activeGroup.value))
