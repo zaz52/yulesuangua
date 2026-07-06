@@ -492,4 +492,5 @@
   - `node --check frontend/functions/api/[[path]].js` 通过。
   - `wrangler pages secret list` 确认 production 环境已存在 3 个 NVIDIA secret，值为加密状态。
 - 首次线上测试发现 `nvidia/llama-3.3-nemotron-super-49b-v1.5` 输出过短；`qwen/qwen3-235b-a22b` 在当前 NVIDIA 环境未成功调用。已查询 NVIDIA `/v1/models`，当前改用列表中可用的 `qwen/qwen3.5-122b-a10b` 并保留强化提示词。
+- 已部署并验证 `POST /api/divine/qimen` 返回 1000+ 字符的完整中文模型解读，不再触发内置规则兜底。
 - 已强化系统提示词：要求直接输出完整解读，不输出“示例”或只输出框架。
