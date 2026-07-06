@@ -177,7 +177,7 @@ async function generateReading(skill, payload, env) {
 async function callOpenAICompatibleModel(input, env) {
   const apiKey = env.OPENAI_API_KEY || env.NVIDIA_API_KEY || env.NVCF_API_KEY
   const baseUrl = env.OPENAI_BASE_URL || env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1'
-  const model = env.OPENAI_MODEL || env.NVIDIA_MODEL || 'nvidia/llama-3.1-nemotron-ultra-253b-v1'
+  const model = env.OPENAI_MODEL || env.NVIDIA_MODEL || 'qwen/qwen3.5-122b-a10b'
   if (!apiKey) return ''
 
   const res = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
