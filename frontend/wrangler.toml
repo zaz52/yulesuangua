@@ -1,0 +1,8 @@
+name = "yulesuangua"
+compatibility_date = "2026-07-06"
+pages_build_output_dir = "dist"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "yulesuangua-prod"
+database_id = "5fd04a83-9678-4aa4-ac76-281a7e8d02e1"

@@ -434,3 +434,13 @@
   - `POST /api/consultations` 在未绑定 D1 时返回 `persistence_unavailable`，符合前端降级设计。
   - Edge 浏览器自动化验证 `/`、`/divine/qimen`、`/divine/bazi`、`/share/test-id` 均可打开，无页面级横向溢出。
   - 390px 移动端 `/divine/qimen` 渲染 9 个奇门宫格，无横向溢出。
+
+### 2026-07-06 MVP 推送、部署与 D1 初始化
+
+- 已提交并推送 MVP 基础版本：`e8a9783 feat: ship production mvp foundation`。
+- 已手动部署到 Cloudflare Pages，预览地址：`https://95818e8a.yulesuangua.pages.dev`。
+- 已验证主站 `https://yulesuangua.pages.dev/` 返回 HTTP 200。
+- 已验证新版 `GET /api/health` 在主站返回 `runtime: cloudflare-pages-functions`。
+- 已创建 Cloudflare D1 数据库 `yulesuangua-prod`，数据库 ID：`5fd04a83-9678-4aa4-ac76-281a7e8d02e1`。
+- 已执行 `docs/startup-mvp-schema.sql`，创建 `consultations` 和 `product_events` 两张表及索引。
+- 已新增 `frontend/wrangler.toml`，将 D1 以 `DB` 绑定给 Pages Functions。
