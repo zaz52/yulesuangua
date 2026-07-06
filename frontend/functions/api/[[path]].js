@@ -206,24 +206,44 @@ function calculateQimenBoard(payload) {
   const names = { 1: '坎一', 2: '坤二', 3: '震三', 4: '巽四', 5: '中五', 6: '乾六', 7: '兑七', 8: '艮八', 9: '离九' }
   const directions = { 1: '正北', 2: '西南', 3: '正东', 4: '东南', 5: '中宫', 6: '西北', 7: '正西', 8: '东北', 9: '正南' }
   return {
+    center: {
+      time: payload.datetime || result.timestamp || date.toISOString(),
+      topic: payload.topic || payload.question || '所问之事',
+      place: payload.place || '方位待定',
+    },
     cells: order.map((gong) => {
       const cell = byGong.get(gong)
-      if (!cell) return [names[gong], gong === 5 ? payload.topic || '所问核心' : '待排', '中宫寄坤', directions[gong]]
+      if (!cell) {
+        return [names[gong], gong === 5 ? payload.topic || '所问核心' : '待排', '中宫寄坤', '值符', '戊', '戊', directions[gong]]
+      }
       return [
-        names[gong],
-        cell.renPan?.door || cell.tianPan?.star || '待排',
-        `${cell.tianPan?.star || ''} ${cell.shenPan?.god || ''}`.trim() || '格局待定',
+        cell.name || names[gong],
+        cell.renPan?.door || '待排',
+        cell.tianPan?.star || '格局待定',
+        cell.shenPan?.god || '神盘待定',
+        cell.tianPan?.stem || '—',
+        cell.diPan?.stem || '—',
         cell.direction || directions[gong],
       ]
     }),
     meta: {
+      solar: payload.datetime || result.timestamp || date.toISOString(),
+      lunar: formatQimenLunar(result),
       juShu: `${result.isYangDun ? '阳遁' : '阴遁'}${result.juShu || ''}局`,
-      zhiFu: result.zhiFu,
-      zhiShi: result.zhiShi,
+      zhiFu: result.zhiFu ? `${result.zhiFu}星` : '待定',
+      zhiShi: result.zhiShi || '待定',
+      xunShou: result.ganzhi?.hour || result.ganzhi?.day || '待定',
+      horse: result.horseStar || '待定',
+      empty: Array.isArray(result.voidBranches) ? result.voidBranches.join('') : '待定',
       patternTags: result.patternTags || [],
     },
     raw: compactRaw(result),
   }
+}
+
+function formatQimenLunar(result) {
+  const ganzhi = result.ganzhi || {}
+  return [ganzhi.year, ganzhi.month, ganzhi.day, ganzhi.hour].filter(Boolean).join(' ') || '按起课时间换算'
 }
 
 function calculateLiuyaoBoard(payload) {

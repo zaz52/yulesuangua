@@ -52,27 +52,44 @@
           <ResultBlock title="今日提醒" copy="适合先把问题写清楚，再进入周易起卦或奇门页面深问。黄历仅作传统文化参考，不作为现实决策依据。" />
         </article>
 
-        <article v-else-if="toolId === 'lingqian'" class="work-card oracle-card">
+        <article v-else-if="toolId === 'lingqian'" class="work-card oracle-card lingqian-ritual">
           <PanelHead kicker="Spiritual Lot" title="灵签占问" :badge="lot.level" />
-          <label class="ds-field wide"><span>所问之事</span><input v-model.trim="question" placeholder="例如：这段关系是否还适合继续推进" /></label>
-          <button class="ds-button primary" type="button" @click="drawLot">诚心抽签</button>
-          <ResultBlock :title="lot.title" :copy="lot.text" />
+          <div class="lingqian-hero">
+            <div>
+              <button class="ds-button primary" type="button" @click="drawLot">抽取灵签</button>
+              <span>今日可抽取 3 次</span>
+            </div>
+          </div>
+          <div class="lingqian-result">
+            <div class="lot-stick"><span>{{ lot.title.replace('：', '\n') }}</span></div>
+            <section>
+              <h3>{{ lot.title }}</h3>
+              <strong>签文</strong>
+              <p>{{ lot.text }}</p>
+              <div class="lot-tags"><span>事业</span><span>财运</span><span>感情</span><span>健康</span></div>
+            </section>
+          </div>
         </article>
 
-        <article v-else-if="toolId === 'jiemeng'" class="work-card oracle-card">
+        <article v-else-if="toolId === 'jiemeng'" class="work-card oracle-card dream-ritual">
           <PanelHead kicker="Dream Reading" title="梦境解析" badge="梦象记录" />
-          <div class="form-grid">
-            <label class="ds-field wide"><span>梦境内容</span><textarea v-model.trim="dreamForm.dream" placeholder="写下梦里最清楚的画面、人物、地点或情绪"></textarea></label>
-            <label class="ds-field"><span>醒来情绪</span><select v-model="dreamForm.mood"><option>平静</option><option>焦虑</option><option>害怕</option><option>怀念</option><option>疑惑</option></select></label>
-            <label class="ds-field"><span>现实背景</span><input v-model.trim="dreamForm.context" placeholder="最近卡住的事情" /></label>
+          <p>请尽可能详细地描述您的梦境，包括场景、人物、事件、情绪感受等细节。</p>
+          <label class="ds-field wide dream-textarea"><span>梦境内容</span><textarea v-model.trim="dreamForm.dream" placeholder="请输入您的梦境内容..."></textarea></label>
+          <div class="dream-prompts">
+            <button type="button">梦中的主要场景是什么？</button>
+            <button type="button">出现了哪些人物或动物？</button>
+            <button type="button">发生了什么事情？</button>
+            <button type="button">您的情绪感受如何？</button>
+            <button type="button">梦中有哪些特别的物品或符号？</button>
+            <button type="button">梦醒时的第一感受？</button>
           </div>
-          <button class="ds-button primary" type="button" @click="analyzeDream">解析梦境</button>
+          <button class="ds-button primary dream-action" type="button" @click="analyzeDream">开始解析</button>
           <ResultBlock title="梦象提示" :copy="dreamResult" />
         </article>
 
-        <article v-else-if="toolId === 'qiming'" class="work-card oracle-card">
+        <article v-else-if="toolId === 'qiming'" class="work-card oracle-card qiming-ritual">
           <PanelHead kicker="Naming" title="美称生成" badge="候选名册" />
-          <div class="form-grid">
+          <div class="form-grid qiming-form">
             <label class="ds-field"><span>姓氏</span><input v-model.trim="nameForm.familyName" placeholder="例如：林" /></label>
             <label class="ds-field"><span>性别</span><select v-model="nameForm.gender"><option>男</option><option>女</option><option>不限</option></select></label>
             <label class="ds-field"><span>农历生日</span><input v-model.trim="nameForm.birth" placeholder="例如：2024-04-16" /></label>
@@ -108,7 +125,15 @@
               <span>{{ item.time }}</span>
             </button>
           </div>
-          <p v-else class="empty-side-note">暂无最近记录。使用工具后会自动显示在这里。</p>
+          <RitualState
+            v-else
+            compact
+            :bordered="false"
+            variant="empty"
+            heading-level="3"
+            title="暂无最近记录"
+            description="使用工具后会自动显示在这里。"
+          />
         </article>
         <article class="right-rail-card">
           <h3>推荐功能</h3>
@@ -127,6 +152,7 @@
 <script setup>
 import { computed, defineComponent, h, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import RitualState from '../components/RitualState.vue'
 
 const ResultBlock = defineComponent({
   props: { title: String, copy: String },
@@ -387,6 +413,119 @@ function offerIncense() {
   gap: 18px;
 }
 
+.lingqian-hero {
+  min-height: 210px;
+  display: grid;
+  align-items: center;
+  padding: 26px;
+  border: 1px solid rgba(215, 179, 95, 0.14);
+  border-radius: var(--radius-xs);
+  background:
+    linear-gradient(90deg, rgba(13, 9, 7, 0.72), rgba(13, 9, 7, 0.12)),
+    radial-gradient(circle at 76% 42%, rgba(215, 179, 95, 0.2), transparent 32%);
+}
+
+.lingqian-hero div {
+  display: grid;
+  width: min(320px, 100%);
+  gap: 12px;
+  text-align: center;
+}
+
+.lingqian-hero span {
+  color: var(--paper-dim);
+}
+
+.lingqian-result {
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  gap: 24px;
+  align-items: center;
+  padding: 18px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-xs);
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.lot-stick {
+  display: grid;
+  min-height: 270px;
+  place-items: center;
+  border: 1px solid rgba(215, 179, 95, 0.22);
+  border-radius: var(--radius-xs);
+  background: radial-gradient(circle, rgba(215, 179, 95, 0.14), rgba(13, 9, 7, 0.62));
+}
+
+.lot-stick span {
+  color: var(--ink);
+  writing-mode: vertical-rl;
+  white-space: pre-line;
+  font-family: var(--font-display);
+  font-size: 24px;
+}
+
+.lingqian-result h3 {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 400;
+}
+
+.lingqian-result strong,
+.dream-ritual p {
+  color: var(--paper-dim);
+}
+
+.lot-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.lot-tags span,
+.dream-prompts button {
+  padding: 6px 12px;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: 999px;
+  color: var(--paper-dim);
+  background: rgba(255, 247, 231, 0.04);
+}
+
+.dream-ritual {
+  position: relative;
+  overflow: hidden;
+  min-height: 560px;
+}
+
+.dream-textarea textarea {
+  min-height: 190px;
+}
+
+.dream-prompts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dream-action {
+  width: min(280px, 100%);
+  justify-self: center;
+}
+
+.qiming-ritual {
+  padding: 30px;
+}
+
+.qiming-form {
+  grid-template-columns: 160px 160px 240px minmax(260px, 1fr);
+  align-items: end;
+}
+
+.qiming-form .wide {
+  grid-column: auto;
+}
+
 .panel-head {
   display: flex;
   align-items: flex-start;
@@ -579,6 +718,19 @@ function offerIncense() {
 
   .name-board-head em {
     text-align: left;
+  }
+
+  .lingqian-result,
+  .qiming-form {
+    grid-template-columns: 1fr;
+  }
+
+  .lot-stick {
+    min-height: 190px;
+  }
+
+  .qiming-form .wide {
+    grid-column: 1 / -1;
   }
 }
 </style>

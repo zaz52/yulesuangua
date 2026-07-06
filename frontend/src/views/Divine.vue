@@ -49,7 +49,7 @@
 
         <div class="work-tabs"><span class="active">基础信息</span><span>排盘结果</span></div>
 
-        <section class="primary-work-grid">
+        <section class="primary-work-grid" :class="{ 'is-qimen-work': skillId === 'qimen' }">
           <article class="form-panel oracle-card">
             <div class="panel-head">
               <div>
@@ -94,7 +94,7 @@
               <label class="ds-field wide"><span>事情背景</span><input v-model.trim="mind.context" placeholder="简单说说发生了什么，或你卡在哪里" /></label>
             </div>
 
-            <div v-else class="form-grid">
+            <div v-else class="form-grid event-form-grid">
               <label class="ds-field"><span>起课时间</span><input v-model="eventForm.datetime" type="datetime-local" /></label>
               <label class="ds-field"><span>地点/方位</span><input v-model.trim="eventForm.place" placeholder="例如：杭州 / 东南 / 不确定" /></label>
               <label class="ds-field"><span>事件类型</span><select v-model="eventForm.topic"><option>合作/项目</option><option>出行/迁移</option><option>求职/事业</option><option>感情/关系</option><option>财务/交易</option><option>健康/心态</option><option>其他</option></select></label>
@@ -151,11 +151,13 @@
             <p>{{ skillInfo.emptyCopy }}</p>
           </article>
 
-          <article v-if="loading" class="empty-card oracle-card">
-            <span class="loading-ring"></span>
-            <h2>正在推演</h2>
-            <p>正在连接后端和术法提示词，请稍候。</p>
-          </article>
+          <RitualState
+            v-if="loading"
+            class="oracle-card"
+            variant="loading"
+            title="正在推演"
+            description="正在连接后端和术法提示词，请稍候。"
+          />
 
           <article v-for="(resp, index) in responses" :key="index" class="answer-card oracle-card">
             <div class="answer-head">
@@ -163,7 +165,16 @@
               <time>{{ today }}</time>
             </div>
             <VisualBoard v-if="typeof resp !== 'string' && resp.board" :board="resp.board" />
-            <AnswerText :text="typeof resp === 'string' ? resp : resp.text" />
+            <RitualState
+              v-if="typeof resp !== 'string' && resp.error"
+              compact
+              variant="error"
+              title="解读暂时失败"
+              :description="resp.text"
+              :actions="[{ key: 'reset', label: '清空后重试', tone: 'ghost' }]"
+              @action="handleStateAction"
+            />
+            <AnswerText v-else :text="typeof resp === 'string' ? resp : resp.text" />
           </article>
         </section>
       </section>
@@ -184,7 +195,15 @@
               <span>{{ item.time }}</span>
             </button>
           </div>
-          <p v-else class="empty-side-note">暂无最近记录。完成一次问卦后会自动显示在这里。</p>
+          <RitualState
+            v-else
+            compact
+            :bordered="false"
+            variant="empty"
+            heading-level="3"
+            title="暂无最近记录"
+            description="完成一次问卦后会自动显示在这里。"
+          />
         </article>
         <article class="right-rail-card">
           <h3>推荐功能</h3>
@@ -203,6 +222,9 @@
 import { computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { calculateChart, divineStream } from '../api/divine'
+import QimenBoard from '../components/QimenBoard.vue'
+import RitualState from '../components/RitualState.vue'
+import { buildQimenFallbackBoard } from '../domain/qimen'
 
 const route = useRoute()
 const router = useRouter()
@@ -411,18 +433,12 @@ function buildBoard(chartResult = null) {
         fiveElementsClass: ziweiElementClass(),
       },
     },
-    qimen: {
-      center: {
-        time: eventForm.value.datetime ? eventForm.value.datetime.replace('T', ' ') : '当前起局',
-        topic: eventForm.value.topic || '所问之事',
-        place: eventForm.value.place || '方位待定',
-      },
-      cells: [
-        ['巽四', '杜门', '天辅', '东南'], ['离九', '景门', '天英', '正南'], ['坤二', '死门', '天芮', '西南'],
-        ['震三', '伤门', '天冲', '正东'], ['中五', eventForm.value.topic, '值符', '核心'], ['兑七', '惊门', '天柱', '正西'],
-        ['艮八', '生门', '天任', '东北'], ['坎一', '休门', '天蓬', '正北'], ['乾六', '开门', '天心', '西北'],
-      ],
-    },
+    qimen: buildQimenFallbackBoard({
+      datetime: eventForm.value.datetime,
+      topic: eventForm.value.topic,
+      place: eventForm.value.place,
+      today: today.value,
+    }),
     liuyao: {
       lines: [
         ['上爻', '阴爻', '父母', '应', '收束与外部'],
@@ -535,11 +551,17 @@ async function sendMessage() {
   } catch (error) {
     const last = responses.value[responses.value.length - 1]
     if (last && typeof last !== 'string') {
-      responses.value[responses.value.length - 1] = { ...last, text: `暂时无法完成推演：${error.message}`, streaming: false }
+      responses.value[responses.value.length - 1] = { ...last, text: `暂时无法完成推演：${error.message}`, streaming: false, error: true }
     } else {
-      responses.value.push(`暂时无法完成推演：${error.message}`)
+      responses.value.push({ text: `暂时无法完成推演：${error.message}`, streaming: false, error: true })
     }
     loading.value = false
+  }
+}
+
+function handleStateAction(action) {
+  if (action?.key === 'reset') {
+    responses.value = []
   }
 }
 
@@ -669,32 +691,7 @@ function normalizeZiweiPalaces(data) {
 }
 
 function renderQimenBoard(data) {
-  const cells = (data.cells || []).filter((cell) => cell[0] !== '中五')
-  const center = data.center || {}
-  const meta = data.meta || {}
-  return h('div', { class: 'qimen-wheel' }, [
-    h('div', { class: 'qimen-ring outer' }),
-    h('div', { class: 'qimen-ring middle' }),
-    h('div', { class: 'qimen-ring inner' }),
-    ...cells.map((cell, index) => h('div', {
-      class: 'qimen-sector',
-      style: { '--a': `${index * 45}deg` },
-    }, [
-      h('span', cell[3]),
-      h('strong', cell[1]),
-      h('em', cell[2]),
-      h('small', cell[0]),
-    ])),
-    h('div', { class: 'qimen-wheel-center' }, [
-      h('b', center.topic || meta.juShu || '奇门盘式'),
-      h('span', center.time || '起局时间'),
-      h('small', `值符：${meta.zhiFu || '天心'} · 值使：${meta.zhiShi || '开门'} · ${center.place || '方位待定'}`),
-    ]),
-    h('div', { class: 'qimen-compass north' }, '北'),
-    h('div', { class: 'qimen-compass east' }, '东'),
-    h('div', { class: 'qimen-compass south' }, '南'),
-    h('div', { class: 'qimen-compass west' }, '西'),
-  ])
+  return h(QimenBoard, { data })
 }
 
 function renderLiuyaoBoard(data) {
@@ -721,31 +718,47 @@ function renderLiuyaoBoard(data) {
 
 function renderMeihuaBoard(data) {
   const blocks = data.blocks || []
-  return h('div', { class: 'meihua-flow' }, [
-    ...blocks.map((block, index) => h('div', { class: ['meihua-node', index === 3 && 'is-relation'] }, [
-      h('span', block[0]),
-      h('strong', block[1]),
+  const petals = [
+    blocks[0] || ['离', '本卦', '初始'],
+    ['兑', '象意', '外应'],
+    blocks[2] || ['坤', '变卦', '趋势'],
+    blocks[3] || ['坎', '体用', '生克'],
+    ['艮', '互象', '过程'],
+    blocks[1] || ['震', '互卦', '暗线'],
+  ]
+  return h('div', { class: 'meihua-plum-board' }, [
+    h('div', { class: 'meihua-plum-center' }, [h('b', '☯'), h('span', '数由心生')]),
+    ...petals.map((block, index) => h('div', { class: 'meihua-petal', style: { '--a': `${index * 60}deg` } }, [
+      h('strong', block[0]),
+      h('i', '☰'),
+      h('span', block[1]),
       h('em', block[2]),
     ])),
+    h('p', { class: 'meihua-plum-note' }, '数由心生，象从数起，心诚则灵，卦显其义。'),
   ])
 }
 
 function renderDaliurenBoard(data) {
   const items = data.items || []
-  return h('div', { class: 'daliuren-board' }, [
-    h('div', { class: 'daliuren-core' }, [
-      h('span', '课体'),
-      h('strong', items[0]?.[1] || '四课待排'),
-      h('em', '四课定事体，三传看流转'),
+  const pass = (items[1]?.[1] || '初传 -> 中传 -> 末传').split('->').map((item) => item.trim())
+  const rings = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
+  return h('div', { class: 'daliuren-plate' }, [
+    h('div', { class: 'daliuren-ring outer' }, rings.map((item, index) => h('span', { style: { '--a': `${index * 30}deg` } }, item))),
+    h('div', { class: 'daliuren-ring middle' }, ['青龙', '勾陈', '朱雀', '六合', '白虎', '玄武'].map((item, index) => h('span', { style: { '--a': `${index * 60 + 15}deg` } }, item))),
+    h('div', { class: 'daliuren-center' }, [
+      h('strong', eventForm.value.datetime ? eventForm.value.datetime.slice(11) || '占时' : '戊戌时'),
+      h('span', '旬首：甲戌'),
+      h('span', '值符：天心'),
+      h('span', '值使：开门'),
     ]),
-    h('div', { class: 'daliuren-pass' }, ['初传', '中传', '末传'].map((name, index) => h('div', [
+    h('div', { class: 'daliuren-pass-strip' }, ['初传', '中传', '末传'].map((name, index) => h('div', [
       h('span', name),
-      h('strong', (items[1]?.[1] || '初传 -> 中传 -> 末传').split('->')[index]?.trim() || '待排'),
+      h('strong', pass[index] || ['癸酉', '壬申', '辛未'][index]),
     ]))),
-    h('div', { class: 'daliuren-grid' }, items.slice(2).map((item) => h('div', [
-      h('span', item[0]),
-      h('strong', item[1]),
-    ]))),
+    h('div', { class: 'daliuren-foot' }, [
+      h('span', `四课：${items[0]?.[1] || '龙蛇 勾贵 朱合 阴阳'}`),
+      h('span', `课体：${items[2]?.[1] || '神将定吉凶'}`),
+    ]),
   ])
 }
 
@@ -869,6 +882,8 @@ function renderGenericBoard(data) {
 
 .divine-shell {
   align-items: start;
+  grid-template-columns: 190px minmax(0, 1fr) 230px;
+  width: min(1720px, 100%);
 }
 
 .skill-hero {
@@ -912,6 +927,10 @@ function renderGenericBoard(data) {
   align-items: stretch;
 }
 
+.primary-work-grid.is-qimen-work {
+  grid-template-columns: minmax(280px, 0.58fr) minmax(0, 1.42fr);
+}
+
 .primary-work-grid .form-panel,
 .board-preview-panel {
   min-height: 560px;
@@ -919,6 +938,15 @@ function renderGenericBoard(data) {
 
 .primary-work-grid .form-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.primary-work-grid.is-qimen-work .event-form-grid {
+  grid-template-columns: 1fr;
+}
+
+.primary-work-grid.is-qimen-work .event-form-grid .ds-field,
+.primary-work-grid.is-qimen-work .event-form-grid .info-chip {
+  grid-column: 1 / -1;
 }
 
 .inline-question {
@@ -933,7 +961,38 @@ function renderGenericBoard(data) {
   display: grid;
   align-content: start;
   gap: 14px;
-  padding: 22px;
+  padding: 20px;
+}
+
+.divine-shell .right-rail-card {
+  padding: 14px;
+}
+
+.divine-shell .right-rail-card h3 {
+  font-size: 23px;
+}
+
+.divine-shell .right-rail .ritual-state {
+  padding: 8px;
+}
+
+.divine-shell .right-rail .ritual-state-title {
+  font-size: 24px;
+}
+
+.divine-shell .right-rail .quick-icons {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.divine-shell .right-rail .quick-icons button {
+  min-height: 66px;
+  padding: 7px;
+}
+
+.divine-shell .right-rail .quick-icons b {
+  width: 30px;
+  height: 30px;
 }
 
 .board-preview-panel .visual-board {
@@ -1139,15 +1198,6 @@ function renderGenericBoard(data) {
   text-align: center;
 }
 
-.loading-ring {
-  width: 48px;
-  height: 48px;
-  border: 2px solid rgba(215, 179, 95, 0.26);
-  border-top-color: var(--seal);
-  border-radius: 50%;
-  animation: slow-rotate 1s linear infinite;
-}
-
 .visual-board {
   display: grid;
   gap: 14px;
@@ -1172,7 +1222,6 @@ function renderGenericBoard(data) {
 .ziwei-palace-grid,
 .ziwei-dial,
 .qimen-nine-grid,
-.qimen-wheel,
 .liuyao-layout,
 .liuyao-pro-lines,
 .meihua-flow,
@@ -1366,109 +1415,6 @@ function renderGenericBoard(data) {
   color: var(--paper-dim);
 }
 
-.qimen-wheel {
-  display: grid;
-  width: min(620px, 100%);
-  aspect-ratio: 1;
-  place-items: center;
-  justify-self: center;
-  overflow: visible;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle, rgba(13, 9, 7, 0.86) 0 25%, rgba(215, 179, 95, 0.08) 26% 32%, transparent 33%),
-    conic-gradient(from -22.5deg, rgba(215, 179, 95, 0.06) 0 45deg, rgba(184, 58, 47, 0.09) 45deg 90deg, rgba(215, 179, 95, 0.06) 90deg 135deg, rgba(79, 155, 131, 0.08) 135deg 180deg, rgba(215, 179, 95, 0.06) 180deg 225deg, rgba(109, 150, 170, 0.09) 225deg 270deg, rgba(215, 179, 95, 0.06) 270deg 315deg, rgba(184, 58, 47, 0.08) 315deg 360deg),
-    rgba(0, 0, 0, 0.16);
-  box-shadow: inset 0 0 55px rgba(0, 0, 0, 0.42), 0 0 32px rgba(215, 179, 95, 0.12);
-}
-
-.qimen-ring,
-.qimen-sector,
-.qimen-wheel-center,
-.qimen-compass {
-  position: absolute;
-}
-
-.qimen-ring {
-  border: 1px solid rgba(215, 179, 95, 0.3);
-  border-radius: 50%;
-  pointer-events: none;
-}
-
-.qimen-ring.outer {
-  inset: 4%;
-}
-
-.qimen-ring.middle {
-  inset: 18%;
-}
-
-.qimen-ring.inner {
-  inset: 34%;
-}
-
-.qimen-sector {
-  display: grid;
-  width: 110px;
-  min-height: 94px;
-  place-items: center;
-  gap: 2px;
-  padding: 10px;
-  border: 1px solid rgba(215, 179, 95, 0.16);
-  border-radius: var(--radius-xs);
-  background: rgba(13, 9, 7, 0.54);
-  text-align: center;
-  transform: rotate(var(--a)) translateY(-220px) rotate(calc(-1 * var(--a)));
-}
-
-.qimen-sector span,
-.qimen-compass {
-  color: var(--gold-bright);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.qimen-sector strong {
-  color: var(--gold-bright);
-  font-family: var(--font-display);
-  font-size: 27px;
-  font-weight: 400;
-  line-height: 1.1;
-}
-
-.qimen-sector em,
-.qimen-sector small,
-.qimen-wheel-center span,
-.qimen-wheel-center small {
-  color: var(--paper-dim);
-  font-style: normal;
-}
-
-.qimen-wheel-center {
-  display: grid;
-  width: 188px;
-  min-height: 148px;
-  place-items: center;
-  gap: 7px;
-  padding: 18px;
-  border: 1px solid rgba(240, 217, 132, 0.42);
-  border-radius: 50%;
-  background: rgba(13, 9, 7, 0.9);
-  text-align: center;
-  box-shadow: 0 0 24px rgba(215, 179, 95, 0.15);
-}
-
-.qimen-wheel-center b {
-  color: var(--gold-bright);
-  font-family: var(--font-display);
-  font-size: 28px;
-  font-weight: 400;
-}
-
-.qimen-compass.north { top: 1%; }
-.qimen-compass.south { bottom: 1%; }
-.qimen-compass.east { right: 1%; }
-.qimen-compass.west { left: 1%; }
-
 .ziwei-palace-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
@@ -1658,6 +1604,96 @@ function renderGenericBoard(data) {
   padding: 14px;
 }
 
+.meihua-plum-board {
+  position: relative;
+  display: grid;
+  width: min(620px, 100%);
+  aspect-ratio: 1.12;
+  place-items: center;
+  justify-self: center;
+  overflow: hidden;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: var(--radius-sm);
+  background:
+    radial-gradient(circle at 50% 50%, rgba(215, 179, 95, 0.16), transparent 22%),
+    radial-gradient(circle at 18% 20%, rgba(184, 58, 47, 0.18), transparent 28%),
+    rgba(0, 0, 0, 0.12);
+}
+
+.meihua-plum-center {
+  position: absolute;
+  z-index: 3;
+  display: grid;
+  width: 128px;
+  height: 128px;
+  place-items: center;
+  border: 1px solid rgba(240, 217, 132, 0.42);
+  border-radius: 50%;
+  background: rgba(13, 9, 7, 0.88);
+  color: var(--gold-bright);
+  text-align: center;
+}
+
+.meihua-plum-center b {
+  font-size: 48px;
+  line-height: 1;
+}
+
+.meihua-plum-center span,
+.meihua-plum-note {
+  color: var(--paper-dim);
+  font-size: 13px;
+}
+
+.meihua-petal {
+  position: absolute;
+  display: grid;
+  width: 138px;
+  min-height: 138px;
+  place-items: center;
+  align-content: center;
+  gap: 5px;
+  padding: 14px;
+  border: 1px solid rgba(215, 179, 95, 0.28);
+  border-radius: 48% 52% 48% 52%;
+  background: radial-gradient(circle, rgba(215, 179, 95, 0.12), rgba(13, 9, 7, 0.7));
+  text-align: center;
+  transform: rotate(var(--a)) translateY(-190px) rotate(calc(-1 * var(--a)));
+}
+
+.meihua-petal strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+}
+
+.meihua-petal i {
+  color: var(--paper);
+  font-size: 26px;
+  font-style: normal;
+}
+
+.meihua-petal span {
+  color: var(--paper);
+  font-weight: 700;
+}
+
+.meihua-petal em {
+  color: var(--paper-dim);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.meihua-plum-note {
+  position: absolute;
+  right: 24px;
+  bottom: 18px;
+  left: 24px;
+  margin: 0;
+  text-align: center;
+}
+
 .meihua-node {
   position: relative;
   display: grid;
@@ -1722,6 +1758,162 @@ function renderGenericBoard(data) {
   grid-template-columns: 1fr 1.2fr;
   gap: 14px;
   padding: 14px;
+}
+
+.daliuren-plate {
+  position: relative;
+  display: grid;
+  width: min(620px, 100%);
+  aspect-ratio: 1;
+  place-items: center;
+  justify-self: center;
+  overflow: hidden;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: var(--radius-sm);
+  background:
+    radial-gradient(circle, rgba(215, 179, 95, 0.12), transparent 38%),
+    conic-gradient(from -15deg, rgba(215, 179, 95, 0.08), rgba(109, 150, 170, 0.08), rgba(184, 58, 47, 0.08), rgba(215, 179, 95, 0.08)),
+    rgba(0, 0, 0, 0.12);
+}
+
+.daliuren-ring,
+.daliuren-ring span,
+.daliuren-center,
+.daliuren-pass-strip,
+.daliuren-foot {
+  position: absolute;
+}
+
+.daliuren-ring {
+  border: 1px solid rgba(215, 179, 95, 0.28);
+  border-radius: 50%;
+}
+
+.daliuren-ring.outer {
+  inset: 8%;
+}
+
+.daliuren-ring.middle {
+  inset: 24%;
+}
+
+.daliuren-ring span {
+  top: 50%;
+  left: 50%;
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 22px;
+  transform: rotate(var(--a)) translateY(-244px) rotate(calc(-1 * var(--a)));
+}
+
+.daliuren-ring.middle span {
+  font-size: 15px;
+  transform: rotate(var(--a)) translateY(-164px) rotate(calc(-1 * var(--a)));
+}
+
+.daliuren-center {
+  display: grid;
+  width: 170px;
+  height: 170px;
+  place-items: center;
+  align-content: center;
+  gap: 6px;
+  border: 1px solid rgba(240, 217, 132, 0.46);
+  border-radius: 50%;
+  background: rgba(13, 9, 7, 0.9);
+  text-align: center;
+}
+
+.daliuren-center strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 400;
+}
+
+.daliuren-center span,
+.daliuren-foot span {
+  color: var(--paper-dim);
+  font-size: 12px;
+}
+
+.daliuren-pass-strip,
+.daliuren-foot {
+  right: 18px;
+  left: 18px;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  padding: 9px 12px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-xs);
+  background: rgba(0, 0, 0, 0.18);
+}
+
+.daliuren-pass-strip {
+  bottom: 54px;
+}
+
+.daliuren-foot {
+  bottom: 14px;
+}
+
+.daliuren-pass-strip div {
+  display: flex;
+  gap: 6px;
+}
+
+.daliuren-pass-strip span {
+  color: var(--paper-dim);
+}
+
+.daliuren-pass-strip strong {
+  color: var(--gold-bright);
+}
+
+:deep(.meihua-plum-board) {
+  position: relative;
+  display: grid;
+  width: min(620px, 100%);
+  aspect-ratio: 1.12;
+  place-items: center;
+  justify-self: center;
+  overflow: hidden;
+}
+
+:deep(.meihua-plum-center),
+:deep(.meihua-petal),
+:deep(.meihua-plum-note),
+:deep(.daliuren-ring),
+:deep(.daliuren-ring span),
+:deep(.daliuren-center),
+:deep(.daliuren-pass-strip),
+:deep(.daliuren-foot) {
+  position: absolute;
+}
+
+:deep(.meihua-petal) {
+  transform: rotate(var(--a)) translateY(-190px) rotate(calc(-1 * var(--a)));
+}
+
+:deep(.daliuren-plate) {
+  position: relative;
+  display: grid;
+  width: min(620px, 100%);
+  aspect-ratio: 1;
+  place-items: center;
+  justify-self: center;
+  overflow: hidden;
+}
+
+:deep(.daliuren-ring span) {
+  top: 50%;
+  left: 50%;
+  transform: rotate(var(--a)) translateY(-244px) rotate(calc(-1 * var(--a)));
+}
+
+:deep(.daliuren-ring.middle span) {
+  transform: rotate(var(--a)) translateY(-164px) rotate(calc(-1 * var(--a)));
 }
 
 .daliuren-core {
@@ -2077,6 +2269,10 @@ function renderGenericBoard(data) {
     grid-template-columns: 1fr;
   }
 
+  .primary-work-grid.is-qimen-work {
+    grid-template-columns: 1fr;
+  }
+
   .method-menu {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -2178,10 +2374,6 @@ function renderGenericBoard(data) {
     grid-column: 2 / -1;
   }
 
-  .qimen-wheel {
-    width: min(340px, 94vw);
-  }
-
   .ziwei-dial {
     width: min(350px, 94vw);
   }
@@ -2216,32 +2408,6 @@ function renderGenericBoard(data) {
     font-size: 19px;
   }
 
-  .qimen-sector {
-    width: 76px;
-    min-height: 70px;
-    padding: 6px;
-    transform: rotate(var(--a)) translateY(-124px) rotate(calc(-1 * var(--a)));
-  }
-
-  .qimen-sector strong {
-    font-size: 18px;
-  }
-
-  .qimen-sector em,
-  .qimen-sector small {
-    display: none;
-  }
-
-  .qimen-wheel-center {
-    width: 126px;
-    min-height: 104px;
-    padding: 10px;
-  }
-
-  .qimen-wheel-center b {
-    font-size: 20px;
-  }
-
   .meihua-node:not(:last-child)::after {
     top: auto;
     right: 50%;
@@ -2251,6 +2417,53 @@ function renderGenericBoard(data) {
 
   .xiaoliuren-wheel {
     width: min(330px, 94vw);
+  }
+
+  .meihua-plum-board,
+  .daliuren-plate {
+    width: min(330px, 94vw);
+  }
+
+  .meihua-petal {
+    width: 82px;
+    min-height: 82px;
+    padding: 7px;
+    transform: rotate(var(--a)) translateY(-112px) rotate(calc(-1 * var(--a)));
+  }
+
+  .meihua-petal strong,
+  .meihua-petal i {
+    font-size: 17px;
+  }
+
+  .meihua-petal em,
+  .meihua-plum-note,
+  .daliuren-foot {
+    display: none;
+  }
+
+  .meihua-plum-center {
+    width: 92px;
+    height: 92px;
+  }
+
+  .daliuren-ring span {
+    font-size: 15px;
+    transform: rotate(var(--a)) translateY(-132px) rotate(calc(-1 * var(--a)));
+  }
+
+  .daliuren-ring.middle span {
+    display: none;
+  }
+
+  .daliuren-center {
+    width: 118px;
+    height: 118px;
+  }
+
+  .daliuren-pass-strip {
+    bottom: 12px;
+    gap: 6px;
   }
 
   .xiaoliuren-gate {
