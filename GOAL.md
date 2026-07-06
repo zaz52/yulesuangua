@@ -491,5 +491,5 @@
   - `npm run build` 通过。
   - `node --check frontend/functions/api/[[path]].js` 通过。
   - `wrangler pages secret list` 确认 production 环境已存在 3 个 NVIDIA secret，值为加密状态。
-- 首次线上测试发现 `nvidia/llama-3.3-nemotron-super-49b-v1.5` 输出过短，已切换为更适合中文生成的 `qwen/qwen3-235b-a22b`。
+- 首次线上测试发现 `nvidia/llama-3.3-nemotron-super-49b-v1.5` 输出过短；`qwen/qwen3-235b-a22b` 在当前 NVIDIA 环境未成功调用，已改用 `nvidia/llama-3.1-nemotron-ultra-253b-v1` 并保留强化提示词。
 - 已强化系统提示词：要求直接输出完整解读，不输出“示例”或只输出框架。
