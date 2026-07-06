@@ -519,3 +519,14 @@
   - `node --check frontend/functions/api/[[path]].js` 通过。
   - Playwright 使用本机 Chrome 提交 `/divine/qimen` 后，只捕捉到 `/api/health`、`/api/metaphysics/calculate`、`/api/divine/qimen`，没有 `/api/consultations`。
   - 使用 `/divine/qimen` 和 `/tools/xianghuo` 后，`localStorage` 中没有任何 `qk_` key。
+
+### 2026-07-07 自定义域名接入
+
+- 已为 Cloudflare Pages 项目 `yulesuangua` 添加子域名 `suangua.weiyiai.top`。
+- 已在 Cloudflare DNS 为 `suangua.weiyiai.top` 添加 CNAME，目标为 `yulesuangua.pages.dev`。
+- 为了让 Pages 验证到真实 CNAME，当前 DNS 记录使用“仅 DNS”状态；如后续 Pages 域名状态完全 active，可再评估是否切回代理。
+- 验证结果：
+  - `nslookup suangua.weiyiai.top 1.1.1.1` 返回 `yulesuangua.pages.dev`。
+  - `https://suangua.weiyiai.top/` 返回 HTTP 200。
+  - `https://suangua.weiyiai.top/divine/qimen` 返回 HTTP 200。
+  - Playwright 使用本机 Chrome 在 390px 移动视口检查首页和奇门页均正常渲染，无页面级横向溢出。
