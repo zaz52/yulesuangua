@@ -625,3 +625,25 @@
 - 验证通过：`node --check frontend/functions/api/[[path]].js`。
 - 端到端验证通过：移动端核心路径 `/divine/qimen`、`/divine/bazi`、`/divine/ziwei`、`/divine/meihua`、`/divine/liuyao`、`/tools/qiming`、`/zhouyi` 均可打开并生成结果，无横向溢出，无 `qk_` 本地记录。
 - 聚焦验证通过：`/divine/bazi` 未填表单时按钮禁用并提示缺少“姓名/称呼、农历生日”，补全姓名、农历生日、出生时辰和问题后按钮可用，提交后渲染 `.answer-section`，无控制台错误、无横向溢出、无 `qk_` 本地记录。
+### 2026-07-07 术法专属结果结构与 AI 固定栏目
+
+- 当前任务：实现“术法专属结果结构 + AI 固定栏目输出”，让不同术法的解读不再共用泛泛段落，而是按八字、奇门、紫微、六爻、梅花等各自专业栏目输出。
+- 成功标准：
+  - 后端 `/api/divine/:skill` 对核心术法输出固定栏目要求，模型不得只输出自由散文。
+  - 前端结果页能识别固定栏目并展示专属结构，不同术法至少有不同的栏目名称、重点标签和视觉层级。
+  - 保持现有排盘、API、隐私策略不变：不写本地记录，不自动保存远端记录。
+  - `npm run build`、Functions 语法检查、核心浏览器路径验证通过。
+- 架构思路：
+  - 后端增加 `resultSchemas` 或扩展 `skillRubrics`，把每个术法的固定栏目、输出格式和禁止事项集中管理。
+  - AI 输出统一要求使用 `【栏目名】正文`，便于前端稳定解析。
+  - 前端 `AnswerText` 接收当前 `skillId`，根据术法定义渲染栏目顺序、空态兜底和重点摘要样式。
+- 完成记录：
+  - 后端新增 `resultSchemas`，覆盖八字、紫微、奇门、六爻、梅花、大六壬、小六壬、姻缘、合婚、佛学、风水、每日运势、塔罗。
+  - 后端模型提示词改为强制按 `resultSchema` 顺序输出 `【栏目名】正文`。
+  - 后端新增 `normalizeReadingOutput()`，当模型忽略格式输出自然段时，自动按当前术法 schema 重新包装，避免线上结果退回泛泛段落。
+  - 前端 `AnswerText` 接收 `skillId`，按当前术法显示栏目条、结果小节和“盘面/判断/行动/边界”标签。
+  - 前端解析器支持同一行多个 `【栏目】正文`，兼容流式文本合并和模型不稳定换行。
+  - 验证通过：`npm run build`、`node --check frontend/functions/api/[[path]].js`。
+  - 浏览器核心路径验证通过：`/divine/qimen`、`/divine/bazi`、`/divine/ziwei`、`/divine/meihua`、`/divine/liuyao`、`/tools/qiming`、`/zhouyi` 均可打开并生成结果，无横向溢出，无 `qk_` 本地记录。
+  - 生产 API 抽样通过：奇门返回 `【九宫总览】/【值符值使】/【门星神格局】...`，八字返回 `【四柱总览】/【日主五行】/【十神关系】...`。
+  - 生产前端验证通过：`https://suangua.weiyiai.top/divine/qimen` 提交后显示 7 个专属栏目，标签包含“盘面/判断/行动/边界”，无控制台错误、无横向溢出、无 `qk_` 本地记录。

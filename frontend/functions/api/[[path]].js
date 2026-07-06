@@ -96,6 +96,23 @@ const skillRubrics = {
   },
 }
 
+const resultSchemas = {
+  bazi: ['四柱总览', '日主五行', '十神关系', '阶段节奏', '关键矛盾', '行动建议', '风险提醒'],
+  ziwei: ['命身总览', '十二宫重点', '主星结构', '事业财帛', '关系迁移', '行动建议', '风险提醒'],
+  qimen: ['九宫总览', '值符值使', '门星神格局', '方位时机', '关键矛盾', '行动策略', '风险提醒'],
+  liuyao: ['本卦变卦', '世应用神', '动爻变化', '六亲关系', '应期倾向', '行动建议', '风险提醒'],
+  meihua: ['本互变卦', '体用生克', '动爻外应', '趋势判断', '关键矛盾', '行动建议', '风险提醒'],
+  daliuren: ['四课三传', '神将月将', '来意脉络', '事件走势', '关键矛盾', '行动建议', '风险提醒'],
+  xiaoliuren: ['六宫落点', '起因过程结果', '速断倾向', '应事时间', '行动建议', '风险提醒'],
+  yinyuan: ['关系现状', '缘分结构', '沟通阻力', '推进时机', '行动建议', '风险提醒'],
+  hehun: ['双方结构', '合盘重点', '磨合风险', '长期相处', '行动建议', '风险提醒'],
+  fojiao: ['当下心境', '执着所在', '观照方向', '当行之事', '风险提醒'],
+  fengshui: ['空间总览', '门窗动线', '床桌主位', '九宫方位', '调整建议', '风险提醒'],
+  'daily-fortune': ['今日主题', '宜行事项', '忌避事项', '情绪节奏', '行动建议', '风险提醒'],
+  tarot: ['牌阵总览', '牌面象征', '当前位置', '选择提醒', '行动建议', '风险提醒'],
+  default: ['盘面摘要', '关键结构', '问题重心', '趋势判断', '行动建议', '风险提醒'],
+}
+
 export async function onRequest(context) {
   const path = normalizePath(context.params.path)
 
@@ -227,6 +244,7 @@ async function generateReading(skill, payload, env) {
   ].filter(Boolean)
   const boardSummary = summarizeBoard(board)
   const boardFacts = extractBoardFacts(board)
+  const resultSchema = resultSchemas[skill] || resultSchemas.default
 
   if (env.OPENAI_API_KEY || env.NVIDIA_API_KEY || env.NVCF_API_KEY) {
     const modelText = await callOpenAICompatibleModel({
@@ -237,22 +255,59 @@ async function generateReading(skill, payload, env) {
       boardSummary,
       boardFacts,
       rubric,
+      resultSchema,
     }, env).catch(() => '')
-    if (modelText) return modelText
+    if (modelText) return normalizeReadingOutput(skill, modelText)
   }
 
   const focus = inferFocus(message)
   const rubricText = `${rubric.fallback} 重点维度：${rubric.dimensions.join('、')}。`
-  return [
-    `【${skillName}】盘面已成。本次解读以文化娱乐和行动复盘为边界，不作为医疗、法律、投资等现实决策依据。`,
-    contextLines.length ? `【基础信息】${contextLines.join('；')}` : '【基础信息】本次以当前填写内容和起课时间生成判断框架。',
-    `【盘面摘要】${boardSummary}`,
-    boardFacts.length ? `【盘面要点】${boardFacts.slice(0, 8).join('；')}` : `【解读框架】${rubricText}`,
-    `【问题重心】${focus}`,
-    `【趋势判断】${rubricText} 当前更适合先收束信息、确认关键变量，再推进下一步。若盘面中出现变动、空亡或冲克类信号，应降低一次性投入，改为小步验证。`,
-    `【行动建议】1. 把问题拆成可验证的一个动作；2. 先做低成本试探；3. 记录对方反馈或外部结果；4. 24 到 72 小时后再复盘是否加码。`,
-    `【风险提醒】若涉及金钱、合同、健康、婚姻承诺，请以现实证据和专业意见为准，问卦结果只用于整理思路。`,
-  ].join('\n')
+  const fallbackBodies = {
+    四柱总览: `${contextLines.join('；') || '本次以当前填写内容生成四柱判断框架。'} ${boardSummary}`,
+    日主五行: boardFacts.length ? boardFacts.slice(0, 4).join('；') : rubricText,
+    十神关系: '先看月令与日主，再看十神在现实里的资源、压力、表达和关系互动，不宜只按单一标签下结论。',
+    阶段节奏: '当前更适合先确认关键变量，再小步推进；若盘面有冲克或失衡信号，应先修正节奏。',
+    九宫总览: boardSummary,
+    值符值使: boardFacts.length ? boardFacts.slice(0, 5).join('；') : rubricText,
+    门星神格局: '门主行动入口，星主状态倾向，神主外部助力与变数，三者需要合看。',
+    方位时机: '先取盘面中稳定、可执行、阻力较低的方向和时间窗口，避免一次性重押。',
+    本卦变卦: boardSummary,
+    世应用神: boardFacts.length ? boardFacts.slice(0, 6).join('；') : rubricText,
+    动爻变化: '动爻代表当前问题的变化点，应优先观察它牵动的六亲、世应和变卦方向。',
+    本互变卦: boardSummary,
+    体用生克: boardFacts.length ? boardFacts.slice(0, 6).join('；') : rubricText,
+    动爻外应: '把时间、数字、外应和用户问题合看，重点看体用之间是相生、相克还是互耗。',
+    关键矛盾: focus,
+    趋势判断: `${rubricText} 当前宜先收束信息、确认关键变量，再推进下一步。`,
+    行动建议: '把问题拆成一个可验证动作；先做低成本试探；记录反馈；24 到 72 小时后复盘是否加码。',
+    行动策略: '先选低风险路径推进，保留回撤余地；若外部反馈不清晰，先等一个明确回信或可验证信号。',
+    风险提醒: '若涉及金钱、合同、健康、婚姻承诺，请以现实证据和专业意见为准，问卦结果只用于整理思路。',
+  }
+  return resultSchema.map((title) => `【${title}】${fallbackBodies[title] || fallbackBodies.趋势判断}`).join('\n')
+}
+
+function normalizeReadingOutput(skill, text) {
+  const clean = String(text || '').replace(/\r/g, '').trim()
+  if (!clean) return ''
+  const schema = resultSchemas[skill] || resultSchemas.default
+  const marked = [...clean.matchAll(/【([^】]{1,16})】([\s\S]*?)(?=【[^】]{1,16}】|$)/g)]
+    .map((match) => ({ title: match[1].trim(), body: match[2].trim() }))
+    .filter((item) => item.title && item.body)
+  const hasRequiredShape = marked.length >= Math.min(4, schema.length)
+    && marked.some((item) => /建议|策略|调整|当行/.test(item.title))
+    && marked.some((item) => /风险|提醒|边界/.test(item.title))
+  if (hasRequiredShape) return marked.map((item) => `【${item.title}】${item.body}`).join('\n')
+
+  const paragraphs = clean
+    .replace(/^data:\s*/gm, '')
+    .split(/\n{2,}|\\n\\n/)
+    .map((item) => item.replace(/\\n/g, '').replace(/\s+/g, ' ').trim())
+    .filter(Boolean)
+  const usable = paragraphs.length ? paragraphs : [clean.replace(/\s+/g, ' ')]
+  return schema.map((title, index) => {
+    const body = usable[index] || usable[usable.length - 1] || '请结合盘面继续观察。'
+    return `【${title}】${body}`
+  }).join('\n')
 }
 
 async function callOpenAICompatibleModel(input, env) {
@@ -275,7 +330,15 @@ async function callOpenAICompatibleModel(input, env) {
       messages: [
         {
           role: 'system',
-          content: '你是一个中文玄学文化娱乐应用的解读助手。必须直接输出完整解读，不要输出“示例”、不要只输出框架、不要停在标题。必须严格围绕用户选择的术法、盘面要点和指定术语展开，不要把不同术法混在一起。输出 6 到 8 段，包含：盘面摘要、关键结构、问题重心、趋势判断、行动建议、风险提醒。语气克制、可执行，不做绝对预测，不提供医疗法律投资结论。',
+          content: [
+            '你是一个中文玄学文化娱乐应用的解读助手。',
+            '必须直接输出完整解读，不要输出“示例”、不要只输出框架、不要停在标题。',
+            '必须严格围绕用户选择的术法、盘面要点和指定术语展开，不要把不同术法混在一起。',
+            '必须按用户 JSON 中 resultSchema 给出的栏目名和顺序输出，每一段格式必须是：`【栏目名】正文`。',
+            '不得新增无关栏目，不得省略“行动建议/行动策略”和“风险提醒”类栏目。',
+            '每个栏目正文 60 到 140 个中文字符，必须包含具体判断或行动含义，不要空泛套话。',
+            '语气克制、可执行，不做绝对预测，不提供医疗法律投资结论。',
+          ].join('\n'),
         },
         {
           role: 'user',

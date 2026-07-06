@@ -173,7 +173,7 @@
               :actions="[{ key: 'reset', label: '清空后重试', tone: 'ghost' }]"
               @action="handleStateAction"
             />
-            <AnswerText v-else :text="typeof resp === 'string' ? resp : resp.text" />
+            <AnswerText v-else :text="typeof resp === 'string' ? resp : resp.text" :skill-id="skillId" />
           </article>
         </section>
       </section>
@@ -283,6 +283,29 @@ const formTipMap = {
     { title: '信息越明确越好', text: '请写清楚时间、背景和你真正关心的点。' },
     { title: '结果仅作文化娱乐参考', text: '重要现实事项请结合专业意见。' },
   ],
+}
+const resultSectionSchemas = {
+  bazi: ['四柱总览', '日主五行', '十神关系', '阶段节奏', '关键矛盾', '行动建议', '风险提醒'],
+  ziwei: ['命身总览', '十二宫重点', '主星结构', '事业财帛', '关系迁移', '行动建议', '风险提醒'],
+  qimen: ['九宫总览', '值符值使', '门星神格局', '方位时机', '关键矛盾', '行动策略', '风险提醒'],
+  liuyao: ['本卦变卦', '世应用神', '动爻变化', '六亲关系', '应期倾向', '行动建议', '风险提醒'],
+  meihua: ['本互变卦', '体用生克', '动爻外应', '趋势判断', '关键矛盾', '行动建议', '风险提醒'],
+  daliuren: ['四课三传', '神将月将', '来意脉络', '事件走势', '关键矛盾', '行动建议', '风险提醒'],
+  xiaoliuren: ['六宫落点', '起因过程结果', '速断倾向', '应事时间', '行动建议', '风险提醒'],
+  yinyuan: ['关系现状', '缘分结构', '沟通阻力', '推进时机', '行动建议', '风险提醒'],
+  hehun: ['双方结构', '合盘重点', '磨合风险', '长期相处', '行动建议', '风险提醒'],
+  fojiao: ['当下心境', '执着所在', '观照方向', '当行之事', '风险提醒'],
+  fengshui: ['空间总览', '门窗动线', '床桌主位', '九宫方位', '调整建议', '风险提醒'],
+  'daily-fortune': ['今日主题', '宜行事项', '忌避事项', '情绪节奏', '行动建议', '风险提醒'],
+  tarot: ['牌阵总览', '牌面象征', '当前位置', '选择提醒', '行动建议', '风险提醒'],
+}
+const resultSectionAliases = {
+  bazi: { 盘面摘要: '四柱总览', 盘面要点: '日主五行', 趋势判断: '阶段节奏' },
+  ziwei: { 盘面摘要: '命身总览', 关键结构: '主星结构', 趋势判断: '事业财帛' },
+  qimen: { 盘面摘要: '九宫总览', 盘面要点: '值符值使', 趋势判断: '方位时机', 行动建议: '行动策略' },
+  liuyao: { 盘面摘要: '本卦变卦', 盘面要点: '世应用神', 趋势判断: '应期倾向' },
+  meihua: { 盘面摘要: '本互变卦', 盘面要点: '体用生克' },
+  default: { 盘面摘要: '盘面摘要', 关键结构: '关键结构', 趋势判断: '趋势判断' },
 }
 const dimensionChips = computed(() => dimensionMap[skillId.value] || dimensionMap.bazi)
 const formTips = computed(() => formTipMap[skillId.value] || formTipMap.default)
@@ -605,15 +628,17 @@ const VisualBoard = defineComponent({
 })
 
 const AnswerText = defineComponent({
-  props: { text: String },
+  props: { text: String, skillId: String },
   setup(props) {
     return () => {
-      const sections = parseAnswerSections(props.text)
+      const sections = normalizeAnswerSections(parseAnswerSections(props.text), props.skillId)
       const visibleSections = sections.length ? sections : [{ title: '生成中', body: '解读生成中...' }]
+      const expectedTitles = resultSectionSchemas[props.skillId] || []
       return h('section', { class: 'answer-text' }, [
         h('div', { class: 'answer-text-head' }, [h('span', '解读'), h('strong', 'AI 文字仅作文化娱乐参考')]),
-        h('div', { class: 'answer-text-body' }, visibleSections.map((section) => h('article', { class: 'answer-section' }, [
-          h('strong', section.title),
+        expectedTitles.length ? h('div', { class: 'answer-schema-strip', 'aria-label': '本次解读栏目' }, expectedTitles.map((title, index) => h('span', { key: title, class: index < visibleSections.length ? 'filled' : '' }, title))) : null,
+        h('div', { class: 'answer-text-body' }, visibleSections.map((section, index) => h('article', { key: `${section.title}-${index}`, class: 'answer-section' }, [
+          h('strong', [h('span', section.title), section.kind ? h('em', section.kind) : null]),
           h('p', section.body),
         ]))),
       ])
@@ -622,7 +647,16 @@ const AnswerText = defineComponent({
 })
 
 function parseAnswerSections(text = '') {
-  return String(text || '')
+  const normalized = String(text || '').replace(/\r/g, '').trim()
+  const markedSections = [...normalized.matchAll(/【([^】]{1,16})】([\s\S]*?)(?=【[^】]{1,16}】|$)/g)]
+    .map((match) => ({
+      title: match[1].trim(),
+      body: match[2].trim().replace(/\n+/g, ' ') || '请结合盘面继续观察。',
+    }))
+    .filter((section) => section.title && section.body)
+  if (markedSections.length) return markedSections
+
+  return normalized
     .split(/\n+/)
     .map((line) => line.trim())
     .filter(Boolean)
@@ -634,6 +668,34 @@ function parseAnswerSections(text = '') {
       if (line.length <= 18) return { title: line, body: '请继续查看下方解读。' }
       return { title: '解读要点', body: line }
     })
+}
+
+function normalizeAnswerSections(sections, skill) {
+  const schema = resultSectionSchemas[skill] || null
+  if (!schema) return sections.map((section) => ({ ...section, kind: sectionKind(section.title) }))
+  const aliases = resultSectionAliases[skill] || resultSectionAliases.default
+  const mapped = new Map()
+  const extras = []
+  for (const section of sections) {
+    const title = aliases[section.title] || section.title
+    if (schema.includes(title) && !mapped.has(title)) {
+      mapped.set(title, { ...section, title, kind: sectionKind(title) })
+    } else if (section.body && section.body !== '请继续查看下方解读。') {
+      extras.push({ ...section, title, kind: sectionKind(title) })
+    }
+  }
+  const ordered = schema
+    .filter((title) => mapped.has(title))
+    .map((title) => mapped.get(title))
+  return ordered.length ? [...ordered, ...extras.slice(0, 2)] : sections.map((section) => ({ ...section, kind: sectionKind(section.title) }))
+}
+
+function sectionKind(title) {
+  if (/建议|策略|调整|当行/.test(title)) return '行动'
+  if (/风险|忌避/.test(title)) return '边界'
+  if (/总览|结构|格局|卦|宫|盘|符|使|星|神|五行|十神|体用/.test(title)) return '盘面'
+  if (/趋势|时机|应期|节奏|关系|矛盾|阻力/.test(title)) return '判断'
+  return '要点'
 }
 
 function renderBoard(board) {
@@ -2200,6 +2262,29 @@ function renderGenericBoard(data) {
   gap: 8px;
 }
 
+.answer-schema-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: -2px 0 2px;
+}
+
+.answer-schema-strip span {
+  padding: 4px 8px;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: 999px;
+  color: rgba(245, 234, 212, 0.58);
+  background: rgba(0, 0, 0, 0.08);
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.answer-schema-strip span.filled {
+  border-color: rgba(215, 179, 95, 0.36);
+  color: var(--gold-bright);
+  background: rgba(215, 179, 95, 0.1);
+}
+
 .answer-section {
   display: grid;
   gap: 6px;
@@ -2211,11 +2296,27 @@ function renderGenericBoard(data) {
 }
 
 .answer-section strong {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   color: var(--gold-bright);
   font-family: var(--font-display);
   font-size: 21px;
   font-weight: 400;
   line-height: 1.2;
+}
+
+.answer-section strong em {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  border: 1px solid rgba(215, 179, 95, 0.22);
+  border-radius: 999px;
+  color: rgba(245, 234, 212, 0.62);
+  font-family: var(--font-sans);
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1;
 }
 
 .answer-section p {
