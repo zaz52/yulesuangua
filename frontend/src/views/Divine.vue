@@ -506,7 +506,13 @@ async function sendMessage() {
   await nextTick()
 
   try {
-    await divineStream(skillId.value, message, [], extra, (chunk) => {
+    await divineStream(skillId.value, message, [], {
+      ...extra,
+      ...chartPayload,
+      board,
+      chart: chartResult?.data || null,
+      boardType: board.type,
+    }, (chunk) => {
       answer += chunk
       const last = responses.value[responses.value.length - 1]
       if (last?.streaming) last.text = answer

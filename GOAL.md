@@ -583,3 +583,26 @@
   - Playwright 本地故障复现通过：第一次 `/api/health` 模拟 503，第二次模拟恢复 200；同一次 `/divine/qimen` 提交成功触发 `/api/metaphysics/calculate` 和 `/api/divine/qimen`，页面保留九宫盘，无横向溢出，`localStorage` 无 `qk_` key。
   - 已部署 Cloudflare Pages，预览地址 `https://c4a81844.yulesuangua.pages.dev`。
   - 生产域名 `https://suangua.weiyiai.top/api/health` 返回 `ok: true`，`/divine/qimen` 返回 200。
+
+### 2026-07-07 核心路径验收与 AI 输出质量优化
+
+- 当前任务：先做真实用户路径验收和 AI 输出质量优化，覆盖首页进入奇门、八字、紫微、梅花、六爻、起名、周易起卦等核心流程。
+- 验收标准：
+  - 每个核心工具输入后能看到对应专业盘面或结果，不退回泛泛文字。
+  - AI 解读要贴合术法，不同术法使用不同分析维度。
+  - 移动端和桌面端均无横向溢出、无控制台错误、无本地隐私记录。
+  - 发现问题后直接修复并重新验证。
+- 发现的问题：
+  - 前端提交时虽然已经生成专业盘面，但调用 `/api/divine/:skill` 时没有把 `board`、真实排盘数据和完整表单上下文传给后端，导致模型只看到用户问题，容易泛泛输出。
+  - 后端提示词只有部分代理术法的简短说明，八字、奇门等直连术法没有统一的专业维度要求，规则兜底也偏通用。
+- 已修复：
+  - `/divine/:skill` 提交时把 `chartPayload`、`board`、`chart` 和 `boardType` 一起传给 AI 解读接口。
+  - `frontend/functions/api/[[path]].js` 新增 `skillRubrics`，为八字、紫微、奇门、六爻、梅花、大六壬、小六壬、风水、塔罗定义专属维度和术语。
+  - 新增 `extractBoardFacts()`，把四柱、九宫、十二宫、六爻、本互变卦、塔罗牌阵等盘面事实压缩给模型和规则兜底使用。
+  - 强化模型 system prompt：必须围绕用户选择的术法、盘面要点和指定术语输出，不混用术法，不只给框架。
+- 验证结果：
+  - `npm run build` 通过。
+  - `node --check frontend/functions/api/[[path]].js` 通过。
+  - 已部署 Cloudflare Pages，预览地址 `https://a275317d.yulesuangua.pages.dev`。
+  - 生产 API 抽样通过：奇门命中“九宫/值符/值使/门/星”，八字命中“四柱/日主/五行/十神”，紫微命中“命宫/十二宫/事业宫”，梅花命中“本卦/互卦/变卦/体用”，六爻命中“本卦/变卦/动爻/世”。
+  - 浏览器移动端用户路径通过：`/divine/qimen`、`/divine/bazi`、`/divine/ziwei`、`/divine/meihua`、`/divine/liuyao` 输入后均生成结果卡和对应专业盘面；`/tools/qiming` 生成 6 个候选名；`/zhouyi` 可打开仪式页；无横向溢出、无控制台错误、无 `qk_` 本地记录。

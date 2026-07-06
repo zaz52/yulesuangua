@@ -48,6 +48,54 @@ const skillInstructions = {
   tarot: '请以塔罗牌阵文化娱乐视角回答，按照用户选择的牌阵模拟抽牌，并给出牌面象征、正逆位倾向、建议和现实边界。',
 }
 
+const skillRubrics = {
+  bazi: {
+    dimensions: ['四柱结构', '日主与五行', '十神关系', '阶段节奏', '行动建议'],
+    terms: ['年柱', '月柱', '日柱', '时柱', '天干', '地支', '藏干', '十神', '五行', '纳音', '长生'],
+    fallback: '围绕四柱、日主、五行偏枯、十神关系和阶段节奏来解读，不要只给性格判断。',
+  },
+  ziwei: {
+    dimensions: ['命身宫', '十二宫重点', '主星组合', '事业财帛迁移', '关系与行动'],
+    terms: ['命宫', '身宫', '十二宫', '主星', '辅星', '事业宫', '财帛宫', '迁移宫', '夫妻宫'],
+    fallback: '围绕命身宫、十二宫位和主星组合来解读，避免泛泛谈运势。',
+  },
+  qimen: {
+    dimensions: ['九宫格局', '值符值使', '门星神组合', '方位时机', '行动策略'],
+    terms: ['九宫', '值符', '值使', '门', '星', '神', '天盘干', '地盘干', '空亡', '马星'],
+    fallback: '围绕九宫、值符值使、门星神和方位时机解读，不要脱离盘面。',
+  },
+  liuyao: {
+    dimensions: ['本卦变卦', '世应关系', '动爻', '六亲用神', '应期与风险'],
+    terms: ['本卦', '变卦', '动爻', '世爻', '应爻', '六亲', '用神', '六神', '空亡'],
+    fallback: '围绕本卦、变卦、动爻、世应和六亲用神来解读。',
+  },
+  meihua: {
+    dimensions: ['本卦', '互卦', '变卦', '体用生克', '外应线索'],
+    terms: ['本卦', '互卦', '变卦', '体卦', '用卦', '动爻', '体用生克', '外应'],
+    fallback: '围绕本互变卦、体用生克和外应线索来解读。',
+  },
+  daliuren: {
+    dimensions: ['四课', '三传', '神将', '占时', '事件脉络'],
+    terms: ['四课', '三传', '初传', '中传', '末传', '天将', '月将', '占时'],
+    fallback: '围绕三传四课、神将和事件脉络来解读。',
+  },
+  xiaoliuren: {
+    dimensions: ['六宫落点', '起因过程结果', '速断倾向', '应期', '行动边界'],
+    terms: ['大安', '留连', '速喜', '赤口', '小吉', '空亡', '起因', '过程', '结果'],
+    fallback: '围绕小六壬六宫和起因、过程、结果做快速判断。',
+  },
+  fengshui: {
+    dimensions: ['朝向', '门窗动线', '床桌位置', '明堂靠山', '调整建议'],
+    terms: ['朝向', '门窗', '动线', '床位', '桌位', '明堂', '靠山', '九宫'],
+    fallback: '围绕朝向、门窗、动线、床桌位置和九宫方位给出空间调整建议。',
+  },
+  tarot: {
+    dimensions: ['牌阵位置', '牌面象征', '正逆位倾向', '选择提醒', '现实行动'],
+    terms: ['牌阵', '牌位', '正位', '逆位', '过去', '现在', '未来', '选择'],
+    fallback: '围绕牌阵位置、牌面象征和现实选择建议解读。',
+  },
+}
+
 export async function onRequest(context) {
   const path = normalizePath(context.params.path)
 
@@ -146,29 +194,62 @@ async function generateReading(skill, payload, env) {
   const profile = payload.profile || {}
   const relation = payload.relation || {}
   const event = payload.eventForm || payload.event || {}
+  const mind = payload.mind || {}
+  const space = payload.space || {}
+  const tarot = payload.tarot || {}
   const skillName = getSkillName(skill)
+  const rubric = skillRubrics[skill] || {
+    dimensions: ['问题重心', '盘面摘要', '趋势判断', '行动建议', '风险提醒'],
+    terms: [],
+    fallback: '围绕用户问题和盘面摘要做结构化解读。',
+  }
   const contextLines = [
     profile.name && `称呼：${profile.name}`,
+    profile.gender && `性别：${profile.gender}`,
     profile.birthDate && `农历生日：${profile.birthDate}`,
     profile.shichen && `时辰：${profile.shichen}`,
+    profile.place && `出生地：${profile.place}`,
     relation.status && `关系状态：${relation.status}`,
+    relation.partner && `对方信息：${relation.partner}`,
+    relation.focus && `关注点：${relation.focus}`,
     event.datetime && `起课时间：${event.datetime}`,
     event.topic && `事件类型：${event.topic}`,
+    payload.datetime && `排盘时间：${payload.datetime}`,
+    payload.place && `地点/方位：${payload.place}`,
+    payload.topic && `主题：${payload.topic}`,
+    mind.topic && `困惑类型：${mind.topic}`,
+    mind.mood && `当前心境：${mind.mood}`,
+    space.kind && `空间类型：${space.kind}`,
+    space.direction && `空间朝向：${space.direction}`,
+    space.layout && `布局描述：${space.layout}`,
+    tarot.spread && `塔罗牌阵：${tarot.spread}`,
+    tarot.topic && `塔罗主题：${tarot.topic}`,
   ].filter(Boolean)
+  const boardSummary = summarizeBoard(board)
+  const boardFacts = extractBoardFacts(board)
 
   if (env.OPENAI_API_KEY || env.NVIDIA_API_KEY || env.NVCF_API_KEY) {
-    const modelText = await callOpenAICompatibleModel({ skillName, message, board, contextLines }, env).catch(() => '')
+    const modelText = await callOpenAICompatibleModel({
+      skill,
+      skillName,
+      message,
+      contextLines,
+      boardSummary,
+      boardFacts,
+      rubric,
+    }, env).catch(() => '')
     if (modelText) return modelText
   }
 
   const focus = inferFocus(message)
-  const boardSummary = summarizeBoard(board)
+  const rubricText = `${rubric.fallback} 重点维度：${rubric.dimensions.join('、')}。`
   return [
     `【${skillName}】盘面已成。本次解读以文化娱乐和行动复盘为边界，不作为医疗、法律、投资等现实决策依据。`,
     contextLines.length ? `【基础信息】${contextLines.join('；')}` : '【基础信息】本次以当前填写内容和起课时间生成判断框架。',
     `【盘面摘要】${boardSummary}`,
+    boardFacts.length ? `【盘面要点】${boardFacts.slice(0, 8).join('；')}` : `【解读框架】${rubricText}`,
     `【问题重心】${focus}`,
-    `【趋势判断】当前更适合先收束信息、确认关键变量，再推进下一步。若盘面中出现变动、空亡或冲克类信号，应降低一次性投入，改为小步验证。`,
+    `【趋势判断】${rubricText} 当前更适合先收束信息、确认关键变量，再推进下一步。若盘面中出现变动、空亡或冲克类信号，应降低一次性投入，改为小步验证。`,
     `【行动建议】1. 把问题拆成可验证的一个动作；2. 先做低成本试探；3. 记录对方反馈或外部结果；4. 24 到 72 小时后再复盘是否加码。`,
     `【风险提醒】若涉及金钱、合同、健康、婚姻承诺，请以现实证据和专业意见为准，问卦结果只用于整理思路。`,
   ].join('\n')
@@ -194,7 +275,7 @@ async function callOpenAICompatibleModel(input, env) {
       messages: [
         {
           role: 'system',
-          content: '你是一个中文玄学文化娱乐应用的解读助手。必须直接输出完整解读，不要输出“示例”、不要只输出框架、不要停在标题。输出 5 到 7 段，包含盘面摘要、问题重心、趋势判断、行动建议、风险提醒。语气克制、可执行，不做绝对预测，不提供医疗法律投资结论。',
+          content: '你是一个中文玄学文化娱乐应用的解读助手。必须直接输出完整解读，不要输出“示例”、不要只输出框架、不要停在标题。必须严格围绕用户选择的术法、盘面要点和指定术语展开，不要把不同术法混在一起。输出 6 到 8 段，包含：盘面摘要、关键结构、问题重心、趋势判断、行动建议、风险提醒。语气克制、可执行，不做绝对预测，不提供医疗法律投资结论。',
         },
         {
           role: 'user',
@@ -633,6 +714,58 @@ function summarizeBoard(board) {
     return Object.entries(board.data.meta).slice(0, 5).map(([key, value]) => `${key}: ${valueText(value)}`).join('；')
   }
   return '盘面数据已生成，重点观察本卦/变卦、宫位、动爻或中心关系。'
+}
+
+function extractBoardFacts(board) {
+  if (!board) return []
+  const facts = []
+  const data = board.data || board
+  if (board.title) facts.push(`盘面：${board.title}`)
+  if (board.source) facts.push(`来源：${board.source}`)
+
+  collectNamedFacts(facts, data.meta, '元信息')
+  collectNamedFacts(facts, data.center, '中心')
+
+  if (Array.isArray(data.rows)) {
+    for (const row of data.rows.slice(0, 8)) {
+      if (Array.isArray(row)) facts.push(row.map(valueText).join('：'))
+    }
+  }
+  if (Array.isArray(data.cells)) {
+    for (const cell of data.cells.slice(0, 9)) {
+      facts.push(Array.isArray(cell) ? cell.map(valueText).join('/') : valueText(cell))
+    }
+  }
+  if (Array.isArray(data.lines)) {
+    for (const line of data.lines.slice(0, 6)) {
+      facts.push(Array.isArray(line) ? line.map(valueText).join('/') : valueText(line))
+    }
+  }
+  if (Array.isArray(data.palaces)) {
+    for (const palace of data.palaces.slice(0, 6)) {
+      facts.push(typeof palace === 'object'
+        ? [palace.name, palace.star, palace.note].filter(Boolean).map(valueText).join('/')
+        : valueText(palace))
+    }
+  }
+  for (const key of ['original', 'mutual', 'changed', 'relation']) {
+    if (data[key]) facts.push(`${key}：${valueText(data[key])}`)
+  }
+  if (Array.isArray(data.cards)) {
+    for (const card of data.cards.slice(0, 6)) {
+      facts.push(Array.isArray(card) ? card.map(valueText).join('/') : valueText(card))
+    }
+  }
+
+  return [...new Set(facts.filter(Boolean).map((item) => String(item).slice(0, 180)))].slice(0, 16)
+}
+
+function collectNamedFacts(facts, value, prefix) {
+  if (!value || typeof value !== 'object') return
+  for (const [key, item] of Object.entries(value).slice(0, 8)) {
+    const text = valueText(item, '')
+    if (text) facts.push(`${prefix}${key}：${text}`)
+  }
 }
 
 function chunkText(text, size = 48) {
