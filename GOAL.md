@@ -448,3 +448,46 @@
 - 已验证主站 `GET /api/health` 返回 `database: true`。
 - 已通过生产 API 完成咨询记录写入、详情读取、最近记录读取的冒烟测试，并删除测试记录。
 - 已验证 `https://yulesuangua.pages.dev/divine/qimen` 和 `https://yulesuangua.pages.dev/share/test-id` 均返回 HTTP 200。
+### 2026-07-06 代码库结构审查与质量重构目标
+
+- 当前目标：在功能保持不变的前提下，按大型陌生代码库接手标准审查架构和数据流，识别结构问题、重复代码、性能瓶颈和维护风险，并完成一轮低风险质量重构。
+- 重点问题：
+  - `Divine.vue` 同时负责表单、排盘、流式解读、最近记录、持久化降级和渲染分发，组件职责过宽。
+  - `frontend/src/api/divine.js` 重复处理健康检查、JSON 解析和 HTTP 错误，错误文案与请求细节散落。
+  - Cloudflare Function 文件里仍保留旧代理注释块，容易误导后续维护。
+  - 最近记录 localStorage 逻辑和远端记录映射逻辑散落在页面内部，不利于其它页面复用。
+- 重构策略：
+  - 抽出 `frontend/src/storage/recentRecords.js`，统一管理本地最近记录、时间格式、远端记录映射。
+  - 抽出 `frontend/src/api/http.js`，统一 API base、健康检查、JSON 请求、SSE 读取和客户端 ID。
+  - 保持现有 API、路由、UI 和数据结构不变，仅替换内部实现边界。
+  - 删除不可达旧代理死代码，降低误用风险。
+
+### 2026-07-06 代码质量重构进度
+
+- 已新增 `frontend/src/api/http.js`，统一 API base、后端健康检查、JSON 请求、SSE 读取和匿名客户端 ID。
+- 已重写 `frontend/src/api/divine.js` 的内部实现，保留 `fetchSkills`、`calculateChart`、`divineStream`、`createConsultationRecord` 等对外函数名不变。
+- 已新增 `frontend/src/storage/recentRecords.js`，统一 localStorage 最近记录读写、时间格式化和远端咨询记录映射。
+- 已将 `Divine.vue` 的最近记录逻辑替换为存储模块调用，页面组件减少本地存储细节和远端记录映射代码。
+- 已将 `ToolPage.vue` 的最近记录逻辑也替换为同一存储模块，消除工具页和问卦页的重复 localStorage 读写。
+- 已删除 `frontend/functions/api/[[path]].js` 中旧代理注释块，清理不可达代码。
+- 验证结果：
+  - `npm run build` 通过。
+  - `node --check frontend/functions/api/[[path]].js` 通过。
+  - 本地 Pages Functions `/api/health` 返回 `ok: true`。
+  - 本地 `/api/metaphysics/calculate` 奇门排盘返回 `ok: true`。
+  - Edge 自动化验证 `/`、`/divine/qimen`、`/divine/bazi`、`/share/test-id` 均可打开且无页面级横向溢出。
+  - Edge 自动化验证 `/tools/qiming`、`/tools/lingqian`、`/divine/qimen` 均可打开且无页面级横向溢出。
+  - 390px 移动端 `/divine/qimen` 渲染 9 个奇门宫格，无横向溢出。
+  - 390px 移动端 `/tools/qiming` 无页面级横向溢出。
+### 2026-07-06 NVIDIA API Key 与模型切换
+
+- 已在 Cloudflare Pages production secrets 中配置：
+  - `NVIDIA_API_KEY`
+  - `NVIDIA_BASE_URL`
+  - `NVIDIA_MODEL`
+- 已将默认 NVIDIA 模型从旧默认值切换为 `nvidia/llama-3.3-nemotron-super-49b-v1.5`。
+- 已将模型采样参数调整为 `temperature: 0.6`、`top_p: 0.95`，用于更稳的中文解读输出。
+- 验证结果：
+  - `npm run build` 通过。
+  - `node --check frontend/functions/api/[[path]].js` 通过。
+  - `wrangler pages secret list` 确认 production 环境已存在 3 个 NVIDIA secret，值为加密状态。

@@ -244,6 +244,7 @@ import XiaoliurenBoard from '../components/XiaoliurenBoard.vue'
 import ZiweiBoard from '../components/ZiweiBoard.vue'
 import { buildMeihuaBoard } from '../domain/meihua'
 import { buildQimenFallbackBoard } from '../domain/qimen'
+import { formatRecordTime, loadLocalRecentRecords, remoteConsultationToRecentRecord, saveLocalRecentRecord } from '../storage/recentRecords'
 
 const route = useRoute()
 const router = useRouter()
@@ -365,26 +366,11 @@ function nowDatetimeLocal() {
 }
 
 function loadRecentRecords() {
-  try {
-    return JSON.parse(localStorage.getItem('qk_recent_records') || '[]').slice(0, 8)
-  } catch {
-    return []
-  }
+  return loadLocalRecentRecords()
 }
 
 function saveRecentRecord(title, path) {
-  const record = {
-    title,
-    path,
-    time: new Intl.DateTimeFormat('zh-CN', {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date()),
-  }
-  const next = [record, ...loadRecentRecords()].slice(0, 8)
-  localStorage.setItem('qk_recent_records', JSON.stringify(next))
+  const next = saveLocalRecentRecord({ title, path })
   recentRecords.value = next
   recentRecordsVersion.value += 1
 }
@@ -396,12 +382,7 @@ async function persistConsultation({ title, message, board, reading }) {
     title,
     path: `/divine/${skillId.value}`,
     skill: skillId.value,
-    time: new Intl.DateTimeFormat('zh-CN', {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date()),
+    time: formatRecordTime(),
   }
 
   try {
@@ -420,8 +401,7 @@ async function persistConsultation({ title, message, board, reading }) {
     record.path = `/divine/${skillId.value}`
   }
 
-  const next = [record, ...loadRecentRecords()].slice(0, 8)
-  localStorage.setItem('qk_recent_records', JSON.stringify(next))
+  const next = saveLocalRecentRecord(record)
   recentRecords.value = next
   recentRecordsVersion.value += 1
   return record
@@ -431,16 +411,7 @@ async function loadRecentRecordsAsync() {
   try {
     const remote = await listConsultationRecords(8)
     if (remote?.ok && Array.isArray(remote.records)) {
-      return remote.records.map((item) => ({
-        title: item.title,
-        path: `/share/${item.id}`,
-        time: item.createdAt ? new Intl.DateTimeFormat('zh-CN', {
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-        }).format(new Date(item.createdAt)) : '',
-      }))
+      return remote.records.map(remoteConsultationToRecentRecord)
     }
   } catch {
     // Fall back to browser-local records when the production database is not bound.

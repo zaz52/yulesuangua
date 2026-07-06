@@ -110,27 +110,6 @@ async function proxyDivine(context, requestedSkill) {
   return streamReading(requestedSkill, enrichedPayload, context.env || {})
 }
 
-/*
-async function removedProxyDivine(context, requestedSkill) {
-  const targetSkill = skillDirect.has(requestedSkill) ? requestedSkill : skillProxyMap[requestedSkill]
-  if (!targetSkill) {
-    return json({ error: '未知测算类型' }, 404)
-  }
-
-  const payload = await context.request.json().catch(() => ({}))
-  if (!skillDirect.has(requestedSkill)) {
-    const instruction = skillInstructions[requestedSkill] || ''
-    payload.message = `用户选择的术法：${requestedSkill}。\n${instruction}\n\n用户输入：${payload.message || ''}`
-  }
-
-  return fetch(`${REMOVED_API_BASE}/divine/${targetSkill}`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-}
-
-*/
 async function streamReading(skill, payload, env) {
   const encoder = new TextEncoder()
   const stream = new ReadableStream({
@@ -198,7 +177,7 @@ async function generateReading(skill, payload, env) {
 async function callOpenAICompatibleModel(input, env) {
   const apiKey = env.OPENAI_API_KEY || env.NVIDIA_API_KEY || env.NVCF_API_KEY
   const baseUrl = env.OPENAI_BASE_URL || env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1'
-  const model = env.OPENAI_MODEL || env.NVIDIA_MODEL || 'nvidia/llama-3.1-nemotron-ultra-253b-v1'
+  const model = env.OPENAI_MODEL || env.NVIDIA_MODEL || 'nvidia/llama-3.3-nemotron-super-49b-v1.5'
   if (!apiKey) return ''
 
   const res = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
@@ -209,7 +188,8 @@ async function callOpenAICompatibleModel(input, env) {
     },
     body: JSON.stringify({
       model,
-      temperature: 0.7,
+      temperature: 0.6,
+      top_p: 0.95,
       max_tokens: 900,
       messages: [
         {

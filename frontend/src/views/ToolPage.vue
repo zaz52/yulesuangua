@@ -153,6 +153,7 @@
 import { computed, defineComponent, h, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import RitualState from '../components/RitualState.vue'
+import { loadLocalRecentRecords, saveLocalRecentRecord } from '../storage/recentRecords'
 
 const ResultBlock = defineComponent({
   props: { title: String, copy: String },
@@ -229,26 +230,11 @@ onMounted(() => {
 })
 
 function loadRecentRecords() {
-  try {
-    return JSON.parse(localStorage.getItem('qk_recent_records') || '[]').slice(0, 8)
-  } catch {
-    return []
-  }
+  return loadLocalRecentRecords()
 }
 
 function saveRecentRecord(title, path = `/tools/${toolId.value}`) {
-  const record = {
-    title,
-    path,
-    time: new Intl.DateTimeFormat('zh-CN', {
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(new Date()),
-  }
-  const next = [record, ...loadRecentRecords()].slice(0, 8)
-  localStorage.setItem('qk_recent_records', JSON.stringify(next))
+  const next = saveLocalRecentRecord({ title, path })
   recentRecords.value = next
 }
 
