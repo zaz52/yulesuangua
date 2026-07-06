@@ -386,3 +386,11 @@
   - 使用 `@vue/compiler-sfc` 对 `AsyncBoundary.vue` 做单文件编译检查通过。
   - Chrome CDP 验证 `/divine/bazi`：最近记录空态渲染 1 个 `.async-boundary`，`role="region"`、`aria-live="polite"`、无多余按钮、无横向溢出。
   - Chrome CDP 验证写入本地记录后：`.mini-record` 渲染 1 条，仍无横向溢出。
+### 2026-07-06 GitHub 推送与 Cloudflare 生产部署
+
+- 已将当前动态 UI 边界组件提交 `8f1bae0 feat: add async boundary component` 推送到 GitHub `origin/main`。
+- 已执行生产构建：`npm run build` 通过，Vite 输出 `dist/index.html`、CSS 和 JS 资源。
+- 因 Cloudflare Pages 项目 `yulesuangua` 未绑定 Git 自动部署，已手动执行 `wrangler pages deploy dist --project-name yulesuangua --branch main`。
+- 本次部署预览地址：`https://02ac76f6.yulesuangua.pages.dev`。
+- 已验证主站 `https://yulesuangua.pages.dev/` 返回 HTTP 200，预览地址同样返回 HTTP 200。
+- Git 工作区验证为干净同步状态：`main...origin/main`。
