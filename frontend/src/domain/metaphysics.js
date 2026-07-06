@@ -81,9 +81,22 @@ export function normalizeDaliurenBoard(data = {}) {
   ])
   return {
     branches: data.branches || BRANCHES,
-    gods: data.gods || ['青龙', '勾陈', '朱雀', '六合', '白虎', '玄武'],
-    passes: String(items[1]?.[1] || '初传 -> 中传 -> 末传').split('->').map((item) => item.trim()),
-    center: data.center || { time: '占时', xun: '甲戌', zhiFu: '天心', zhiShi: '开门' },
+    gods: data.gods || ['贵人', '腾蛇', '朱雀', '六合', '勾陈', '青龙', '天空', '白虎', '太常', '玄武', '太阴', '天后'],
+    heavenlyPlate: Array.isArray(data.heavenlyPlate) && data.heavenlyPlate.length ? data.heavenlyPlate : [],
+    fourLessons: Array.isArray(data.fourLessons) && data.fourLessons.length ? data.fourLessons : [
+      { label: '一课', stem: '日干', branch: '上神', god: '贵人', role: '日干上神' },
+      { label: '二课', stem: '日干', branch: '阴神', god: '六合', role: '日干阴神' },
+      { label: '三课', stem: '日支', branch: '上神', god: '青龙', role: '日支上神' },
+      { label: '四课', stem: '日支', branch: '阴神', god: '白虎', role: '日支阴神' },
+    ],
+    threePasses: Array.isArray(data.threePasses) && data.threePasses.length ? data.threePasses : String(items[1]?.[1] || '初传 -> 中传 -> 末传').split('->').map((item, index) => ({
+      label: ['初传', '中传', '末传'][index] || '传',
+      branch: item.trim(),
+      god: ['贵人', '六合', '青龙'][index] || '神将',
+      relation: ['发端', '过程', '归结'][index] || '判断',
+    })),
+    passes: data.passes || String(items[1]?.[1] || '初传 -> 中传 -> 末传').split('->').map((item) => item.trim()),
+    center: data.center || { time: '占时', day: '日辰', hour: '占时', monthGeneral: '月将', xun: '甲戌', zhiFu: '贵人', zhiShi: '子', lessonType: '课体待定' },
     items,
   }
 }
@@ -102,12 +115,39 @@ export function normalizeXiaoliurenBoard(data = {}) {
 }
 
 export function normalizeFengshuiBoard(data = {}) {
+  const fallbackCells = [
+    ['东南', '文昌', '书桌 / 学习'], ['正南', '名声', '光线 / 火气'], ['西南', '坤位', '关系 / 稳定'],
+    ['正东', '生发', '入口动线'], ['中宫', '宅心', '方位待定'], ['正西', '收敛', '金属 / 口舌'],
+    ['东北', '止息', '储物 / 静区'], ['正北', '事业', '水气 / 流动'], ['西北', '乾位', '贵人 / 主位'],
+  ]
+  const cells = normalizeRows(data.cells, fallbackCells).slice(0, 9).map((cell) => Array.isArray(cell) ? {
+    direction: cell[0],
+    palace: cell[1],
+    theme: cell[2],
+    element: '',
+    meaning: cell[2],
+    score: 0,
+    level: cell[0] === '中宫' ? '宅心' : '平衡',
+    features: [],
+    advice: '保持整洁、通风和动线顺畅。',
+  } : {
+    direction: cell.direction || cell.name || '方位',
+    palace: cell.palace || cell.label || '宫位',
+    theme: cell.theme || cell.value || '布局',
+    element: cell.element || '',
+    meaning: cell.meaning || cell.note || '',
+    score: Number.isFinite(cell.score) ? cell.score : 0,
+    level: cell.level || '平衡',
+    features: Array.isArray(cell.features) ? cell.features : [],
+    advice: cell.advice || '保持整洁、通风和动线顺畅。',
+  })
   return {
-    cells: normalizeRows(data.cells, [
-      ['东南', '文昌', '书桌 / 学习'], ['正南', '名声', '光线 / 火气'], ['西南', '坤位', '关系 / 稳定'],
-      ['正东', '生发', '入口动线'], ['中宫', '宅心', '方位待定'], ['正西', '收敛', '金属 / 口舌'],
-      ['东北', '止息', '储物 / 静区'], ['正北', '事业', '水气 / 流动'], ['西北', '乾位', '贵人 / 主位'],
-    ]).slice(0, 9),
+    kind: data.kind || '住宅',
+    direction: data.direction || '不确定',
+    layout: data.layout || '',
+    cells,
+    summary: data.summary || { auspicious: [], caution: [], detected: [] },
+    adjustments: Array.isArray(data.adjustments) && data.adjustments.length ? data.adjustments : ['保持入口、中宫和主要动线清爽。'],
   }
 }
 

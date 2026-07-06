@@ -8,19 +8,28 @@
     </div>
     <article class="daliuren-center">
       <strong>{{ board.center.time }}</strong>
-      <span>旬首：{{ board.center.xun }}</span>
-      <span>值符：{{ board.center.zhiFu }}</span>
-      <span>值使：{{ board.center.zhiShi }}</span>
+      <span>日辰：{{ board.center.day }}</span>
+      <span>占时：{{ board.center.hour }}</span>
+      <span>月将：{{ board.center.monthGeneral }}</span>
+      <em>{{ board.center.lessonType }}</em>
     </article>
     <div class="daliuren-pass">
-      <div v-for="(name, index) in ['初传', '中传', '末传']" :key="name">
-        <span>{{ name }}</span>
-        <strong>{{ board.passes[index] || ['癸酉', '壬申', '辛未'][index] }}</strong>
+      <div v-for="item in board.threePasses" :key="item.label">
+        <span>{{ item.label }}</span>
+        <strong>{{ item.branch }} {{ item.god }}</strong>
+        <em>{{ item.relation }}</em>
       </div>
     </div>
+    <div class="daliuren-lessons">
+      <article v-for="item in board.fourLessons" :key="item.label">
+        <span>{{ item.label }}</span>
+        <strong>{{ item.stem }} · {{ item.branch }}</strong>
+        <em>{{ item.god }} / {{ item.role }}</em>
+      </article>
+    </div>
     <footer class="daliuren-foot">
-      <span>四课：{{ board.items[0]?.[1] }}</span>
-      <span>课体：{{ board.items[2]?.[1] }}</span>
+      <span>课体：{{ board.center.lessonType }}</span>
+      <span>主题：{{ board.center.topic || board.items[3]?.[1] }}</span>
     </footer>
   </section>
 </template>
@@ -51,6 +60,7 @@ const board = computed(() => normalizeDaliurenBoard(props.data))
 .daliuren-ring span,
 .daliuren-center,
 .daliuren-pass,
+.daliuren-lessons,
 .daliuren-foot {
   position: absolute;
 }
@@ -97,8 +107,17 @@ const board = computed(() => normalizeDaliurenBoard(props.data))
 
 .daliuren-center span,
 .daliuren-foot span,
-.daliuren-pass span {
+.daliuren-pass span,
+.daliuren-lessons span,
+.daliuren-lessons em {
   color: var(--paper-dim);
+}
+
+.daliuren-center em,
+.daliuren-pass em {
+  color: rgba(245, 234, 212, 0.72);
+  font-style: normal;
+  font-size: 12px;
 }
 
 .daliuren-pass,
@@ -115,7 +134,43 @@ const board = computed(() => normalizeDaliurenBoard(props.data))
 }
 
 .daliuren-pass {
-  bottom: 54px;
+  bottom: 82px;
+}
+
+.daliuren-pass div {
+  display: grid;
+  gap: 3px;
+  min-width: 92px;
+  text-align: center;
+}
+
+.daliuren-lessons {
+  top: 16px;
+  right: 16px;
+  left: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.daliuren-lessons article {
+  display: grid;
+  gap: 3px;
+  padding: 8px;
+  border: 1px solid rgba(215, 179, 95, 0.14);
+  border-radius: var(--radius-xs);
+  background: rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+.daliuren-lessons strong {
+  color: var(--gold-bright);
+  font-size: 13px;
+}
+
+.daliuren-lessons em {
+  font-style: normal;
+  font-size: 11px;
 }
 
 .daliuren-foot {
@@ -135,6 +190,37 @@ const board = computed(() => normalizeDaliurenBoard(props.data))
   .daliuren-ring.middle span,
   .daliuren-foot {
     display: none;
+  }
+
+  .daliuren-lessons {
+    top: 8px;
+    right: 8px;
+    left: 8px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .daliuren-lessons article {
+    padding: 5px;
+  }
+
+  .daliuren-lessons strong {
+    font-size: 11px;
+  }
+
+  .daliuren-lessons em {
+    display: none;
+  }
+
+  .daliuren-pass {
+    right: 8px;
+    bottom: 18px;
+    left: 8px;
+    gap: 6px;
+  }
+
+  .daliuren-pass div {
+    min-width: 0;
   }
 
   .daliuren-center {

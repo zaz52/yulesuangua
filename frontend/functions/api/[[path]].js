@@ -435,22 +435,24 @@ async function calculateMetaphysics(context) {
 
   try {
     const calculators = {
-      bazi: calculateBaziBoard,
-      ziwei: calculateZiweiBoard,
-      qimen: calculateQimenBoard,
-      liuyao: calculateLiuyaoBoard,
-      meihua: calculateMeihuaBoard,
-      xiaoliuren: calculateXiaoliurenBoard,
-      tarot: calculateTarotBoard,
+      bazi: { fn: calculateBaziBoard, source: 'mingyu-core@0.1.8' },
+      ziwei: { fn: calculateZiweiBoard, source: 'mingyu-core@0.1.8' },
+      qimen: { fn: calculateQimenBoard, source: 'mingyu-core@0.1.8' },
+      liuyao: { fn: calculateLiuyaoBoard, source: 'mingyu-core@0.1.8' },
+      meihua: { fn: calculateMeihuaBoard, source: 'mingyu-core@0.1.8' },
+      daliuren: { fn: calculateDaliurenBoard, source: 'rules-mvp@2026-07' },
+      xiaoliuren: { fn: calculateXiaoliurenBoard, source: 'mingyu-core@0.1.8' },
+      fengshui: { fn: calculateFengshuiBoard, source: 'rules-mvp@2026-07' },
+      tarot: { fn: calculateTarotBoard, source: 'mingyu-core@0.1.8' },
     }
     const calculator = calculators[skill]
     if (!calculator) {
-      return json({ ok: false, skill, source: 'mingyu-core', error: '此术法暂未接入真实排盘算法' }, 422)
+      return json({ ok: false, skill, source: 'unavailable', error: '此术法暂未接入排盘算法' }, 422)
     }
 
-    return json({ ok: true, skill, source: 'mingyu-core@0.1.8', data: await calculator(payload) })
+    return json({ ok: true, skill, source: calculator.source, data: await calculator.fn(payload) })
   } catch (error) {
-    return json({ ok: false, skill, source: 'mingyu-core@0.1.8', error: error.message || '排盘失败' }, 500)
+    return json({ ok: false, skill, source: 'metaphysics-calculator', error: error.message || '排盘失败' }, 500)
   }
 }
 
@@ -666,6 +668,211 @@ function formatAnalysis(value, fallback = '待分析') {
     .filter(([, item]) => item !== null && item !== undefined && typeof item !== 'object')
     .map(([key, item]) => `${key}: ${item}`)
     .join('；') || fallback
+}
+
+function calculateDaliurenBoard(payload) {
+  const date = payload.datetime ? new Date(payload.datetime) : new Date()
+  const topic = payload.topic || payload.question || '所问之事'
+  const ganZhi = buildGanzhiSnapshot(date)
+  const branches = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
+  const gods = rotateBy(['贵人', '腾蛇', '朱雀', '六合', '勾陈', '青龙', '天空', '白虎', '太常', '玄武', '太阴', '天后'], date.getHours())
+  const monthGeneral = branches[(date.getMonth() + 1) % 12]
+  const hourBranch = shichenBranch(date.getHours())
+  const dayStem = ganZhi.day.slice(0, 1) || '甲'
+  const dayBranch = ganZhi.day.slice(1, 2) || '子'
+  const dayIndex = branches.indexOf(dayBranch)
+  const hourIndex = branches.indexOf(hourBranch)
+  const useIndex = (dayIndex + hourIndex + topic.length) % 12
+  const passBranches = [0, 4, 8].map((offset) => branches[(useIndex + offset) % 12])
+  const passGods = passBranches.map((branch) => gods[branches.indexOf(branch)])
+  const heavenlyPlate = branches.map((branch, index) => ({
+    branch,
+    god: gods[index],
+    sky: branches[(index + branches.indexOf(monthGeneral) + 12) % 12],
+    note: index === useIndex ? '发用' : index === hourIndex ? '占时' : index === dayIndex ? '日支' : '',
+  }))
+  const fourLessons = [
+    { label: '一课', stem: dayStem, branch: branches[(dayIndex + 1) % 12], god: gods[(dayIndex + 1) % 12], role: '日干上神' },
+    { label: '二课', stem: dayStem, branch: branches[(dayIndex + 5) % 12], god: gods[(dayIndex + 5) % 12], role: '日干阴神' },
+    { label: '三课', stem: dayBranch, branch: branches[(dayIndex + 7) % 12], god: gods[(dayIndex + 7) % 12], role: '日支上神' },
+    { label: '四课', stem: dayBranch, branch: branches[(dayIndex + 11) % 12], god: gods[(dayIndex + 11) % 12], role: '日支阴神' },
+  ]
+  const threePasses = ['初传', '中传', '末传'].map((label, index) => ({
+    label,
+    branch: passBranches[index],
+    god: passGods[index],
+    relation: relationByOffset((branches.indexOf(passBranches[index]) - dayIndex + 12) % 12),
+  }))
+  const lessonType = inferDaliurenLessonType(useIndex, dayIndex, hourIndex)
+
+  return {
+    branches,
+    gods,
+    heavenlyPlate,
+    fourLessons,
+    threePasses,
+    passes: threePasses.map((item) => `${item.branch}${item.god}`),
+    center: {
+      time: payload.datetime ? String(payload.datetime).replace('T', ' ') : date.toISOString().slice(0, 16).replace('T', ' '),
+      day: ganZhi.day,
+      hour: ganZhi.hour,
+      monthGeneral,
+      topic,
+      xun: `${dayStem}${dayBranch}`,
+      zhiFu: threePasses[0].god,
+      zhiShi: hourBranch,
+      lessonType,
+    },
+    items: [
+      ['四课', fourLessons.map((item) => `${item.label}${item.branch}`).join(' / ')],
+      ['三传', threePasses.map((item) => `${item.label}${item.branch}${item.god}`).join(' -> ')],
+      ['课体', lessonType],
+      ['判断', topic],
+    ],
+  }
+}
+
+function calculateFengshuiBoard(payload) {
+  const space = payload.space || {}
+  const kind = space.kind || payload.kind || '住宅'
+  const direction = space.direction || payload.direction || '不确定'
+  const layout = String(space.layout || payload.layout || payload.question || '')
+  const palaceBase = [
+    ['东南', '巽宫', '文昌 / 远行', '木', '学习、证照、远方机会'],
+    ['正南', '离宫', '名声 / 光照', '火', '曝光、表达、情绪温度'],
+    ['西南', '坤宫', '关系 / 稳定', '土', '伴侣、合作、承载力'],
+    ['正东', '震宫', '生发 / 入口', '木', '行动、成长、主动性'],
+    ['中宫', '宅心', `${kind} · ${direction}`, '土', '全宅气口与杂物压力'],
+    ['正西', '兑宫', '口舌 / 收敛', '金', '沟通、子女、精细事务'],
+    ['东北', '艮宫', '止息 / 储物', '土', '沉淀、学习、阻滞点'],
+    ['正北', '坎宫', '事业 / 流动', '水', '事业、睡眠、流动性'],
+    ['西北', '乾宫', '主位 / 贵人', '金', '负责人、权威、外部助力'],
+  ]
+  const found = detectFengshuiFeatures(layout)
+  const cells = palaceBase.map(([directionName, palace, theme, element, meaning]) => {
+    const hits = found.filter((feature) => feature.direction === directionName || (feature.direction === '全局' && ['杂物', '梁'].includes(feature.label)))
+    const score = scoreFengshuiCell(directionName, hits, layout, direction)
+    return {
+      direction: directionName,
+      palace,
+      theme,
+      element,
+      meaning,
+      score,
+      level: score >= 2 ? '宜用' : score <= -2 ? '需调' : '平衡',
+      features: hits.map((item) => item.label),
+      advice: fengshuiAdvice(directionName, score, hits),
+    }
+  })
+  return {
+    kind,
+    direction,
+    layout,
+    cells,
+    summary: {
+      auspicious: cells.filter((cell) => cell.score >= 2).map((cell) => cell.direction),
+      caution: cells.filter((cell) => cell.score <= -2).map((cell) => cell.direction),
+      detected: found.map((item) => item.label),
+    },
+    adjustments: buildFengshuiAdjustments(cells, found, kind),
+  }
+}
+
+function buildGanzhiSnapshot(date) {
+  const stems = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸']
+  const branches = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
+  const daySeed = Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000) + 40
+  const hourSeed = daySeed * 12 + Math.floor((date.getHours() + 1) / 2)
+  const gz = (seed) => `${stems[((seed % 10) + 10) % 10]}${branches[((seed % 12) + 12) % 12]}`
+  return {
+    year: gz(date.getFullYear() - 4),
+    month: gz((date.getFullYear() - 2000) * 12 + date.getMonth()),
+    day: gz(daySeed),
+    hour: gz(hourSeed),
+  }
+}
+
+function shichenBranch(hour) {
+  const branches = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
+  return branches[Math.floor(((hour + 1) % 24) / 2)]
+}
+
+function rotateBy(items, seed) {
+  const offset = ((seed % items.length) + items.length) % items.length
+  return [...items.slice(offset), ...items.slice(0, offset)]
+}
+
+function relationByOffset(offset) {
+  if ([0, 1].includes(offset)) return '比助'
+  if ([2, 3].includes(offset)) return '生发'
+  if ([4, 5].includes(offset)) return '泄耗'
+  if ([6, 7].includes(offset)) return '冲动'
+  if ([8, 9].includes(offset)) return '制约'
+  return '回收'
+}
+
+function inferDaliurenLessonType(useIndex, dayIndex, hourIndex) {
+  const diff = (useIndex - dayIndex + 12) % 12
+  if (useIndex === hourIndex) return '伏吟课'
+  if (diff === 6) return '反吟课'
+  if ([2, 5, 8, 11].includes(diff)) return '涉害课'
+  if ([1, 4, 7, 10].includes(diff)) return '遥克课'
+  return '比用课'
+}
+
+function detectFengshuiFeatures(layout) {
+  const directionMap = [
+    ['东南', /东南|巽/], ['正南', /正南|南|离/], ['西南', /西南|坤/],
+    ['正东', /正东|东|震/], ['中宫', /中宫|中央|中心/], ['正西', /正西|西|兑/],
+    ['东北', /东北|艮/], ['正北', /正北|北|坎/], ['西北', /西北|乾/],
+  ]
+  const objectMap = [
+    ['门', /门|入口|大门/], ['窗', /窗|阳台/], ['床', /床|卧室/], ['桌', /桌|书桌|办公桌|工位/],
+    ['灶', /灶|厨房|炉/], ['水', /水|卫生间|厕所|鱼缸/], ['杂物', /杂物|堆|乱|堵/], ['梁', /梁|压顶/],
+  ]
+  const found = []
+  const segments = String(layout || '').split(/[，,。；;\n]/).map((item) => item.trim()).filter(Boolean)
+  for (const [label, objectRegex] of objectMap) {
+    const matchedSegments = segments.filter((segment) => objectRegex.test(segment))
+    if (!matchedSegments.length && objectRegex.test(layout)) matchedSegments.push(layout)
+    for (const segment of matchedSegments) {
+      const direction = directionMap.find(([, regex]) => regex.test(segment))?.[0] || '全局'
+      found.push({ label, direction })
+    }
+  }
+  return found
+}
+
+function scoreFengshuiCell(directionName, hits, layout, houseDirection) {
+  let score = directionName === '中宫' ? 0 : 1
+  if (houseDirection.includes(directionName.replace('正', ''))) score += 1
+  for (const hit of hits) {
+    if (hit.direction === '全局' && !['杂物', '梁'].includes(hit.label)) continue
+    if (['门', '窗', '桌'].includes(hit.label)) score += 1
+    if (['床'].includes(hit.label) && ['正北', '西北', '西南'].includes(directionName)) score += 1
+    if (['水'].includes(hit.label) && ['正南', '中宫'].includes(directionName)) score -= 2
+    if (['灶'].includes(hit.label) && ['正北', '西北'].includes(directionName)) score -= 1
+    if (['杂物', '梁'].includes(hit.label)) score -= 2
+  }
+  if (/背后是走道|背后无靠|门冲|对门|镜子对床/.test(layout) && ['中宫', '正东', '正北'].includes(directionName)) score -= 1
+  return Math.max(-3, Math.min(3, score))
+}
+
+function fengshuiAdvice(directionName, score, hits) {
+  if (score <= -2) return `${directionName}先做减法：清理遮挡、减少冲射，必要时调整床桌朝向或增加稳定靠背。`
+  if (score >= 2) return `${directionName}可作为近期可用位：保持明亮整洁，适合放置常用工作或学习物。`
+  if (hits.length) return `${directionName}保持平衡即可，重点是通风、动线顺畅和物品不过度堆叠。`
+  return `${directionName}暂无明显冲突，维持干净、明亮、可通行。`
+}
+
+function buildFengshuiAdjustments(cells, found, kind) {
+  const caution = cells.filter((cell) => cell.score <= -2).slice(0, 3)
+  const good = cells.filter((cell) => cell.score >= 2).slice(0, 2)
+  return [
+    caution.length ? `优先处理：${caution.map((cell) => cell.direction).join('、')}，先清杂物、避冲射、补靠背。` : '当前没有明显重压宫位，先保持入口和中宫清爽。',
+    good.length ? `可用方位：${good.map((cell) => cell.direction).join('、')}，适合作为${kind}的工作、学习或会客重点。` : '暂未形成明显优势方位，建议先补光、通风和收纳。',
+    found.some((item) => item.label === '床') ? '床位重点看靠背、避门冲和避镜照，先稳睡眠再谈旺运。' : '若要进一步细排，请补充床、门、窗、桌、灶、卫生间所在方位。',
+  ]
 }
 
 function calculateXiaoliurenBoard(payload) {

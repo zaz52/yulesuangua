@@ -647,3 +647,21 @@
   - 浏览器核心路径验证通过：`/divine/qimen`、`/divine/bazi`、`/divine/ziwei`、`/divine/meihua`、`/divine/liuyao`、`/tools/qiming`、`/zhouyi` 均可打开并生成结果，无横向溢出，无 `qk_` 本地记录。
   - 生产 API 抽样通过：奇门返回 `【九宫总览】/【值符值使】/【门星神格局】...`，八字返回 `【四柱总览】/【日主五行】/【十神关系】...`。
   - 生产前端验证通过：`https://suangua.weiyiai.top/divine/qimen` 提交后显示 7 个专属栏目，标签包含“盘面/判断/行动/边界”，无控制台错误、无横向溢出、无 `qk_` 本地记录。
+### 2026-07-07 补齐大六壬与风水阳宅排盘
+
+- 当前任务：补齐用户指出的“还有排盘没有弄上”的缺口，优先处理大六壬和风水阳宅。
+- 成功标准：
+  - `/api/metaphysics/calculate` 支持 `daliuren` 和 `fengshui`，提交后不再退回前端占位盘。
+  - 大六壬结果至少包含四课、三传、十二地支/天将、课体、占时信息。
+  - 风水阳宅结果至少包含空间类型、朝向、九宫方位、识别到的门窗床桌水杂物等要素、宫位评分和调整建议。
+  - 移动端无横向溢出，不写本地记录，不自动保存远端记录。
+- 已完成：
+  - 新增 `calculateDaliurenBoard()`，用可扩展规则 MVP 生成四课、三传、十二天将、月将、日辰、占时和课体。
+  - 新增 `calculateFengshuiBoard()`，按用户布局文本分句识别门、窗、床、桌、灶、水、杂物、梁等要素，并映射到九宫方位。
+  - `/api/metaphysics/calculate` 的 source 改为按术法返回，避免把规则 MVP 误标成 `mingyu-core`。
+  - 升级 `DaliurenBoard.vue`：显示四课、三传、中心占时/月将/课体，移动端保留紧凑四课。
+  - 升级 `FengshuiBoard.vue`：显示九宫评分、宜用/需调状态、布局识别和调整建议。
+  - 本地验证通过：`npm run build`、Functions 语法检查、本地 Functions 直接调用、移动端浏览器 UI 检查。
+  - 已部署 Cloudflare Pages，预览地址 `https://405799c0.yulesuangua.pages.dev`。
+  - 生产 API 验证通过：`daliuren` 返回 `rules-mvp@2026-07`、四课/三传结构；`fengshui` 返回 `rules-mvp@2026-07`、识别门/窗/桌/水/杂物，并生成可用方位、需调方位和调整建议。
+  - 生产前端移动端验证通过：`/divine/daliuren` 渲染大六壬盘、四课、三传；`/divine/fengshui` 渲染风水九宫、评分和建议；无横向溢出、无控制台错误、无 `qk_` 本地记录。
