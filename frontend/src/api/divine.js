@@ -59,6 +59,56 @@ export async function calculateChart(skill, payload = {}) {
   return data
 }
 
+export function getClientId() {
+  const key = 'qk_client_id'
+  let value = localStorage.getItem(key)
+  if (!value) {
+    value = `web_${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(16).slice(2)}`}`
+    localStorage.setItem(key, value)
+  }
+  return value
+}
+
+export async function createConsultationRecord(payload = {}) {
+  const available = await checkBackend()
+  const recordPayload = { ...payload, clientId: payload.clientId || getClientId() }
+  if (!available) {
+    return { ok: false, code: 'backend_unavailable', record: recordPayload }
+  }
+
+  const res = await fetch(`${API_BASE}/consultations`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(recordPayload),
+  })
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok && data.code !== 'persistence_unavailable') {
+    throw new Error(data.error || `保存记录失败：${res.status}`)
+  }
+  return data
+}
+
+export async function listConsultationRecords(limit = 8) {
+  const available = await checkBackend()
+  if (!available) return { ok: false, records: [] }
+  const url = `${API_BASE}/consultations?clientId=${encodeURIComponent(getClientId())}&limit=${limit}`
+  const res = await fetch(url)
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok && data.code !== 'persistence_unavailable') {
+    throw new Error(data.error || `读取记录失败：${res.status}`)
+  }
+  return data
+}
+
+export async function getConsultationRecord(id) {
+  const available = await checkBackend()
+  if (!available) throw new Error('后端服务未连接')
+  const res = await fetch(`${API_BASE}/consultations/${encodeURIComponent(id)}`)
+  const data = await res.json().catch(() => ({}))
+  if (!res.ok) throw new Error(data.error || data.code || `读取记录失败：${res.status}`)
+  return data
+}
+
 export async function divineStream(skill, message, history = [], extra = {}, onChunk, onDone) {
   const available = await checkBackend()
   if (!available) {

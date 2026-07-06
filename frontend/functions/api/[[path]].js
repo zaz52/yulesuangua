@@ -1,5 +1,3 @@
-const NETLIFY_API_BASE = 'https://suanguan.netlify.app/api'
-
 import { baziCalculator } from 'mingyu-core/bazi'
 import { generateLiuyao } from 'mingyu-core/divination/liuyao'
 import { generateMeihua } from 'mingyu-core/divination/meihua'
@@ -57,6 +55,16 @@ export async function onRequest(context) {
     return new Response(null, { status: 204, headers: corsHeaders() })
   }
 
+  if (context.request.method === 'GET' && path === 'health') {
+    return json({
+      ok: true,
+      service: 'yulesuangua-api',
+      runtime: 'cloudflare-pages-functions',
+      database: Boolean(context.env?.DB),
+      timestamp: new Date().toISOString(),
+    })
+  }
+
   if (context.request.method === 'GET' && path === 'divine/skills') {
     return json({ skills: extendedSkills })
   }
@@ -65,15 +73,45 @@ export async function onRequest(context) {
     return calculateMetaphysics(context)
   }
 
+  if (context.request.method === 'POST' && path === 'consultations') {
+    return createConsultation(context)
+  }
+
+  if (context.request.method === 'GET' && path === 'consultations') {
+    return listConsultations(context)
+  }
+
+  const consultationMatch = path.match(/^consultations\/([a-zA-Z0-9_-]+)$/)
+  if (context.request.method === 'GET' && consultationMatch) {
+    return getConsultation(context, consultationMatch[1])
+  }
+
   const divineMatch = path.match(/^divine\/([a-z-]+)$/)
   if (context.request.method === 'POST' && divineMatch) {
     return proxyDivine(context, divineMatch[1])
   }
 
-  return proxyToNetlify(context, path)
+  return json({ ok: false, error: '接口不存在' }, 404)
 }
 
 async function proxyDivine(context, requestedSkill) {
+  const targetSkill = skillDirect.has(requestedSkill) ? requestedSkill : skillProxyMap[requestedSkill]
+  if (!targetSkill) {
+    return json({ ok: false, error: '未知测算类型' }, 404)
+  }
+
+  const payload = await context.request.json().catch(() => ({}))
+  const enrichedPayload = { ...payload, requestedSkill, targetSkill }
+  if (!skillDirect.has(requestedSkill)) {
+    const instruction = skillInstructions[requestedSkill] || ''
+    enrichedPayload.message = `用户选择的术法：${requestedSkill}。\n${instruction}\n\n用户输入：${payload.message || ''}`
+  }
+
+  return streamReading(requestedSkill, enrichedPayload, context.env || {})
+}
+
+/*
+async function removedProxyDivine(context, requestedSkill) {
   const targetSkill = skillDirect.has(requestedSkill) ? requestedSkill : skillProxyMap[requestedSkill]
   if (!targetSkill) {
     return json({ error: '未知测算类型' }, 404)
@@ -85,11 +123,186 @@ async function proxyDivine(context, requestedSkill) {
     payload.message = `用户选择的术法：${requestedSkill}。\n${instruction}\n\n用户输入：${payload.message || ''}`
   }
 
-  return fetch(`${NETLIFY_API_BASE}/divine/${targetSkill}`, {
+  return fetch(`${REMOVED_API_BASE}/divine/${targetSkill}`, {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(payload),
   })
+}
+
+*/
+async function streamReading(skill, payload, env) {
+  const encoder = new TextEncoder()
+  const stream = new ReadableStream({
+    async start(controller) {
+      try {
+        const text = await generateReading(skill, payload, env)
+        for (const chunk of chunkText(text, 42)) {
+          controller.enqueue(encoder.encode(`data: ${chunk.replace(/\n/g, '\\n')}\n\n`))
+          await sleep(18)
+        }
+        controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+      } catch (error) {
+        const message = `暂时无法完成解读：${error.message || '服务异常'}`
+        controller.enqueue(encoder.encode(`data: ${message}\n\n`))
+        controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+      } finally {
+        controller.close()
+      }
+    },
+  })
+
+  return new Response(stream, {
+    headers: corsHeaders({
+      'content-type': 'text/event-stream; charset=utf-8',
+      'cache-control': 'no-cache, no-transform',
+      connection: 'keep-alive',
+    }),
+  })
+}
+
+async function generateReading(skill, payload, env) {
+  const message = String(payload.message || payload.question || '').trim()
+  const board = payload.board || payload.chart || null
+  const profile = payload.profile || {}
+  const relation = payload.relation || {}
+  const event = payload.eventForm || payload.event || {}
+  const skillName = getSkillName(skill)
+  const contextLines = [
+    profile.name && `称呼：${profile.name}`,
+    profile.birthDate && `农历生日：${profile.birthDate}`,
+    profile.shichen && `时辰：${profile.shichen}`,
+    relation.status && `关系状态：${relation.status}`,
+    event.datetime && `起课时间：${event.datetime}`,
+    event.topic && `事件类型：${event.topic}`,
+  ].filter(Boolean)
+
+  if (env.OPENAI_API_KEY || env.NVIDIA_API_KEY || env.NVCF_API_KEY) {
+    const modelText = await callOpenAICompatibleModel({ skillName, message, board, contextLines }, env).catch(() => '')
+    if (modelText) return modelText
+  }
+
+  const focus = inferFocus(message)
+  const boardSummary = summarizeBoard(board)
+  return [
+    `【${skillName}】盘面已成。本次解读以文化娱乐和行动复盘为边界，不作为医疗、法律、投资等现实决策依据。`,
+    contextLines.length ? `【基础信息】${contextLines.join('；')}` : '【基础信息】本次以当前填写内容和起课时间生成判断框架。',
+    `【盘面摘要】${boardSummary}`,
+    `【问题重心】${focus}`,
+    `【趋势判断】当前更适合先收束信息、确认关键变量，再推进下一步。若盘面中出现变动、空亡或冲克类信号，应降低一次性投入，改为小步验证。`,
+    `【行动建议】1. 把问题拆成可验证的一个动作；2. 先做低成本试探；3. 记录对方反馈或外部结果；4. 24 到 72 小时后再复盘是否加码。`,
+    `【风险提醒】若涉及金钱、合同、健康、婚姻承诺，请以现实证据和专业意见为准，问卦结果只用于整理思路。`,
+  ].join('\n')
+}
+
+async function callOpenAICompatibleModel(input, env) {
+  const apiKey = env.OPENAI_API_KEY || env.NVIDIA_API_KEY || env.NVCF_API_KEY
+  const baseUrl = env.OPENAI_BASE_URL || env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1'
+  const model = env.OPENAI_MODEL || env.NVIDIA_MODEL || 'nvidia/llama-3.1-nemotron-ultra-253b-v1'
+  if (!apiKey) return ''
+
+  const res = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${apiKey}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      model,
+      temperature: 0.7,
+      max_tokens: 900,
+      messages: [
+        {
+          role: 'system',
+          content: '你是一个中文玄学文化娱乐应用的解读助手。输出要结构化、克制、可执行，不做绝对预测，不提供医疗法律投资结论。',
+        },
+        {
+          role: 'user',
+          content: JSON.stringify(input),
+        },
+      ],
+    }),
+  })
+  if (!res.ok) return ''
+  const data = await res.json().catch(() => ({}))
+  return data.choices?.[0]?.message?.content || ''
+}
+
+async function createConsultation(context) {
+  const payload = await context.request.json().catch(() => ({}))
+  const now = new Date().toISOString()
+  const id = payload.id || crypto.randomUUID()
+  const record = {
+    id,
+    clientId: sanitizeClientId(payload.clientId),
+    skill: String(payload.skill || 'unknown').slice(0, 48),
+    title: String(payload.title || payload.question || '未命名问事').slice(0, 160),
+    question: String(payload.question || '').slice(0, 4000),
+    payload: payload.payload || {},
+    board: payload.board || null,
+    reading: String(payload.reading || '').slice(0, 12000),
+    createdAt: now,
+    updatedAt: now,
+  }
+
+  if (!context.env?.DB) {
+    return json({ ok: false, code: 'persistence_unavailable', record }, 503)
+  }
+
+  await context.env.DB.prepare(`
+    INSERT INTO consultations (
+      id, client_id, skill, title, question, payload_json, board_json, reading, created_at, updated_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(
+    record.id,
+    record.clientId,
+    record.skill,
+    record.title,
+    record.question,
+    JSON.stringify(record.payload),
+    JSON.stringify(record.board),
+    record.reading,
+    record.createdAt,
+    record.updatedAt,
+  ).run()
+
+  return json({ ok: true, record }, 201)
+}
+
+async function listConsultations(context) {
+  const url = new URL(context.request.url)
+  const clientId = sanitizeClientId(url.searchParams.get('clientId'))
+  const limit = Math.min(Math.max(Number(url.searchParams.get('limit') || 20), 1), 50)
+  if (!context.env?.DB) {
+    return json({ ok: false, code: 'persistence_unavailable', records: [] }, 503)
+  }
+  if (!clientId) {
+    return json({ ok: false, error: '缺少 clientId' }, 400)
+  }
+
+  const result = await context.env.DB.prepare(`
+    SELECT id, client_id, skill, title, question, reading, created_at, updated_at
+    FROM consultations
+    WHERE client_id = ?
+    ORDER BY created_at DESC
+    LIMIT ?
+  `).bind(clientId, limit).all()
+
+  return json({ ok: true, records: (result.results || []).map(rowToConsultationSummary) })
+}
+
+async function getConsultation(context, id) {
+  if (!context.env?.DB) {
+    return json({ ok: false, code: 'persistence_unavailable' }, 503)
+  }
+  const row = await context.env.DB.prepare(`
+    SELECT *
+    FROM consultations
+    WHERE id = ?
+    LIMIT 1
+  `).bind(id).first()
+  if (!row) return json({ ok: false, error: '记录不存在' }, 404)
+  return json({ ok: true, record: rowToConsultation(row) })
 }
 
 async function calculateMetaphysics(context) {
@@ -418,24 +631,74 @@ function compactRaw(result) {
   }))
 }
 
-async function proxyToNetlify(context, path) {
-  const url = new URL(context.request.url)
-  const target = new URL(`${NETLIFY_API_BASE}/${path}`)
-  target.search = url.search
+function getSkillName(skill) {
+  return extendedSkills.find((item) => item.id === skill)?.name || skill || '问事'
+}
 
-  const headers = new Headers()
-  const contentType = context.request.headers.get('content-type')
-  const authorization = context.request.headers.get('authorization')
-  if (contentType) headers.set('content-type', contentType)
-  if (authorization) headers.set('authorization', authorization)
+function inferFocus(message) {
+  const text = String(message || '')
+  if (/感情|关系|婚|复合|对象|对方/.test(text)) return '关系互动、信任建立和长期稳定性。'
+  if (/工作|事业|项目|合作|跳槽|面试/.test(text)) return '事业推进、合作节奏和资源匹配。'
+  if (/钱|财|投资|交易|合同|生意/.test(text)) return '财务风险、交易边界和现金流安全。'
+  if (/健康|身体|焦虑|睡眠/.test(text)) return '身心状态、休息节律和现实检查。'
+  return '当前问题的时机、阻力、可行动作和复盘节点。'
+}
 
-  const body = ['GET', 'HEAD'].includes(context.request.method) ? undefined : await context.request.arrayBuffer()
-  return fetch(target.toString(), {
-    method: context.request.method,
-    headers,
-    body,
-    redirect: 'follow',
-  })
+function summarizeBoard(board) {
+  if (!board) return '已根据当前输入生成基础盘面；建议结合表盘中的高亮信息和变动位置观察。'
+  if (board.title || board.badge || board.source) {
+    return [board.title, board.badge, board.source].filter(Boolean).join(' / ')
+  }
+  if (board.data?.meta) {
+    return Object.entries(board.data.meta).slice(0, 5).map(([key, value]) => `${key}: ${valueText(value)}`).join('；')
+  }
+  return '盘面数据已生成，重点观察本卦/变卦、宫位、动爻或中心关系。'
+}
+
+function chunkText(text, size = 48) {
+  const chunks = []
+  const source = String(text || '')
+  for (let index = 0; index < source.length; index += size) {
+    chunks.push(source.slice(index, index + size))
+  }
+  return chunks.length ? chunks : ['']
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+function sanitizeClientId(value) {
+  return String(value || 'anonymous').replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 80) || 'anonymous'
+}
+
+function rowToConsultationSummary(row) {
+  return {
+    id: row.id,
+    clientId: row.client_id,
+    skill: row.skill,
+    title: row.title,
+    question: row.question,
+    reading: row.reading,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  }
+}
+
+function rowToConsultation(row) {
+  return {
+    ...rowToConsultationSummary(row),
+    payload: parseJsonField(row.payload_json, {}),
+    board: parseJsonField(row.board_json, null),
+  }
+}
+
+function parseJsonField(value, fallback) {
+  try {
+    return value ? JSON.parse(value) : fallback
+  } catch {
+    return fallback
+  }
 }
 
 function normalizePath(pathParam) {

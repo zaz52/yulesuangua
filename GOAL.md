@@ -394,3 +394,43 @@
 - 本次部署预览地址：`https://02ac76f6.yulesuangua.pages.dev`。
 - 已验证主站 `https://yulesuangua.pages.dev/` 返回 HTTP 200，预览地址同样返回 HTTP 200。
 - Git 工作区验证为干净同步状态：`main...origin/main`。
+### 2026-07-06 创业项目 MVP 审查与生产化目标
+
+- 当前目标：把 `yulesuangua` 从静态展示型玄学工具站推进为一个真正可运行的创业项目 MVP，具备清晰架构、可部署 API、可持久化记录、可复用 UI、可审查文档和最小商业闭环。
+- 验收标准：
+  - 线上 Cloudflare Pages 不依赖已废弃的 Netlify 站点完成核心流程。
+  - API 至少覆盖健康检查、技能列表、排盘计算、问卦解读、咨询记录创建、咨询记录读取和分享详情读取。
+  - 没有数据库绑定时前端仍可使用本地记录兜底；绑定 Cloudflare D1 后可保存真实咨询记录。
+  - 前端结果卡支持保存状态、错误状态、分享链接和最近记录刷新。
+  - 文档必须包含系统架构、文件结构、数据库设计、API 接口、UI 架构和生产部署说明。
+  - `npm run build` 必须通过，并用浏览器/HTTP 做端到端验证。
+- 架构决策：
+  - 保持 Vue 3 + Vite + Cloudflare Pages Functions，不引入新的全栈框架迁移风险。
+  - 将 AI 解读先做成可替换的 `generateReading` 服务：有模型环境变量时可接真实模型，没有时返回结构化规则解读，保证 MVP 随时可用。
+  - 持久化层使用 Cloudflare D1 作为生产数据库目标；API 在未绑定 `DB` 时返回明确的 `persistence_unavailable`，前端使用 localStorage 降级。
+
+### 2026-07-06 创业项目 MVP 实现进度
+
+- 已实现 Cloudflare Pages 自包含 API：
+  - `GET /api/health`
+  - `POST /api/metaphysics/calculate`
+  - `POST /api/divine/:skill`
+  - `POST /api/consultations`
+  - `GET /api/consultations`
+  - `GET /api/consultations/:id`
+- 已移除核心问卦流程对旧 Netlify API 的运行时依赖；`/api/divine/:skill` 现在优先调用可选 OpenAI/NVIDIA 兼容模型环境变量，没有 Key 时返回结构化规则解读。
+- 已清理旧 Netlify 站点 URL 的可见残留，Open Graph 地址改为 `https://yulesuangua.pages.dev/`。
+- 已新增 D1 schema：`docs/startup-mvp-schema.sql`。
+- 已新增 MVP 架构文档：`docs/startup-mvp-architecture.md`。
+- 已新增分享详情页：`frontend/src/views/ShareView.vue` 和路由 `/share/:id`。
+- 已在 `Divine.vue` 接入咨询记录保存；D1 未绑定时前端继续使用 localStorage 最近记录兜底。
+- 已将 `/divine/:skill` 右侧最近记录改为远端 D1 优先读取，失败或未绑定数据库时自动降级到 localStorage。
+- 验证结果：
+  - `npm run build` 通过。
+  - `node --check frontend/functions/api/[[path]].js` 通过。
+  - 本地 Cloudflare Pages 运行时 `http://127.0.0.1:8788/api/health` 返回 `ok: true`。
+  - `POST /api/metaphysics/calculate` 奇门排盘返回 `ok: true`。
+  - `POST /api/divine/qimen` 返回 SSE 流式结构化解读。
+  - `POST /api/consultations` 在未绑定 D1 时返回 `persistence_unavailable`，符合前端降级设计。
+  - Edge 浏览器自动化验证 `/`、`/divine/qimen`、`/divine/bazi`、`/share/test-id` 均可打开，无页面级横向溢出。
+  - 390px 移动端 `/divine/qimen` 渲染 9 个奇门宫格，无横向溢出。

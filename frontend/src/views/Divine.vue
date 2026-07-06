@@ -230,7 +230,7 @@
 <script setup>
 import { computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { calculateChart, divineStream } from '../api/divine'
+import { calculateChart, createConsultationRecord, divineStream, listConsultationRecords } from '../api/divine'
 import AsyncBoundary from '../components/AsyncBoundary.vue'
 import BaziBoard from '../components/BaziBoard.vue'
 import DaliurenBoard from '../components/DaliurenBoard.vue'
@@ -389,7 +389,62 @@ function saveRecentRecord(title, path) {
   recentRecordsVersion.value += 1
 }
 
+async function persistConsultation({ title, message, board, reading }) {
+  const localId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(16).slice(2)}`
+  const record = {
+    id: localId,
+    title,
+    path: `/divine/${skillId.value}`,
+    skill: skillId.value,
+    time: new Intl.DateTimeFormat('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date()),
+  }
+
+  try {
+    const result = await createConsultationRecord({
+      id: localId,
+      skill: skillId.value,
+      title,
+      question: message,
+      payload: buildChartPayload(message),
+      board,
+      reading,
+    })
+    if (result?.record?.id) record.id = result.record.id
+    if (result?.ok) record.path = `/share/${record.id}`
+  } catch {
+    record.path = `/divine/${skillId.value}`
+  }
+
+  const next = [record, ...loadRecentRecords()].slice(0, 8)
+  localStorage.setItem('qk_recent_records', JSON.stringify(next))
+  recentRecords.value = next
+  recentRecordsVersion.value += 1
+  return record
+}
+
 async function loadRecentRecordsAsync() {
+  try {
+    const remote = await listConsultationRecords(8)
+    if (remote?.ok && Array.isArray(remote.records)) {
+      return remote.records.map((item) => ({
+        title: item.title,
+        path: `/share/${item.id}`,
+        time: item.createdAt ? new Intl.DateTimeFormat('zh-CN', {
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+        }).format(new Date(item.createdAt)) : '',
+      }))
+    }
+  } catch {
+    // Fall back to browser-local records when the production database is not bound.
+  }
   return loadRecentRecords()
 }
 
@@ -551,6 +606,7 @@ async function sendMessage() {
   if (!canSend.value || loading.value) return
   const message = buildMessage()
   saveRecentRecord(`${skillInfo.value.name} · ${userInput.value || eventForm.value.topic || profile.value.name || '问事'}`, `/divine/${skillId.value}`)
+  const consultationTitle = `${skillInfo.value.name} · ${userInput.value || eventForm.value.topic || profile.value.name || '问事'}`
   const chartPayload = buildChartPayload(message)
   let chartResult = null
   try {
@@ -576,6 +632,7 @@ async function sendMessage() {
     }, () => {
       const last = responses.value[responses.value.length - 1]
       if (last && typeof last !== 'string') responses.value[responses.value.length - 1] = { ...last, text: last.text || answer, streaming: false }
+      persistConsultation({ title: consultationTitle, message, board, reading: answer || last?.text || '' })
       loading.value = false
     })
   } catch (error) {
@@ -585,6 +642,7 @@ async function sendMessage() {
     } else {
       responses.value.push({ text: `暂时无法完成推演：${error.message}`, streaming: false, error: true })
     }
+    persistConsultation({ title: consultationTitle, message, board, reading: answer || `暂时无法完成推演：${error.message}` })
     loading.value = false
   }
 }
