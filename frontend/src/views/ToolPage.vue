@@ -12,8 +12,7 @@
         <a href="/">说明</a>
       </nav>
       <div class="mystic-actions">
-        <button class="ds-button ghost" type="button">会员中心</button>
-        <span class="icon-pill">铃</span>
+        <span class="ds-badge green">隐私保护</span>
         <button class="ds-button primary" type="button" @click="router.push('/zhouyi')">开始问卦</button>
       </div>
     </header>
@@ -76,12 +75,7 @@
           <p>请尽可能详细地描述您的梦境，包括场景、人物、事件、情绪感受等细节。</p>
           <label class="ds-field wide dream-textarea"><span>梦境内容</span><textarea v-model.trim="dreamForm.dream" placeholder="请输入您的梦境内容..."></textarea></label>
           <div class="dream-prompts">
-            <button type="button">梦中的主要场景是什么？</button>
-            <button type="button">出现了哪些人物或动物？</button>
-            <button type="button">发生了什么事情？</button>
-            <button type="button">您的情绪感受如何？</button>
-            <button type="button">梦中有哪些特别的物品或符号？</button>
-            <button type="button">梦醒时的第一感受？</button>
+            <button v-for="prompt in dreamPrompts" :key="prompt" type="button" @click="appendDreamPrompt(prompt)">{{ prompt }}</button>
           </div>
           <button class="ds-button primary dream-action" type="button" @click="analyzeDream">开始解析</button>
           <ResultBlock title="梦象提示" :copy="dreamResult" />
@@ -193,6 +187,14 @@ const lots = [
 ]
 const lot = computed(() => lots[lotIndex.value % lots.length])
 const dreamForm = ref({ dream: '', mood: '平静', context: '' })
+const dreamPrompts = [
+  '梦中的主要场景是什么？',
+  '出现了哪些人物或动物？',
+  '发生了什么事情？',
+  '您的情绪感受如何？',
+  '梦中有哪些特别的物品或符号？',
+  '梦醒时的第一感受？',
+]
 const dreamResult = ref('填写梦境后点击解析，会从象意、情绪和现实提醒三个角度生成提示。')
 const nameForm = ref({ familyName: '', gender: '不限', birth: '', style: '' })
 const nameResult = ref('填写姓氏、农历生日和偏好后生成候选名册。')
@@ -213,6 +215,11 @@ function analyzeDream() {
   const mood = dreamForm.value.mood
   const context = dreamForm.value.context || '未填写现实背景'
   dreamResult.value = `梦境可先看三层：一是画面象意，二是醒来时的${mood}情绪，三是它和现实背景“${context}”的关系。建议把梦中最强烈的画面写成一句问题，再进入佛学开示继续深问。`
+}
+
+function appendDreamPrompt(prompt) {
+  const current = dreamForm.value.dream.trim()
+  dreamForm.value.dream = current ? `${current}\n${prompt}` : prompt
 }
 
 function generateNames() {

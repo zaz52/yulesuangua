@@ -543,3 +543,20 @@
   - `npm run build` 通过。
   - `rg` 扫描 `frontend/src` 未发现 `保存结果`、`分享结果`、`我的记录`、`最近记录`、`本地记录`、`localStorage` 残留。
   - Playwright 检查 `/tools/qiming`、`/tools/jiemeng`、`/tools/xianghuo`、`/zhouyi` 的桌面端和移动端：均有隐私说明、无保存/分享空按钮、无最近记录文案、无 `qk_` 本地 key、无横向溢出。
+
+### 2026-07-07 细节复查启动
+
+- 当前任务：在基础功能、域名和隐私策略已完成后，继续从真实用户视角检查线上站点细节，重点覆盖首页、核心术法、生活工具、周易起卦、分享页、移动端布局、控制台错误、隐私文案一致性和文档一致性。
+- 本轮先发现并修正文档口径问题：`docs/async-boundary-component.md`、`docs/qimen-mvp-architecture.md`、`docs/startup-mvp-architecture.md`、`docs/metaphysics-workbench-mvp.md` 仍残留旧版“最近记录 / localStorage 兜底 / 自动保存记录”描述，已统一改为当前隐私策略：默认不落本地、不落远端，保存/分享必须由用户主动触发。
+- 已修复细节：
+  - 首页补充隐私说明，使用户进入首页即可看到“不自动保存”的承诺。
+  - 顶部空按钮“会员中心”和铃铛改为“隐私保护”状态徽标，术法页空按钮“使用说明”改为“文化娱乐参考”徽标。
+  - 首页“更多功能”空操作改为静态“精选入口”标签。
+  - 梦境解析提示按钮改为可点击追加提示到输入框，不再是无效按钮。
+  - 分享详情 API 对不存在记录返回 `200 + ok:false/code:not_found`，前端显示空状态且浏览器控制台不再出现 404 资源错误。
+- 验证结果：
+  - `npm run build` 通过。
+  - `node --check frontend/functions/api/[[path]].js` 通过。
+  - 本地预览桌面端和 390px 移动端检查首页、核心术法、工具页、周易页均无页面级横向溢出和旧记录入口；奇门提交后保留预览盘和结果盘，`localStorage` 无 `qk_` key。
+  - 已部署 Cloudflare Pages，新预览地址 `https://dad2d494.yulesuangua.pages.dev`；生产自定义域名 `https://suangua.weiyiai.top` API 健康检查正常。
+  - 线上 `https://suangua.weiyiai.top` 桌面端和 390px 移动端巡检 `/`、九个核心术法页、三个工具页、`/zhouyi`、`/share/test-id` 均返回 200，无控制台错误、无横向溢出、无旧记录入口；奇门提交后无本地记录。

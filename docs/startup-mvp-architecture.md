@@ -11,24 +11,23 @@ flowchart LR
   A --> C["mingyu-core 排盘引擎"]
   A --> R["规则解读服务"]
   A -.可选.-> L["OpenAI Compatible LLM"]
-  A -.绑定后.-> D["Cloudflare D1"]
-  V --> LS["localStorage 离线兜底"]
+  A -.用户主动保存/分享时.-> D["Cloudflare D1"]
 ```
 
 核心原则：
 
 - 前端先生成可视化盘面，AI/规则解读随后补充，避免后端慢或失败时页面空白。
 - `/api/divine/:skill` 不再依赖旧 Netlify 站点；没有模型 Key 时使用结构化规则解读。
-- `/api/consultations` 面向 D1 持久化；未绑定 D1 时明确返回 `persistence_unavailable`，前端降级到本地记录。
-- 分享页 `/share/:id` 是最小增长闭环：用户可保存记录，后续绑定 D1 后可分享。
+- `/api/consultations` 面向 D1 持久化；默认问卦流程不会调用该接口，只有用户后续主动保存/分享并看到明确提示时才允许写入。
+- 分享页 `/share/:id` 是可选能力：只有用户主动生成分享记录后才会跨设备访问。
 
 ## 文件结构
 
 ```text
 frontend/
   functions/api/[[path]].js          # Cloudflare Pages API：健康检查、排盘、解读、咨询记录
-  src/api/divine.js                  # 前端 API SDK：排盘、流式解读、记录保存/读取
-  src/views/Divine.vue               # 核心问卦工作台，接入保存记录
+  src/api/divine.js                  # 前端 API SDK：排盘、流式解读、可选记录保存/读取
+  src/views/Divine.vue               # 核心问卦工作台，默认不保存用户输入或结果
   src/views/ShareView.vue            # 分享/记录详情页
   src/router/index.js                # 路由，包含 /share/:id
   src/components/AsyncBoundary.vue   # 异步状态边界
@@ -49,7 +48,7 @@ docs/
 | `id` | TEXT PK | 记录 ID，可用于分享 URL |
 | `client_id` | TEXT | 浏览器匿名客户端 ID |
 | `skill` | TEXT | 术法类型 |
-| `title` | TEXT | 最近记录和详情页标题 |
+| `title` | TEXT | 分享详情页标题 |
 | `question` | TEXT | 用户问题 |
 | `payload_json` | TEXT | 表单参数快照 |
 | `board_json` | TEXT | 排盘结果快照 |
@@ -67,8 +66,8 @@ docs/
 | `GET` | `/api/divine/skills` | 获取术法列表 |
 | `POST` | `/api/metaphysics/calculate` | 调用 `mingyu-core` 生成结构化盘面 |
 | `POST` | `/api/divine/:skill` | SSE 流式解读，优先模型，失败后规则解读 |
-| `POST` | `/api/consultations` | 保存咨询记录 |
-| `GET` | `/api/consultations?clientId=&limit=` | 读取当前客户端最近记录 |
+| `POST` | `/api/consultations` | 用户主动保存/分享时保存咨询记录 |
+| `GET` | `/api/consultations?clientId=&limit=` | 可选读取授权记录列表，当前前端默认不调用 |
 | `GET` | `/api/consultations/:id` | 读取分享详情 |
 
 `POST /api/consultations` 请求：
@@ -95,11 +94,11 @@ docs/
 }
 ```
 
-前端收到该响应后继续保存到 localStorage，不打断用户流程。
+前端收到该响应后不做本地兜底保存，只提示保存不可用；普通问卦流程不依赖该接口，因此不会打断用户流程。
 
 ## UI 架构
 
-- `Divine.vue` 是核心工作台，负责表单、排盘、流式解读、保存记录。
+- `Divine.vue` 是核心工作台，负责表单、排盘和流式解读；默认只把结果保存在当前页面状态中。
 - 专业盘面由 `BaziBoard`、`ZiweiBoard`、`QimenBoard`、`MeihuaBoard` 等组件承载。
 - `AsyncBoundary` 统一加载、空、错、成功状态，避免动态数据散落在页面里。
 - `ShareView.vue` 使用同一套 `AsyncBoundary` 读取详情，保证分享页具备错误和空状态。
@@ -136,6 +135,6 @@ wrangler d1 execute yulesuangua-prod --file ..\docs\startup-mvp-schema.sql
 
 ## 当前 MVP 边界
 
-- 已具备问卦、排盘、解读、记录保存、最近记录、分享详情的技术闭环。
+- 已具备问卦、排盘、解读和可选分享详情的技术基础；隐私策略要求默认不保存、不展示最近记录。
 - 还没有账号、支付、后台管理和正式订单系统。
-- D1 未绑定时线上仍可使用，但分享详情需要数据库后才能跨设备访问。
+- D1 未绑定时线上仍可使用；分享详情需要用户主动保存且数据库可用后才能跨设备访问。

@@ -281,7 +281,7 @@ async function getConsultation(context, id) {
     WHERE id = ?
     LIMIT 1
   `).bind(id).first()
-  if (!row) return json({ ok: false, error: '记录不存在' }, 404)
+  if (!row) return json({ ok: false, code: 'not_found', error: '记录不存在', record: null })
   return json({ ok: true, record: rowToConsultation(row) })
 }
 

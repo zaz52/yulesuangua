@@ -15,8 +15,7 @@
         <a href="#boundary">说明</a>
       </nav>
       <div class="mystic-actions">
-        <button class="ds-button ghost" type="button">会员中心</button>
-        <span class="icon-pill">铃</span>
+        <span class="ds-badge green">隐私保护</span>
         <button class="ds-button primary" type="button" @click="go('/zhouyi')">开始问卦</button>
       </div>
     </header>
@@ -89,7 +88,7 @@
             <div class="mini-metrics"><span>五行 海中金</span><span>冲煞 马日冲鼠</span><span>值神 金匮</span></div>
           </article>
           <article id="skills" class="oracle-card recommend-card">
-            <div class="card-title-row"><h3>推荐功能</h3><button type="button" @click="activeGroup = 'all'">更多功能</button></div>
+            <div class="card-title-row"><h3>推荐功能</h3><span class="ds-badge">精选入口</span></div>
             <div class="recommend-row">
               <button v-for="item in featuredSkills" :key="item.id" type="button" @click="go(item.path)">
                 <i>{{ item.icon }}</i><strong>{{ item.name }}</strong><span>{{ item.short }}</span>
@@ -109,6 +108,7 @@
           <span class="section-kicker">Boundary</span>
           <h2>使用边界</h2>
           <p>本站内容用于传统文化体验、娱乐和自我观察，不构成医疗、法律、财务、婚恋等现实决策建议。重要事项请结合现实信息与专业人士意见。</p>
+          <p>隐私保护：默认不会在本地浏览器或远端数据库保存你的姓名、生日、地点、问题和解读结果。</p>
         </article>
       </section>
 

@@ -12,8 +12,7 @@
         <a href="/">说明</a>
       </nav>
       <div class="mystic-actions">
-        <button class="ds-button ghost" type="button">会员中心</button>
-        <span class="icon-pill">铃</span>
+        <span class="ds-badge green">隐私保护</span>
         <button class="ds-button primary" type="button" @click="router.push('/zhouyi')">开始问卦</button>
       </div>
     </header>
@@ -38,7 +37,7 @@
               <span v-for="tag in skillInfo.tags" :key="tag" class="ds-badge gold">{{ tag }}</span>
             </div>
           </div>
-          <button class="ds-button ghost" type="button">使用说明</button>
+          <span class="ds-badge">文化娱乐参考</span>
         </article>
 
         <div class="dimension-filter">

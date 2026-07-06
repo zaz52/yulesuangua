@@ -28,7 +28,7 @@ docs/qimen-mvp-schema.sql               # 可选数据库 schema
 
 ## 数据库设计
 
-MVP 当前不强依赖数据库，最近记录仍保留在浏览器本地。生产版本建议新增 `divination_records` 表保存用户授权后的排盘记录，`chart_payload` 保存规范 DTO，`ai_summary` 保存流式解读结果。
+MVP 当前不强依赖数据库，也不会把排盘记录保存在浏览器本地。生产版本如需新增 `divination_records` 表，必须以用户主动点击“保存/分享”作为前提，并在 UI 中明确提示将写入远端；`chart_payload` 保存规范 DTO，`ai_summary` 保存流式解读结果。
 
 ## API 接口
 

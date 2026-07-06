@@ -1,6 +1,6 @@
 # AsyncBoundary 动态 UI 组件
 
-`AsyncBoundary` 是用于动态内容区域的生产级组件。它不绑定具体业务，可用于排盘结果、最近记录、推荐列表、AI 解读片段、后台任务结果等异步 UI。
+`AsyncBoundary` 是用于动态内容区域的生产级组件。它不绑定具体业务，可用于排盘结果、推荐列表、AI 解读片段、后台任务结果等异步 UI。
 
 ## 组件架构
 
@@ -74,26 +74,26 @@ AsyncBoundary.vue
 
 - `frontend/src/components/AsyncBoundary.vue`
 
-## 使用示例：加载最近记录
+## 使用示例：加载推荐列表
 
 ```vue
 <template>
   <AsyncBoundary
-    title="最近记录"
-    eyebrow="Records"
-    :loader="loadRecentRecords"
-    :empty-when="(records) => records.length === 0"
+    title="推荐功能"
+    eyebrow="Suggestions"
+    :loader="loadSuggestions"
+    :empty-when="(items) => items.length === 0"
     immediate
     layout="panel"
-    empty-title="暂无最近记录"
-    empty-description="完成一次问卦后会自动显示在这里。"
-    aria-label="最近记录列表"
+    empty-title="暂无推荐"
+    empty-description="当前没有可展示的推荐内容。"
+    aria-label="推荐功能列表"
   >
     <template #default="{ data, reload }">
-      <div class="record-list">
-        <button v-for="item in data" :key="item.time" type="button">
+      <div class="suggestion-list">
+        <button v-for="item in data" :key="item.path" type="button">
           <strong>{{ item.title }}</strong>
-          <span>{{ item.time }}</span>
+          <span>{{ item.description }}</span>
         </button>
       </div>
       <button class="ds-button ghost" type="button" @click="reload">刷新</button>
@@ -104,28 +104,22 @@ AsyncBoundary.vue
 <script setup>
 import AsyncBoundary from '../components/AsyncBoundary.vue'
 
-async function loadRecentRecords() {
-  const raw = localStorage.getItem('qk_recent_records')
-  return raw ? JSON.parse(raw) : []
+async function loadSuggestions() {
+  const response = await fetch('/api/divine/skills')
+  const payload = await response.json()
+  return payload.items ?? []
 }
 </script>
 ```
 
 ## 当前项目接入点
 
-`/divine/:skill` 右侧“最近记录”已经接入 `AsyncBoundary`：
-
-- `loader`: `loadRecentRecordsAsync`
-- `reloadKey`: `recentRecordsVersion`
-- `emptyWhen`: `(items) => items.length === 0`
-- `showRetry`: `false`
-- 成功态：渲染 `.mini-list`
-- 空态：复用 `RitualState`
-- 保存问卦记录后：`recentRecordsVersion += 1`，组件自动重新加载
+当前隐私策略下，问卦和工具页面不再展示“最近记录”，也不再把用户输入写入 `localStorage`。`AsyncBoundary` 保留为通用异步状态组件，适合后续承载推荐、公开内容、只读配置、分享详情等不涉及默认保存用户隐私数据的区域。
 
 对应文件：
 
-- `frontend/src/views/Divine.vue`
+- `frontend/src/components/AsyncBoundary.vue`
+- `frontend/src/views/ShareView.vue`
 
 ## 使用示例：受控模式
 
