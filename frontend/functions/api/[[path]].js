@@ -272,19 +272,63 @@ function calculateLiuyaoBoard(payload) {
 function calculateMeihuaBoard(payload) {
   const number = extractNumber(payload.question || payload.context) || 123
   const result = generateMeihua(payload.datetime ? new Date(payload.datetime) : new Date(), { method: 'number', number })
+  const originalName = result.originalName || result.mainHexagram?.name || '本卦待定'
+  const mutualName = result.interName || result.interHexagram?.name || '互卦待定'
+  const changedName = result.changedName || result.changedHexagram?.name || '变卦待定'
+  const body = result.tiGua || result.bodyGua || '体卦'
+  const use = result.yongGua || result.useGua || '用卦'
+  const analysisText = formatAnalysis(result.analysis, '体用生克')
   return {
-    blocks: [
-      ['本卦', result.originalName || result.mainHexagram?.name || '待定', result.mainHexagram?.description || '初始态势'],
-      ['互卦', result.interName || result.interHexagram?.name || '待定', '过程暗线'],
-      ['变卦', result.changedName || result.changedHexagram?.name || '待定', '变化结果'],
-      ['体用', `${result.tiGua || '体'} / ${result.yongGua || '用'}`, result.analysis?.summary || result.analysis || '体用生克'],
-    ],
     meta: {
+      solar: payload.datetime ? String(payload.datetime).replace('T', ' ') : '当前起卦',
+      lunar: result.lunar || '由算法按起课时间换算',
+      topic: payload.topic || '所问之事',
+      place: payload.place || '方位未定',
+      method: '数字 / 时间 / 外应起卦',
       movingYao: result.movingYao,
       calculation: result.calculation,
     },
+    original: {
+      label: '本卦',
+      name: originalName,
+      note: result.mainHexagram?.description || '初始态势',
+    },
+    mutual: {
+      label: '互卦',
+      name: mutualName,
+      note: result.interHexagram?.description || '过程暗线',
+    },
+    changed: {
+      label: '变卦',
+      name: changedName,
+      note: result.changedHexagram?.description || '变化结果',
+    },
+    relation: {
+      body,
+      use,
+      text: analysisText,
+      movingLine: result.movingYao ? `${result.movingYao}爻动` : '动爻待定',
+    },
+    clues: [
+      { label: '起课线索', value: payload.question || payload.context || `数字 ${number}` },
+      { label: '事件类型', value: payload.topic || '未选择' },
+      { label: '地点方位', value: payload.place || '未填写' },
+      { label: '计算依据', value: result.calculation || `取数 ${number}` },
+    ],
     raw: compactRaw(result),
   }
+}
+
+function formatAnalysis(value, fallback = '待分析') {
+  if (!value) return fallback
+  if (typeof value === 'string') return value
+  if (typeof value.summary === 'string') return value.summary
+  if (typeof value.text === 'string') return value.text
+  if (typeof value.description === 'string') return value.description
+  return Object.entries(value)
+    .filter(([, item]) => item !== null && item !== undefined && typeof item !== 'object')
+    .map(([key, item]) => `${key}: ${item}`)
+    .join('；') || fallback
 }
 
 function calculateXiaoliurenBoard(payload) {

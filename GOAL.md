@@ -300,3 +300,63 @@
   - 浏览器桌面抽查 `/divine/ziwei`：最近记录空状态渲染 1 个 `RitualState`，`role="status"`，无页面级横向溢出。
   - 浏览器移动端 390px 抽查 `/tools/qiming`：最近记录空状态渲染 1 个 `RitualState`，无页面级横向溢出。
   - 模拟 `/api/divine/ziwei` 返回 500：提交后先出现加载态 `aria-busy="true"`，失败后出现错误态 `role="alert"`，且紫微盘面仍保留。
+
+### 2026-07-06 梅花易数工作台 MVP 架构化修复
+
+- 根据用户反馈“完成样子不符合，不能只是文字表述”，本轮把 `/divine/meihua` 从旧的临时花瓣展示升级为最小但可扩展的专属排盘子系统。
+- 新增 `frontend/src/domain/meihua.js`：
+  - 定义梅花易数前端 DTO：`meta`、`original`、`mutual`、`changed`、`relation`、`clues`。
+  - 提供 `buildMeihuaBoard()`，让起课时间、地点、事件类型和所问内容能驱动实时预览盘变化。
+  - 提供 `normalizeMeihuaBoard()`，兼容后端真实算法数据和前端 fallback。
+- 新增 `frontend/src/components/MeihuaBoard.vue`：
+  - 使用“本卦 / 互卦 / 变卦 / 体用”的盘面结构，不再显示为普通文字卡片。
+  - 中央展示体用生克，周围展示三卦，上方展示起课信息，底部展示线索摘要。
+  - 支持桌面端大盘面和移动端压缩布局。
+- 更新 `frontend/src/views/Divine.vue`：
+  - `/divine/meihua` 主工作区使用 `is-meihua-work`，右侧盘面获得更大空间。
+  - 梅花预览和提交后的结果统一使用 `MeihuaBoard`。
+  - 事件表单在梅花页改为上下布局，避免字段拥挤重叠。
+- 更新 `frontend/functions/api/[[path]].js`：
+  - `calculateMeihuaBoard()` 返回结构化 DTO，而不是旧的 `blocks` 文本数组。
+  - API 响应包含本卦、互卦、变卦、体用关系、线索和 raw 数据，方便后续持久化与复盘。
+- 新增文档：
+  - `docs/metaphysics-workbench-mvp.md`：系统架构、文件结构、API 接口、UI 架构和验收标准。
+  - `docs/metaphysics-workbench-schema.sql`：生产环境记录表设计。
+- 下一步验证要求：
+  - `npm run build` 必须通过。
+  - 浏览器检查 `/divine/meihua` 桌面端和 390px 移动端无横向溢出。
+  - 自动修改问题内容后，梅花盘文本应发生变化。
+- 验证结果：
+  - `npm run build` 已通过。
+  - 本地预览 `http://127.0.0.1:4210/divine/meihua` 返回 200。
+  - Chrome CDP 桌面端 1440px：`.meihua-board` 1 个、`.meihua-hex` 3 个、线索 4 条、无横向溢出；修改 textarea 后盘面文本发生变化。
+  - Chrome CDP 移动端 390px：`.meihua-board` 1 个、`.meihua-hex` 3 个、线索 4 条、无横向溢出。
+
+### 2026-07-06 全核心排盘组件化 MVP
+
+- 根据用户反馈“其它的也需要这样做，排盘要根据各个的来做”，本轮把核心排盘类术数从 `Divine.vue` 内联渲染拆成可复用组件。
+- 新增统一归一化层 `frontend/src/domain/metaphysics.js`：
+  - `normalizeBaziBoard`
+  - `normalizeZiweiBoard`
+  - `normalizeLiuyaoBoard`
+  - `normalizeDaliurenBoard`
+  - `normalizeXiaoliurenBoard`
+  - `normalizeFengshuiBoard`
+  - `normalizeTarotBoard`
+- 新增专属 UI 组件：
+  - `BaziBoard.vue`：四柱八字专业表格。
+  - `ZiweiBoard.vue`：十二宫圆盘。
+  - `LiuyaoBoard.vue`：六爻线盘。
+  - `DaliurenBoard.vue`：大六壬十二支/神将/三传圆盘。
+  - `XiaoliurenBoard.vue`：小六壬六宫圆盘。
+  - `FengshuiBoard.vue`：九宫方位盘。
+  - `TarotBoard.vue`：塔罗牌阵。
+- `Divine.vue` 现在只做排盘组件分发：八字、紫微、奇门、六爻、梅花、大六壬、小六壬、风水、塔罗都使用专属组件，不再在主页面内硬编码完整盘面。
+- 验证结果：
+  - `npm run build` 通过。
+  - 本地预览 `http://127.0.0.1:4211/divine/bazi` 返回 200。
+  - Chrome CDP 桌面端 1440px 检查 9 个路由：`/divine/bazi`、`/divine/ziwei`、`/divine/qimen`、`/divine/liuyao`、`/divine/meihua`、`/divine/daliuren`、`/divine/xiaoliuren`、`/divine/fengshui`、`/divine/tarot` 均渲染对应专属组件，`.generic-pro-grid` 为 0，无横向溢出。
+  - Chrome CDP 移动端 390px 检查同样 9 个路由，均渲染对应专属组件，无横向溢出。
+- 剩余边界：
+  - 姻缘、合婚、佛学、每日运势当前仍属于结构化结果面板，不是严格排盘；后续可以按相同模式继续拆组件。
+  - 部分真实算法字段仍依赖 `mingyu-core` 返回形态，已通过归一化层做兼容 fallback。

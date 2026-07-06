@@ -49,7 +49,7 @@
 
         <div class="work-tabs"><span class="active">基础信息</span><span>排盘结果</span></div>
 
-        <section class="primary-work-grid" :class="{ 'is-qimen-work': skillId === 'qimen' }">
+        <section class="primary-work-grid" :class="{ 'is-qimen-work': skillId === 'qimen', 'is-meihua-work': skillId === 'meihua' }">
           <article class="form-panel oracle-card">
             <div class="panel-head">
               <div>
@@ -222,8 +222,17 @@
 import { computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { calculateChart, divineStream } from '../api/divine'
+import BaziBoard from '../components/BaziBoard.vue'
+import DaliurenBoard from '../components/DaliurenBoard.vue'
+import FengshuiBoard from '../components/FengshuiBoard.vue'
+import LiuyaoBoard from '../components/LiuyaoBoard.vue'
+import MeihuaBoard from '../components/MeihuaBoard.vue'
 import QimenBoard from '../components/QimenBoard.vue'
 import RitualState from '../components/RitualState.vue'
+import TarotBoard from '../components/TarotBoard.vue'
+import XiaoliurenBoard from '../components/XiaoliurenBoard.vue'
+import ZiweiBoard from '../components/ZiweiBoard.vue'
+import { buildMeihuaBoard } from '../domain/meihua'
 import { buildQimenFallbackBoard } from '../domain/qimen'
 
 const route = useRoute()
@@ -450,7 +459,12 @@ function buildBoard(chartResult = null) {
       ],
     },
     meihua: {
-      blocks: [['本卦', '乾为天', '初始态势'], ['互卦', '天泽履', '过程暗线'], ['变卦', '天风姤', '变化结果'], ['体用', '体金 / 用木', '生克关系']],
+      ...buildMeihuaBoard({
+        datetime: eventForm.value.datetime,
+        topic: eventForm.value.topic,
+        place: eventForm.value.place,
+        question: userInput.value,
+      }),
     },
     daliuren: { items: [['四课', '日干 / 日支 / 课体 / 发用'], ['三传', '初传 -> 中传 -> 末传'], ['神将', '贵人、六合、勾陈、天空'], ['判断', eventForm.value.topic || '复杂事件']] },
     xiaoliuren: { items: [['大安', '稳定可守'], ['留连', '拖延反复'], ['速喜', '消息临近'], ['赤口', '口舌谨慎'], ['小吉', '小成可进'], ['空亡', '暂缓复核']] },
@@ -632,37 +646,11 @@ function renderBoard(board) {
 }
 
 function renderBaziBoard(data) {
-  return h('div', { class: 'bazi-pro-table' }, [
-    h('div', { class: 'bazi-row bazi-header' }, [h('span', '项目'), ...data.columns.map((item) => h('strong', item))]),
-    ...data.rows.map((row) => h('div', { class: 'bazi-row' }, [h('span', row[0]), ...row.slice(1).map((item) => h('em', item))])),
-    h('div', { class: 'board-tips' }, data.highlights.map((item) => h('small', item))),
-  ])
+  return h(BaziBoard, { data })
 }
 
 function renderZiweiBoard(data) {
-  const palaces = normalizeZiweiPalaces(data)
-  const meta = data.meta || {}
-  return h('div', { class: 'ziwei-dial' }, [
-    h('div', { class: 'ziwei-dial-ring outer' }),
-    h('div', { class: 'ziwei-dial-ring middle' }),
-    h('div', { class: 'ziwei-dial-ring inner' }),
-    ...palaces.map((palace, index) => h('div', {
-      class: ['ziwei-dial-palace', palace.note?.includes('命宫') && 'is-ming', palace.note?.includes('身宫') && 'is-body'],
-      style: { '--a': `${index * 30}deg` },
-    }, [
-      h('span', palace.branch || palace.name),
-      h('strong', palace.name),
-      h('b', palace.star),
-      h('em', palace.minor || palace.note || '排盘参考'),
-      h('small', palace.age || ''),
-    ])),
-    h('div', { class: 'ziwei-dial-center' }, [
-      h('b', '紫微斗数'),
-      h('strong', meta.soul || '命宫未定'),
-      h('span', meta.body || '身宫待定'),
-      h('small', `${meta.fiveElementsClass || '五行局待定'} · ${data.center || '命主信息待填'}`),
-    ]),
-  ])
+  return h(ZiweiBoard, { data })
 }
 
 function normalizeZiweiPalaces(data) {
@@ -695,82 +683,19 @@ function renderQimenBoard(data) {
 }
 
 function renderLiuyaoBoard(data) {
-  const meta = data.meta || {}
-  return h('div', { class: 'liuyao-layout' }, [
-    h('div', { class: 'liuyao-title-strip' }, [
-      h('strong', meta.originalName || '本卦待定'),
-      h('span', meta.changedName ? `变卦：${meta.changedName}` : '变卦随动爻而定'),
-      h('em', meta.palace || '世应用神'),
-    ]),
-    h('div', { class: 'liuyao-pro-lines' }, (data.lines || []).map((line) => h('div', { class: ['yao-row', line[3] && 'is-marked'] }, [
-      h('span', line[0]),
-      h('i', { class: line[1] === '阳爻' ? 'yao-line yang' : 'yao-line yin' }),
-      h('strong', line[2]),
-      h('b', line[3]),
-      h('em', line[4]),
-    ]))),
-    h('div', { class: 'liuyao-footnotes' }, [
-      h('span', meta.interName ? `互卦 ${meta.interName}` : '互卦待排'),
-      h('span', meta.specialPattern || '以世应、用神、动爻为判断核心'),
-    ]),
-  ])
+  return h(LiuyaoBoard, { data })
 }
 
 function renderMeihuaBoard(data) {
-  const blocks = data.blocks || []
-  const petals = [
-    blocks[0] || ['离', '本卦', '初始'],
-    ['兑', '象意', '外应'],
-    blocks[2] || ['坤', '变卦', '趋势'],
-    blocks[3] || ['坎', '体用', '生克'],
-    ['艮', '互象', '过程'],
-    blocks[1] || ['震', '互卦', '暗线'],
-  ]
-  return h('div', { class: 'meihua-plum-board' }, [
-    h('div', { class: 'meihua-plum-center' }, [h('b', '☯'), h('span', '数由心生')]),
-    ...petals.map((block, index) => h('div', { class: 'meihua-petal', style: { '--a': `${index * 60}deg` } }, [
-      h('strong', block[0]),
-      h('i', '☰'),
-      h('span', block[1]),
-      h('em', block[2]),
-    ])),
-    h('p', { class: 'meihua-plum-note' }, '数由心生，象从数起，心诚则灵，卦显其义。'),
-  ])
+  return h(MeihuaBoard, { data })
 }
 
 function renderDaliurenBoard(data) {
-  const items = data.items || []
-  const pass = (items[1]?.[1] || '初传 -> 中传 -> 末传').split('->').map((item) => item.trim())
-  const rings = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
-  return h('div', { class: 'daliuren-plate' }, [
-    h('div', { class: 'daliuren-ring outer' }, rings.map((item, index) => h('span', { style: { '--a': `${index * 30}deg` } }, item))),
-    h('div', { class: 'daliuren-ring middle' }, ['青龙', '勾陈', '朱雀', '六合', '白虎', '玄武'].map((item, index) => h('span', { style: { '--a': `${index * 60 + 15}deg` } }, item))),
-    h('div', { class: 'daliuren-center' }, [
-      h('strong', eventForm.value.datetime ? eventForm.value.datetime.slice(11) || '占时' : '戊戌时'),
-      h('span', '旬首：甲戌'),
-      h('span', '值符：天心'),
-      h('span', '值使：开门'),
-    ]),
-    h('div', { class: 'daliuren-pass-strip' }, ['初传', '中传', '末传'].map((name, index) => h('div', [
-      h('span', name),
-      h('strong', pass[index] || ['癸酉', '壬申', '辛未'][index]),
-    ]))),
-    h('div', { class: 'daliuren-foot' }, [
-      h('span', `四课：${items[0]?.[1] || '龙蛇 勾贵 朱合 阴阳'}`),
-      h('span', `课体：${items[2]?.[1] || '神将定吉凶'}`),
-    ]),
-  ])
+  return h(DaliurenBoard, { data })
 }
 
 function renderXiaoliurenBoard(data) {
-  const items = data.items || []
-  return h('div', { class: 'xiaoliuren-wheel' }, [
-    h('div', { class: 'xiaoliuren-center' }, [h('strong', '小六壬'), h('span', '六宫速断')]),
-    ...items.slice(0, 6).map((item, index) => h('div', { class: 'xiaoliuren-gate', style: { '--a': `${index * 60}deg` } }, [
-      h('span', item[0]),
-      h('em', item[1]),
-    ])),
-  ])
+  return h(XiaoliurenBoard, { data })
 }
 
 function renderYinyuanBoard(data) {
@@ -809,13 +734,7 @@ function renderFojiaoBoard(data) {
 }
 
 function renderFengshuiBoard(data) {
-  return h('div', { class: 'fengshui-compass' }, [
-    h('div', { class: 'fengshui-nine-grid' }, (data.cells || []).map((cell) => h('div', { class: cell[0] === '中宫' ? 'feng-cell center' : 'feng-cell' }, [
-      h('span', cell[0]),
-      h('strong', cell[1]),
-      h('em', cell[2]),
-    ]))),
-  ])
+  return h(FengshuiBoard, { data })
 }
 
 function renderDailyFortuneBoard(data) {
@@ -830,10 +749,7 @@ function renderDailyFortuneBoard(data) {
 }
 
 function renderTarotBoard(data) {
-  return h('div', { class: 'tarot-spread' }, [
-    h('div', { class: 'tarot-spread-name' }, data.spread),
-    ...data.cards.map((card) => h('div', { class: 'tarot-card' }, [h('span', card[0]), h('strong', card[1]), h('em', card[2])])),
-  ])
+  return h(TarotBoard, { data })
 }
 
 function renderGenericBoard(data) {
@@ -931,6 +847,10 @@ function renderGenericBoard(data) {
   grid-template-columns: minmax(280px, 0.58fr) minmax(0, 1.42fr);
 }
 
+.primary-work-grid.is-meihua-work {
+  grid-template-columns: minmax(320px, 0.7fr) minmax(0, 1.3fr);
+}
+
 .primary-work-grid .form-panel,
 .board-preview-panel {
   min-height: 560px;
@@ -946,6 +866,15 @@ function renderGenericBoard(data) {
 
 .primary-work-grid.is-qimen-work .event-form-grid .ds-field,
 .primary-work-grid.is-qimen-work .event-form-grid .info-chip {
+  grid-column: 1 / -1;
+}
+
+.primary-work-grid.is-meihua-work .event-form-grid {
+  grid-template-columns: 1fr;
+}
+
+.primary-work-grid.is-meihua-work .event-form-grid .ds-field,
+.primary-work-grid.is-meihua-work .event-form-grid .info-chip {
   grid-column: 1 / -1;
 }
 
@@ -2270,6 +2199,10 @@ function renderGenericBoard(data) {
   }
 
   .primary-work-grid.is-qimen-work {
+    grid-template-columns: 1fr;
+  }
+
+  .primary-work-grid.is-meihua-work {
     grid-template-columns: 1fr;
   }
 
