@@ -177,7 +177,7 @@ async function generateReading(skill, payload, env) {
 async function callOpenAICompatibleModel(input, env) {
   const apiKey = env.OPENAI_API_KEY || env.NVIDIA_API_KEY || env.NVCF_API_KEY
   const baseUrl = env.OPENAI_BASE_URL || env.NVIDIA_BASE_URL || 'https://integrate.api.nvidia.com/v1'
-  const model = env.OPENAI_MODEL || env.NVIDIA_MODEL || 'nvidia/llama-3.3-nemotron-super-49b-v1.5'
+  const model = env.OPENAI_MODEL || env.NVIDIA_MODEL || 'qwen/qwen3-235b-a22b'
   if (!apiKey) return ''
 
   const res = await fetch(`${baseUrl.replace(/\/$/, '')}/chat/completions`, {
@@ -190,11 +190,11 @@ async function callOpenAICompatibleModel(input, env) {
       model,
       temperature: 0.6,
       top_p: 0.95,
-      max_tokens: 900,
+      max_tokens: 1400,
       messages: [
         {
           role: 'system',
-          content: '你是一个中文玄学文化娱乐应用的解读助手。输出要结构化、克制、可执行，不做绝对预测，不提供医疗法律投资结论。',
+          content: '你是一个中文玄学文化娱乐应用的解读助手。必须直接输出完整解读，不要输出“示例”、不要只输出框架、不要停在标题。输出 5 到 7 段，包含盘面摘要、问题重心、趋势判断、行动建议、风险提醒。语气克制、可执行，不做绝对预测，不提供医疗法律投资结论。',
         },
         {
           role: 'user',
