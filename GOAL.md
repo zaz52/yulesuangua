@@ -560,3 +560,26 @@
   - 本地预览桌面端和 390px 移动端检查首页、核心术法、工具页、周易页均无页面级横向溢出和旧记录入口；奇门提交后保留预览盘和结果盘，`localStorage` 无 `qk_` key。
   - 已部署 Cloudflare Pages，新预览地址 `https://dad2d494.yulesuangua.pages.dev`；生产自定义域名 `https://suangua.weiyiai.top` API 健康检查正常。
   - 线上 `https://suangua.weiyiai.top` 桌面端和 390px 移动端巡检 `/`、九个核心术法页、三个工具页、`/zhouyi`、`/share/test-id` 均返回 200，无控制台错误、无横向溢出、无旧记录入口；奇门提交后无本地记录。
+
+### 2026-07-07 生产故障式代码排查
+
+- 当前任务：按生产环境故障排查标准阅读现有代码，分步骤推理真实数据流，识别根本原因、边缘情况，并给出/实现稳健修复方案。
+- 验收标准：
+  - 必须先说明相关代码原本功能、故障表现、失败原因、边缘情况。
+  - 必须落实到生产级代码，而不是只给建议。
+  - 修复后必须通过构建、Function 语法检查和至少一组线上/本地端到端验证。
+- 排查结论：
+  - 根因位于 `frontend/src/api/http.js`：`checkBackend()` 将首次 `/api/health` 结果永久缓存在 `backendAvailable` 中。如果首次请求因为网络抖动、Cloudflare 冷启动、微信内置浏览器网络切换或短暂 5xx 失败，后续 `calculateChart`、`getConsultationRecord`、`divineStream` 会一直认为后端不可用，直到用户刷新页面。
+  - 旧实现还直接依赖 `AbortSignal.timeout()`，部分旧内核浏览器可能不支持，导致健康检查自身抛错并被缓存为不可用。
+- 修复方案：
+  - 为后端健康状态增加 30 秒 TTL，不再永久缓存失败或成功状态。
+  - 增加并发去重，多个组件同时检查 `/health` 时共享同一个 Promise。
+  - 增加 `timeoutSignal()` 兼容旧浏览器，不支持 `AbortSignal.timeout()` 时回退到 `AbortController + setTimeout`。
+  - 增加 `ensureBackendAvailable()`，用户触发真实 API 请求时，如果前一次健康检查失败，会在同一次请求链路内强制复查一次，避免真实排盘被一次瞬时失败降级。
+  - 暴露 `resetBackendStatus()`，后续错误恢复、测试或手动重试可以清空缓存状态。
+- 验证结果：
+  - `npm run build` 通过。
+  - `node --check frontend/functions/api/[[path]].js` 通过。
+  - Playwright 本地故障复现通过：第一次 `/api/health` 模拟 503，第二次模拟恢复 200；同一次 `/divine/qimen` 提交成功触发 `/api/metaphysics/calculate` 和 `/api/divine/qimen`，页面保留九宫盘，无横向溢出，`localStorage` 无 `qk_` key。
+  - 已部署 Cloudflare Pages，预览地址 `https://c4a81844.yulesuangua.pages.dev`。
+  - 生产域名 `https://suangua.weiyiai.top/api/health` 返回 `ok: true`，`/divine/qimen` 返回 200。
