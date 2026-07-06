@@ -1,31 +1,47 @@
 <template>
-  <main class="tool-page ritual-page">
-    <header class="page-nav app-shell">
-      <button class="ds-button ghost" type="button" @click="router.push('/')">返回首页</button>
-      <div class="title-center">
-        <span class="round-mark small">{{ tool.icon }}</span>
-        <div>
-          <strong>{{ tool.name }}</strong>
-          <em>{{ tool.kicker }}</em>
-        </div>
+  <main class="tool-page mystic-app">
+    <header class="mystic-topbar">
+      <a class="brand" href="/" aria-label="乾坤之道首页">
+        <span class="brand-seal">卦</span>
+        <span><strong>乾坤之道</strong><em>功能中心</em></span>
+      </a>
+      <nav class="nav-links" aria-label="主导航">
+        <a href="/">首页</a>
+        <a href="/divine/bazi">AI问卦</a>
+        <a href="/tools/qiming">功能中心</a>
+        <a href="/">说明</a>
+      </nav>
+      <div class="mystic-actions">
+        <button class="ds-button ghost" type="button">会员中心</button>
+        <span class="icon-pill">铃</span>
+        <button class="ds-button primary" type="button" @click="router.push('/zhouyi')">开始问卦</button>
       </div>
-      <button class="ds-button gold" type="button" @click="router.push(`/divine/${tool.related}`)">AI 深问</button>
     </header>
 
-    <section class="tool-shell app-shell">
-      <aside class="tool-side ds-card">
-        <span class="round-mark">{{ tool.icon }}</span>
-        <h1>{{ tool.name }}</h1>
-        <p>{{ tool.description }}</p>
+    <section class="tool-shell mystic-layout">
+      <aside class="tool-side left-rail">
+        <button class="rail-link" type="button" @click="router.push('/')"><i>⌂</i><span>首页</span></button>
+        <span class="rail-section-title">辅助工具</span>
         <div class="side-links">
-          <button v-for="item in tools" :key="item.id" type="button" :class="{ active: item.id === toolId }" @click="router.push(`/tools/${item.id}`)">
-            {{ item.name }}
+          <button v-for="item in tools" :key="item.id" type="button" class="rail-link" :class="{ active: item.id === toolId }" @click="router.push(`/tools/${item.id}`)">
+            <i>{{ item.icon }}</i><span>{{ item.name }}</span>
           </button>
         </div>
+        <button class="rail-link rail-record" type="button"><i>记</i><span>我的记录</span></button>
       </aside>
 
-      <section class="tool-main">
-        <article v-if="toolId === 'huangli'" class="work-card ds-card">
+      <section class="tool-main main-workspace">
+        <article class="tool-hero hero-workspace">
+          <div>
+            <span class="section-kicker">{{ tool.kicker }}</span>
+            <h1>{{ tool.name }}</h1>
+            <p>{{ tool.description }}</p>
+          </div>
+          <button class="ds-button ghost" type="button" @click="router.push(`/divine/${tool.related}`)">AI 深问</button>
+        </article>
+        <div class="work-tabs"><span class="active">基础信息</span><span>{{ toolId === 'qiming' ? '起名结果' : '推演结果' }}</span></div>
+
+        <article v-if="toolId === 'huangli'" class="work-card oracle-card">
           <PanelHead kicker="Daily Almanac" title="今日宜忌" :badge="today" />
           <div class="almanac-grid">
             <div><span>宜</span><strong>问卦、复盘、整理计划、拜访长辈</strong></div>
@@ -36,14 +52,14 @@
           <ResultBlock title="今日提醒" copy="适合先把问题写清楚，再进入周易起卦或奇门页面深问。黄历仅作传统文化参考，不作为现实决策依据。" />
         </article>
 
-        <article v-else-if="toolId === 'lingqian'" class="work-card ds-card">
+        <article v-else-if="toolId === 'lingqian'" class="work-card oracle-card">
           <PanelHead kicker="Spiritual Lot" title="灵签占问" :badge="lot.level" />
           <label class="ds-field wide"><span>所问之事</span><input v-model.trim="question" placeholder="例如：这段关系是否还适合继续推进" /></label>
           <button class="ds-button primary" type="button" @click="drawLot">诚心抽签</button>
           <ResultBlock :title="lot.title" :copy="lot.text" />
         </article>
 
-        <article v-else-if="toolId === 'jiemeng'" class="work-card ds-card">
+        <article v-else-if="toolId === 'jiemeng'" class="work-card oracle-card">
           <PanelHead kicker="Dream Reading" title="梦境解析" badge="梦象记录" />
           <div class="form-grid">
             <label class="ds-field wide"><span>梦境内容</span><textarea v-model.trim="dreamForm.dream" placeholder="写下梦里最清楚的画面、人物、地点或情绪"></textarea></label>
@@ -54,7 +70,7 @@
           <ResultBlock title="梦象提示" :copy="dreamResult" />
         </article>
 
-        <article v-else-if="toolId === 'qiming'" class="work-card ds-card">
+        <article v-else-if="toolId === 'qiming'" class="work-card oracle-card">
           <PanelHead kicker="Naming" title="美称生成" badge="候选名册" />
           <div class="form-grid">
             <label class="ds-field"><span>姓氏</span><input v-model.trim="nameForm.familyName" placeholder="例如：林" /></label>
@@ -66,7 +82,7 @@
           <NameBoard :names="nameCandidates" :summary="nameResult" />
         </article>
 
-        <article v-else class="work-card ds-card">
+        <article v-else class="work-card oracle-card">
           <PanelHead kicker="Wish & Incense" title="祈福上香" :badge="`香火 ${incenseCount} 点`" />
           <div class="form-grid">
             <label class="ds-field"><span>祈福对象</span><select v-model="wishForm.target"><option>自己</option><option>家人</option><option>朋友</option><option>众生</option></select></label>
@@ -76,6 +92,34 @@
           <ResultBlock title="心愿记录" :copy="wishResult" />
         </article>
       </section>
+
+      <aside class="right-rail">
+        <article class="right-rail-card">
+          <div class="card-title-row"><h3>今日指引</h3><span class="ds-badge">查看详情</span></div>
+          <div class="mini-item"><strong>宜</strong><span>祭祀 祈福 求嗣 出行 修造 纳采 订盟</span></div>
+          <div class="mini-item"><strong>忌</strong><span>动土 破土 安葬 冠笄 造桥</span></div>
+          <p>名者，命也。名正则言顺，命善则运通。</p>
+        </article>
+        <article class="right-rail-card">
+          <h3>最近记录</h3>
+          <div v-if="recentRecords.length" class="mini-list">
+            <button v-for="item in recentRecords" :key="`${item.title}-${item.time}`" type="button" class="mini-record" @click="item.path && router.push(item.path)">
+              <strong>{{ item.title }}</strong>
+              <span>{{ item.time }}</span>
+            </button>
+          </div>
+          <p v-else class="empty-side-note">暂无最近记录。使用工具后会自动显示在这里。</p>
+        </article>
+        <article class="right-rail-card">
+          <h3>推荐功能</h3>
+          <div class="quick-icons">
+            <button type="button" @click="router.push('/tools/qiming')"><b>名</b>姓名分析</button>
+            <button type="button" @click="router.push('/divine/bazi')"><b>命</b>八字精批</button>
+            <button type="button" @click="router.push('/divine/hehun')"><b>合</b>合婚配对</button>
+            <button type="button" @click="router.push('/tools/xianghuo')"><b>香</b>祈福上香</button>
+          </div>
+        </article>
+      </aside>
     </section>
   </main>
 </template>
@@ -149,21 +193,49 @@ const nameCandidates = ref(buildNameCandidates('林', '清雅、自然'))
 const wishForm = ref({ target: '自己', text: '' })
 const wishResult = ref('写下心愿后，点击上香会记录在当前浏览器中。')
 const incenseCount = ref(108)
+const recentRecords = ref([])
 
 onMounted(() => {
   if (toolId.value === 'liuyao') router.replace('/zhouyi')
   incenseCount.value = Number(localStorage.getItem('qk_incense') || 108)
   wishForm.value.text = localStorage.getItem('qk_wish') || ''
+  recentRecords.value = loadRecentRecords()
 })
+
+function loadRecentRecords() {
+  try {
+    return JSON.parse(localStorage.getItem('qk_recent_records') || '[]').slice(0, 8)
+  } catch {
+    return []
+  }
+}
+
+function saveRecentRecord(title, path = `/tools/${toolId.value}`) {
+  const record = {
+    title,
+    path,
+    time: new Intl.DateTimeFormat('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date()),
+  }
+  const next = [record, ...loadRecentRecords()].slice(0, 8)
+  localStorage.setItem('qk_recent_records', JSON.stringify(next))
+  recentRecords.value = next
+}
 
 function drawLot() {
   lotIndex.value += 1
+  saveRecentRecord(`灵签占问 · ${question.value || lot.value.title}`)
 }
 
 function analyzeDream() {
   const mood = dreamForm.value.mood
   const context = dreamForm.value.context || '未填写现实背景'
   dreamResult.value = `梦境可先看三层：一是画面象意，二是醒来时的${mood}情绪，三是它和现实背景“${context}”的关系。建议把梦中最强烈的画面写成一句问题，再进入佛学开示继续深问。`
+  saveRecentRecord(`梦境解析 · ${mood}`)
 }
 
 function generateNames() {
@@ -171,6 +243,7 @@ function generateNames() {
   const style = nameForm.value.style || '清雅、自然、易读'
   nameCandidates.value = buildNameCandidates(family, style)
   nameResult.value = `${family}姓 · ${nameForm.value.gender} · 农历 ${nameForm.value.birth || '未填'} · ${style}`
+  saveRecentRecord(`宝宝起名 · ${family}姓${nameForm.value.gender}`)
 }
 
 function buildNameCandidates(family, style) {
@@ -197,12 +270,13 @@ function offerIncense() {
   localStorage.setItem('qk_incense', String(incenseCount.value))
   localStorage.setItem('qk_wish', wishForm.value.text)
   wishResult.value = `已为${wishForm.value.target}敬上三炷香。心愿已保存在当前浏览器：${wishForm.value.text || '愿心安定，所行有度。'}`
+  saveRecentRecord(`祈福上香 · ${wishForm.value.target}`)
 }
 </script>
 
 <style scoped>
 .tool-page {
-  padding: 18px 0 64px;
+  padding-bottom: 28px;
 }
 
 .title-center {
@@ -236,20 +310,39 @@ function offerIncense() {
 }
 
 .tool-shell {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: 18px;
-  padding-top: 24px;
+  align-items: start;
 }
 
-.tool-side,
+.tool-hero {
+  display: flex;
+  min-height: 240px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 22px;
+  background:
+    linear-gradient(90deg, rgba(13, 9, 7, 0.86), rgba(13, 9, 7, 0.24)),
+    radial-gradient(circle at 80% 34%, rgba(215, 179, 95, 0.2), transparent 34%),
+    linear-gradient(145deg, rgba(255, 247, 231, 0.08), transparent);
+}
+
+.tool-hero h1 {
+  margin: 12px 0 0;
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: clamp(48px, 7vw, 76px);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.tool-hero p {
+  max-width: 720px;
+  color: var(--paper-dim);
+}
+
 .work-card {
   padding: 22px;
 }
 
-.tool-side > *,
 .work-card > * {
   position: relative;
   z-index: 1;
@@ -272,22 +365,16 @@ function offerIncense() {
 .side-links {
   display: grid;
   gap: 8px;
-  margin-top: 20px;
+  margin-top: 0;
 }
 
 .side-links button {
-  padding: 10px 12px;
-  border: 1px solid rgba(215, 179, 95, 0.16);
-  border-radius: var(--radius-xs);
-  color: var(--paper-dim);
-  background: rgba(255, 247, 231, 0.04);
-  text-align: left;
+  width: 100%;
 }
 
 .side-links button.active,
 .side-links button:hover {
   color: var(--gold-bright);
-  border-color: rgba(240, 217, 132, 0.42);
 }
 
 .tool-main {

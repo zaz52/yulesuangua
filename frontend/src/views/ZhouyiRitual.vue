@@ -17,7 +17,17 @@
       <button class="ds-button ghost" type="button" @click="resetRitual">重新起卦</button>
     </header>
 
-    <section class="stage">
+    <section class="ritual-dashboard">
+      <aside class="left-rail ritual-left">
+        <button class="rail-link" type="button" @click="goHome"><i>⌂</i><span>首页</span></button>
+        <span class="rail-section-title">起卦流程</span>
+        <button v-for="item in ritualSteps" :key="item.id" type="button" class="rail-link" :class="{ active: step === item.id }">
+          <i>{{ item.icon }}</i><span>{{ item.name }}</span>
+        </button>
+        <button class="rail-link rail-record" type="button" @click="resetRitual"><i>重</i><span>重新起卦</span></button>
+      </aside>
+
+      <section class="stage">
       <article v-if="step === 'intro'" class="stage-card intro-card">
         <BaguaPlate />
         <span class="section-kicker">观象取意，推演吉凶</span>
@@ -92,6 +102,24 @@
           </div>
         </section>
       </article>
+      </section>
+
+      <aside class="right-rail ritual-right">
+        <article class="right-rail-card">
+          <div class="card-title-row"><h3>仪式进度</h3><span class="ds-badge gold">{{ stepTitle }}</span></div>
+          <div class="ritual-progress">
+            <span v-for="item in ritualSteps" :key="item.id" :class="{ active: step === item.id, done: stepOrder.indexOf(step) > stepOrder.indexOf(item.id) }">{{ item.name }}</span>
+          </div>
+        </article>
+        <article class="right-rail-card">
+          <h3>今日指引</h3>
+          <div class="mini-item"><strong>起卦前</strong><span>先写清楚所问，不要一次问多个方向。</span></div>
+          <div class="mini-item"><strong>得卦后</strong><span>先看本卦，再看动爻与变卦，不急着定吉凶。</span></div>
+        </article>
+        <article class="right-rail-card quote-card">
+          <p>观象取意，推演吉凶；心念既定，卦象自明。</p>
+        </article>
+      </aside>
     </section>
   </main>
 </template>
@@ -110,6 +138,15 @@ const coinRound = ref(0)
 const breathWords = ['静心', '凝神', '起意']
 const castingWords = ['初爻已定', '二爻已成', '三爻既显', '四爻渐明', '五爻将成', '上爻既就，卦象已成']
 const tags = ['吉', '中平', '谨慎', '宜守', '宜进']
+const ritualSteps = [
+  { id: 'intro', icon: '静', name: '静心引导' },
+  { id: 'question', icon: '问', name: '默念所问' },
+  { id: 'prepare', icon: '备', name: '起卦准备' },
+  { id: 'casting', icon: '投', name: '铜钱投掷' },
+  { id: 'reveal', icon: '定', name: '卦象定格' },
+  { id: 'result', icon: '卷', name: '卷轴解卦' },
+]
+const stepOrder = ritualSteps.map((item) => item.id)
 
 const stepTitle = computed(() => ({
   intro: '静心引导',
@@ -196,6 +233,23 @@ const HexagramLines = defineComponent({
 .zhouyi-page {
   min-height: 100vh;
   overflow: hidden;
+}
+
+.ritual-dashboard {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) 310px;
+  gap: 16px;
+  width: min(1660px, calc(100% - 28px));
+  margin: 0 auto;
+  padding-top: 96px;
+}
+
+.ritual-left,
+.ritual-right {
+  top: 96px;
+  align-self: start;
 }
 
 .ritual-bg,
@@ -299,15 +353,15 @@ const HexagramLines = defineComponent({
   position: relative;
   z-index: 2;
   display: grid;
-  min-height: 100vh;
+  min-height: calc(100vh - 124px);
   place-items: center;
-  padding: 104px 18px 38px;
+  padding: 0 0 28px;
 }
 
 .stage-card,
 .result-scroll {
   width: min(980px, 100%);
-  min-height: 620px;
+  min-height: min(620px, calc(100vh - 150px));
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
@@ -315,6 +369,30 @@ const HexagramLines = defineComponent({
     linear-gradient(135deg, rgba(255, 247, 231, 0.08), transparent 48%),
     rgba(32, 20, 13, 0.78);
   box-shadow: var(--shadow-deep);
+}
+
+.ritual-progress {
+  display: grid;
+  gap: 8px;
+}
+
+.ritual-progress span {
+  padding: 9px 10px;
+  border: 1px solid rgba(215, 179, 95, 0.14);
+  border-radius: var(--radius-xs);
+  color: rgba(245, 234, 212, 0.56);
+  background: rgba(255, 247, 231, 0.035);
+}
+
+.ritual-progress span.active {
+  color: var(--gold-bright);
+  border-color: rgba(240, 217, 132, 0.42);
+  background: rgba(215, 179, 95, 0.12);
+}
+
+.ritual-progress span.done {
+  color: #9ad8c5;
+  border-color: rgba(79, 155, 131, 0.32);
 }
 
 .stage-card {
@@ -639,6 +717,22 @@ const HexagramLines = defineComponent({
 }
 
 @media (max-width: 760px) {
+  .ritual-dashboard {
+    grid-template-columns: 1fr;
+    width: min(100% - 24px, 760px);
+  }
+
+  .ritual-left,
+  .ritual-right {
+    position: relative;
+    top: auto;
+    min-height: auto;
+  }
+
+  .ritual-left {
+    display: none;
+  }
+
   .ritual-nav {
     grid-template-columns: 1fr auto;
   }

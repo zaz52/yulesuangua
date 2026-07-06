@@ -1,87 +1,132 @@
 <template>
-  <main class="divine-page ritual-page">
-    <header class="page-nav app-shell">
-      <button class="ds-button ghost" type="button" @click="router.push('/')">返回首页</button>
-      <div class="title-center">
-        <span class="round-mark small">{{ skillInfo.icon }}</span>
-        <div>
-          <strong>{{ skillInfo.name }}</strong>
-          <em>{{ skillInfo.caption }}</em>
-        </div>
+  <main class="divine-page mystic-app">
+    <header class="mystic-topbar">
+      <a class="brand" href="/" aria-label="乾坤之道首页">
+        <span class="brand-seal">卦</span>
+        <span><strong>乾坤之道</strong><em>AI问卦</em></span>
+      </a>
+      <nav class="nav-links" aria-label="主导航">
+        <a href="/">首页</a>
+        <a href="/divine/bazi">AI问卦</a>
+        <a href="/tools/qiming">功能中心</a>
+        <a href="/">说明</a>
+      </nav>
+      <div class="mystic-actions">
+        <button class="ds-button ghost" type="button">会员中心</button>
+        <span class="icon-pill">铃</span>
+        <button class="ds-button primary" type="button" @click="router.push('/zhouyi')">开始问卦</button>
       </div>
-      <span class="ds-badge green">AI Skill</span>
     </header>
 
-    <section class="divine-shell app-shell">
-      <aside class="method-panel ds-card">
-        <span class="section-kicker">当前术法</span>
-        <h1>{{ skillInfo.name }}</h1>
-        <p>{{ skillInfo.description }}</p>
-        <div class="method-tags">
-          <span v-for="tag in skillInfo.tags" :key="tag" class="ds-badge gold">{{ tag }}</span>
-        </div>
-        <div class="method-menu">
-          <button v-for="item in skillList" :key="item.id" type="button" :class="{ active: item.id === skillId }" @click="switchSkill(item.id)">
-            <span>{{ item.icon }}</span>
-            <strong>{{ item.name }}</strong>
-          </button>
-        </div>
+    <section class="divine-shell mystic-layout">
+      <aside class="method-panel left-rail">
+        <button class="rail-link" type="button" @click="router.push('/')"><i>⌂</i><span>首页</span></button>
+        <span class="rail-section-title">核心工具</span>
+        <button v-for="item in skillList" :key="item.id" type="button" class="rail-link" :class="{ active: item.id === skillId }" @click="switchSkill(item.id)">
+          <i>{{ item.icon }}</i>
+          <span>{{ item.name }}</span>
+        </button>
+        <button class="rail-link rail-record" type="button"><i>记</i><span>我的记录</span></button>
       </aside>
 
-      <section class="workbench">
-        <article class="form-panel ds-card">
-          <div class="panel-head">
-            <div>
-              <span class="section-kicker">{{ skillInfo.formKicker }}</span>
-              <h2>{{ skillInfo.formTitle }}</h2>
+      <section class="workbench main-workspace">
+        <article class="skill-hero hero-workspace">
+          <div>
+            <span class="section-kicker">{{ skillInfo.caption }}</span>
+            <h1>{{ skillInfo.name }}</h1>
+            <p>{{ skillInfo.description }}</p>
+            <div class="method-tags">
+              <span v-for="tag in skillInfo.tags" :key="tag" class="ds-badge gold">{{ tag }}</span>
             </div>
-            <span class="ds-badge" :class="canSend ? 'green' : 'red'">{{ canSend ? '可提交' : '待补全' }}</span>
           </div>
-
-          <div v-if="skillId === 'bazi' || skillId === 'ziwei'" class="form-grid">
-            <label class="ds-field"><span>姓名/称呼</span><input v-model.trim="profile.name" placeholder="请输入称呼" /></label>
-            <label class="ds-field"><span>性别</span><select v-model="profile.gender"><option>男</option><option>女</option><option>不便说明</option></select></label>
-            <label class="ds-field"><span>农历生日</span><input v-model.trim="profile.birthDate" placeholder="例如：1996-05-01" /></label>
-            <label class="ds-field"><span>出生时辰</span><select v-model="profile.shichen"><option value="">请选择</option><option v-for="item in shichenList" :key="item.name" :value="item.name">{{ item.name }}（{{ item.range }}）</option></select></label>
-            <label class="ds-field"><span>出生地</span><input v-model.trim="profile.place" placeholder="例如：杭州" /></label>
-            <div class="info-chip">按阴历生日排盘。请填写农历年月日，闰月后续会单独加开关；当前默认非闰月。</div>
-          </div>
-
-          <div v-else-if="skillId === 'yinyuan' || skillId === 'hehun'" class="form-grid">
-            <label class="ds-field"><span>你的称呼</span><input v-model.trim="relation.name" placeholder="例如：小林" /></label>
-            <label class="ds-field"><span>你的农历生日</span><input v-model.trim="relation.birthday" placeholder="例如：1996-05-01 / 属鼠" /></label>
-            <label class="ds-field wide"><span>对方信息</span><input v-model.trim="relation.partner" placeholder="姓名、生日、生肖或大致情况" /></label>
-            <label class="ds-field"><span>关系状态</span><select v-model="relation.status"><option value="">请选择</option><option>单身，想看正缘</option><option>暧昧中，想看走向</option><option>恋爱中，想看稳定性</option><option>分开后，想看是否复合</option><option>婚姻中，想看相处问题</option></select></label>
-            <label class="ds-field"><span>关注点</span><select v-model="relation.focus"><option value="">请选择</option><option>正缘时间</option><option>对方是否合适</option><option>关系阻碍</option><option>生肖合婚</option><option>未来半年趋势</option></select></label>
-          </div>
-
-          <div v-else-if="skillId === 'fengshui'" class="form-grid">
-            <label class="ds-field"><span>空间类型</span><select v-model="space.kind"><option>住宅</option><option>卧室</option><option>办公室</option><option>店铺</option><option>书房/工位</option></select></label>
-            <label class="ds-field"><span>朝向</span><select v-model="space.direction"><option>坐北朝南</option><option>坐南朝北</option><option>坐东朝西</option><option>坐西朝东</option><option>不确定</option></select></label>
-            <label class="ds-field wide"><span>布局描述</span><input v-model.trim="space.layout" placeholder="例如：门在东侧，床靠西墙，窗户朝南，办公桌背后是走道" /></label>
-          </div>
-
-          <div v-else-if="skillId === 'tarot'" class="form-grid">
-            <label class="ds-field"><span>牌阵</span><select v-model="tarot.spread"><option>单牌指引</option><option>过去-现在-未来</option><option>选择 A/B</option><option>关系牌阵</option></select></label>
-            <label class="ds-field"><span>问题类型</span><select v-model="tarot.topic"><option>感情</option><option>事业</option><option>选择</option><option>自我成长</option><option>其他</option></select></label>
-            <label class="ds-field wide"><span>当前背景</span><input v-model.trim="tarot.context" placeholder="简单说明你纠结的选项或当前处境" /></label>
-          </div>
-
-          <div v-else-if="skillId === 'fojiao'" class="form-grid">
-            <label class="ds-field"><span>困惑类型</span><select v-model="mind.topic"><option value="">请选择</option><option>情绪焦虑</option><option>人际关系</option><option>工作压力</option><option>家庭牵挂</option><option>修行疑问</option><option>人生取舍</option></select></label>
-            <label class="ds-field"><span>当前心境</span><select v-model="mind.mood"><option value="">请选择</option><option>焦虑不安</option><option>犹豫反复</option><option>执着放不下</option><option>疲惫麻木</option><option>想要安定</option></select></label>
-            <label class="ds-field wide"><span>事情背景</span><input v-model.trim="mind.context" placeholder="简单说说发生了什么，或你卡在哪里" /></label>
-          </div>
-
-          <div v-else class="form-grid">
-            <label class="ds-field"><span>起课时间</span><input v-model="eventForm.datetime" type="datetime-local" /></label>
-            <label class="ds-field"><span>地点/方位</span><input v-model.trim="eventForm.place" placeholder="例如：杭州 / 东南 / 不确定" /></label>
-            <label class="ds-field"><span>事件类型</span><select v-model="eventForm.topic"><option>合作/项目</option><option>出行/迁移</option><option>求职/事业</option><option>感情/关系</option><option>财务/交易</option><option>健康/心态</option><option>其他</option></select></label>
-            <div class="info-chip wide">起课仍以你选择的现实时间定位，算法内部会换算农历、节气、干支和时辰后排盘。</div>
-          </div>
+          <button class="ds-button ghost" type="button">使用说明</button>
         </article>
 
-        <article class="ask-panel ds-card">
+        <div class="dimension-filter">
+          <span>查看维度：</span>
+          <button v-for="item in dimensionChips" :key="item" type="button" :class="{ active: item === '全部' }">{{ item }}</button>
+        </div>
+
+        <div class="work-tabs"><span class="active">基础信息</span><span>排盘结果</span></div>
+
+        <section class="primary-work-grid">
+          <article class="form-panel oracle-card">
+            <div class="panel-head">
+              <div>
+                <span class="section-kicker">{{ skillInfo.formKicker }}</span>
+                <h2>{{ skillInfo.formTitle }}</h2>
+              </div>
+              <span class="ds-badge" :class="canSend ? 'green' : 'red'">{{ canSend ? '可提交' : '待补全' }}</span>
+            </div>
+
+            <div v-if="skillId === 'bazi' || skillId === 'ziwei'" class="form-grid">
+              <label class="ds-field"><span>姓名/称呼</span><input v-model.trim="profile.name" placeholder="请输入称呼" /></label>
+              <label class="ds-field"><span>性别</span><select v-model="profile.gender"><option>男</option><option>女</option><option>不便说明</option></select></label>
+              <label class="ds-field"><span>农历生日</span><input v-model.trim="profile.birthDate" placeholder="例如：1996-05-01" /></label>
+              <label class="ds-field"><span>出生时辰</span><select v-model="profile.shichen"><option value="">请选择</option><option v-for="item in shichenList" :key="item.name" :value="item.name">{{ item.name }}（{{ item.range }}）</option></select></label>
+              <label class="ds-field"><span>出生地</span><input v-model.trim="profile.place" placeholder="例如：杭州" /></label>
+              <div class="info-chip">按阴历生日排盘。请填写农历年月日，闰月后续会单独加开关；当前默认非闰月。</div>
+            </div>
+
+            <div v-else-if="skillId === 'yinyuan' || skillId === 'hehun'" class="form-grid">
+              <label class="ds-field"><span>你的称呼</span><input v-model.trim="relation.name" placeholder="例如：小林" /></label>
+              <label class="ds-field"><span>你的农历生日</span><input v-model.trim="relation.birthday" placeholder="例如：1996-05-01 / 属鼠" /></label>
+              <label class="ds-field wide"><span>对方信息</span><input v-model.trim="relation.partner" placeholder="姓名、生日、生肖或大致情况" /></label>
+              <label class="ds-field"><span>关系状态</span><select v-model="relation.status"><option value="">请选择</option><option>单身，想看正缘</option><option>暧昧中，想看走向</option><option>恋爱中，想看稳定性</option><option>分开后，想看是否复合</option><option>婚姻中，想看相处问题</option></select></label>
+              <label class="ds-field"><span>关注点</span><select v-model="relation.focus"><option value="">请选择</option><option>正缘时间</option><option>对方是否合适</option><option>关系阻碍</option><option>生肖合婚</option><option>未来半年趋势</option></select></label>
+            </div>
+
+            <div v-else-if="skillId === 'fengshui'" class="form-grid">
+              <label class="ds-field"><span>空间类型</span><select v-model="space.kind"><option>住宅</option><option>卧室</option><option>办公室</option><option>店铺</option><option>书房/工位</option></select></label>
+              <label class="ds-field"><span>朝向</span><select v-model="space.direction"><option>坐北朝南</option><option>坐南朝北</option><option>坐东朝西</option><option>坐西朝东</option><option>不确定</option></select></label>
+              <label class="ds-field wide"><span>布局描述</span><input v-model.trim="space.layout" placeholder="例如：门在东侧，床靠西墙，窗户朝南，办公桌背后是走道" /></label>
+            </div>
+
+            <div v-else-if="skillId === 'tarot'" class="form-grid">
+              <label class="ds-field"><span>牌阵</span><select v-model="tarot.spread"><option>单牌指引</option><option>过去-现在-未来</option><option>选择 A/B</option><option>关系牌阵</option></select></label>
+              <label class="ds-field"><span>问题类型</span><select v-model="tarot.topic"><option>感情</option><option>事业</option><option>选择</option><option>自我成长</option><option>其他</option></select></label>
+              <label class="ds-field wide"><span>当前背景</span><input v-model.trim="tarot.context" placeholder="简单说明你纠结的选项或当前处境" /></label>
+            </div>
+
+            <div v-else-if="skillId === 'fojiao'" class="form-grid">
+              <label class="ds-field"><span>困惑类型</span><select v-model="mind.topic"><option value="">请选择</option><option>情绪焦虑</option><option>人际关系</option><option>工作压力</option><option>家庭牵挂</option><option>修行疑问</option><option>人生取舍</option></select></label>
+              <label class="ds-field"><span>当前心境</span><select v-model="mind.mood"><option value="">请选择</option><option>焦虑不安</option><option>犹豫反复</option><option>执着放不下</option><option>疲惫麻木</option><option>想要安定</option></select></label>
+              <label class="ds-field wide"><span>事情背景</span><input v-model.trim="mind.context" placeholder="简单说说发生了什么，或你卡在哪里" /></label>
+            </div>
+
+            <div v-else class="form-grid">
+              <label class="ds-field"><span>起课时间</span><input v-model="eventForm.datetime" type="datetime-local" /></label>
+              <label class="ds-field"><span>地点/方位</span><input v-model.trim="eventForm.place" placeholder="例如：杭州 / 东南 / 不确定" /></label>
+              <label class="ds-field"><span>事件类型</span><select v-model="eventForm.topic"><option>合作/项目</option><option>出行/迁移</option><option>求职/事业</option><option>感情/关系</option><option>财务/交易</option><option>健康/心态</option><option>其他</option></select></label>
+              <div class="info-chip wide">起课仍以你选择的现实时间定位，算法内部会换算农历、节气、干支和时辰后排盘。</div>
+            </div>
+
+            <label class="ds-field wide inline-question">
+              <span>{{ skillInfo.questionLabel }}</span>
+              <textarea v-model.trim="userInput" :placeholder="skillInfo.askHint" :disabled="loading" @keydown.ctrl.enter="sendMessage"></textarea>
+            </label>
+
+            <p class="privacy-note">页面不会在浏览器之外主动保存你的姓名、生日、地点或提问内容。</p>
+            <div class="actions">
+              <button class="ds-button primary" type="button" :disabled="loading || !canSend" @click="sendMessage">{{ loading ? '推演中...' : '开始排盘' }}</button>
+              <button class="ds-button ghost" type="button" :disabled="loading" @click="responses = []">重置</button>
+            </div>
+          </article>
+
+          <article v-if="previewableSkills.includes(skillId)" class="board-preview-panel oracle-card">
+            <div class="panel-head">
+              <div>
+                <span class="section-kicker">{{ skillInfo.name }}命盘</span>
+                <h2>排盘结果</h2>
+              </div>
+              <span class="ds-badge gold">实时预览</span>
+            </div>
+            <VisualBoard :board="buildBoard(null)" />
+            <p class="preview-note">此为示例命盘，填写信息并排盘后可查看你的专属盘面与详细解读。</p>
+          </article>
+        </section>
+
+        <article v-if="false" class="ask-panel oracle-card">
           <div class="panel-head">
             <div>
               <span class="section-kicker">Ask</span>
@@ -100,19 +145,19 @@
         </article>
 
         <section class="result-list">
-          <article v-if="responses.length === 0 && !loading" class="empty-card ds-card">
+          <article v-if="responses.length === 0 && !loading && false" class="empty-card oracle-card">
             <span class="round-mark">{{ skillInfo.icon }}</span>
             <h2>{{ skillInfo.greeting }}</h2>
             <p>{{ skillInfo.emptyCopy }}</p>
           </article>
 
-          <article v-if="loading" class="empty-card ds-card">
+          <article v-if="loading" class="empty-card oracle-card">
             <span class="loading-ring"></span>
             <h2>正在推演</h2>
             <p>正在连接后端和术法提示词，请稍候。</p>
           </article>
 
-          <article v-for="(resp, index) in responses" :key="index" class="answer-card ds-card">
+          <article v-for="(resp, index) in responses" :key="index" class="answer-card oracle-card">
             <div class="answer-head">
               <span class="ds-badge gold">第 {{ index + 1 }} 次问事</span>
               <time>{{ today }}</time>
@@ -122,6 +167,34 @@
           </article>
         </section>
       </section>
+
+      <aside class="right-rail">
+        <article class="right-rail-card">
+          <div class="card-title-row"><h3>填写提示</h3><span class="ds-badge">?</span></div>
+          <div v-for="tip in formTips" :key="tip.title" class="mini-item tip-item">
+            <strong>{{ tip.title }}</strong>
+            <span>{{ tip.text }}</span>
+          </div>
+        </article>
+        <article class="right-rail-card">
+          <div class="card-title-row"><h3>最近记录</h3><span>全部记录</span></div>
+          <div v-if="recentRecords.length" class="mini-list">
+            <button v-for="item in recentRecords" :key="`${item.title}-${item.time}`" type="button" class="mini-record" @click="item.path && router.push(item.path)">
+              <strong>{{ item.title }}</strong>
+              <span>{{ item.time }}</span>
+            </button>
+          </div>
+          <p v-else class="empty-side-note">暂无最近记录。完成一次问卦后会自动显示在这里。</p>
+        </article>
+        <article class="right-rail-card">
+          <h3>推荐功能</h3>
+          <div class="quick-icons">
+            <button v-for="item in sideRecommendations" :key="item.id" type="button" @click="switchSkill(item.id)">
+              <b>{{ item.icon }}</b>{{ item.name }}
+            </button>
+          </div>
+        </article>
+      </aside>
     </section>
   </main>
 </template>
@@ -158,6 +231,50 @@ const shichenList = [
 ]
 
 const skillInfo = computed(() => skillList.find((item) => item.id === skillId.value) || skillList[0])
+const sideRecommendations = computed(() => skillList.filter((item) => item.id !== skillId.value).slice(0, 4))
+const recentRecords = ref([])
+const previewableSkills = ['bazi', 'ziwei', 'qimen', 'liuyao', 'meihua', 'daliuren', 'xiaoliuren', 'yinyuan', 'hehun', 'fojiao', 'fengshui', 'daily-fortune', 'tarot']
+const dimensionMap = {
+  bazi: ['全部', '命理', '阶段', '流年', '关系', '风水', '六亲'],
+  ziwei: ['全部', '命宫', '事业', '财帛', '夫妻', '迁移', '福德'],
+  qimen: ['全部', '时机', '方位', '用神', '宫门', '策略'],
+  liuyao: ['全部', '本卦', '变卦', '世应', '用神', '动爻'],
+  meihua: ['全部', '本卦', '互卦', '变卦', '体用', '外应'],
+  daliuren: ['全部', '四课', '三传', '神将', '课体', '应期'],
+  xiaoliuren: ['全部', '六宫', '速断', '应事', '吉凶'],
+  yinyuan: ['全部', '桃花', '关系', '沟通', '时机'],
+  hehun: ['全部', '生肖', '合盘', '性格', '长期'],
+  fojiao: ['全部', '情绪', '观照', '行动', '典籍'],
+  fengshui: ['全部', '门向', '卧室', '书桌', '财位', '动线'],
+  'daily-fortune': ['全部', '宜忌', '行动', '情绪', '方位'],
+  tarot: ['全部', '牌阵', '现状', '建议', '选择'],
+}
+const formTipMap = {
+  bazi: [
+    { title: '请使用本人真实信息排盘', text: '出生时间建议精确到时辰，结果更准确。' },
+    { title: '出生地影响真太阳时校正', text: '请如实填写城市或地区。' },
+    { title: '补充问题将帮助解读聚焦', text: '比如事业、财运、感情或阶段选择。' },
+  ],
+  ziwei: [
+    { title: '生日与时辰要尽量准确', text: '紫微斗数对时辰较敏感。' },
+    { title: '可指定想看的宫位', text: '如事业宫、夫妻宫、迁移宫。' },
+  ],
+  qimen: [
+    { title: '问题要具体', text: '奇门适合问一个明确事件，不适合一次问多个问题。' },
+    { title: '时间按起念或决策时刻', text: '若不确定，可使用当前时间。' },
+    { title: '地点/方位有助于判断', text: '可填城市、方向或“不确定”。' },
+  ],
+  liuyao: [
+    { title: '先定一事一问', text: '六爻更适合围绕一个具体问题起卦。' },
+    { title: '可从周易起卦带入卦象', text: '也可以直接描述本卦、动爻和变卦。' },
+  ],
+  default: [
+    { title: '信息越明确越好', text: '请写清楚时间、背景和你真正关心的点。' },
+    { title: '结果仅作文化娱乐参考', text: '重要现实事项请结合专业意见。' },
+  ],
+}
+const dimensionChips = computed(() => dimensionMap[skillId.value] || dimensionMap.bazi)
+const formTips = computed(() => formTipMap[skillId.value] || formTipMap.default)
 const today = new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit' }).format(new Date())
 const userInput = ref('')
 const loading = ref(false)
@@ -181,6 +298,7 @@ const canSend = computed(() => {
 onMounted(() => {
   profile.value.shichen = currentShichen()
   eventForm.value.datetime = nowDatetimeLocal()
+  recentRecords.value = loadRecentRecords()
 })
 
 watch(skillId, () => {
@@ -202,6 +320,30 @@ function nowDatetimeLocal() {
   const d = new Date()
   const pad = (value) => String(value).padStart(2, '0')
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function loadRecentRecords() {
+  try {
+    return JSON.parse(localStorage.getItem('qk_recent_records') || '[]').slice(0, 8)
+  } catch {
+    return []
+  }
+}
+
+function saveRecentRecord(title, path) {
+  const record = {
+    title,
+    path,
+    time: new Intl.DateTimeFormat('zh-CN', {
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(new Date()),
+  }
+  const next = [record, ...loadRecentRecords()].slice(0, 8)
+  localStorage.setItem('qk_recent_records', JSON.stringify(next))
+  recentRecords.value = next
 }
 
 function buildMessage() {
@@ -261,14 +403,20 @@ function buildBoard(chartResult = null) {
       highlights: ['先看日主旺衰', '再看月令格局', '最后看合冲刑害'],
     },
     ziwei: {
-      palaces: ['命宫', '兄弟', '夫妻', '子女', '财帛', '疾厄', '迁移', '仆役', '官禄', '田宅', '福德', '父母'].map((name, index) => ({
-        name,
-        star: ['紫微', '天机', '太阳', '武曲', '天同', '廉贞', '天府', '太阴', '贪狼', '巨门', '天相', '天梁'][index],
-        note: index === 0 ? '本命核心' : index === 8 ? '事业重点' : index === 6 ? '外部机会' : '待排参考',
-      })),
-      center: `${profile.value.name || '命主'} · ${profile.value.gender} · ${profile.value.shichen || '时辰待定'}`,
+      palaces: buildZiweiPreviewPalaces(),
+      center: `${profile.value.name || '命主'} · ${profile.value.gender} · 农历${profile.value.birthDate || '生日待填'} · ${profile.value.shichen || '时辰待定'}`,
+      meta: {
+        soul: profile.value.name ? `${profile.value.name.slice(0, 1)}命` : '命主待定',
+        body: profile.value.shichen || '身宫待定',
+        fiveElementsClass: ziweiElementClass(),
+      },
     },
     qimen: {
+      center: {
+        time: eventForm.value.datetime ? eventForm.value.datetime.replace('T', ' ') : '当前起局',
+        topic: eventForm.value.topic || '所问之事',
+        place: eventForm.value.place || '方位待定',
+      },
       cells: [
         ['巽四', '杜门', '天辅', '东南'], ['离九', '景门', '天英', '正南'], ['坤二', '死门', '天芮', '西南'],
         ['震三', '伤门', '天冲', '正东'], ['中五', eventForm.value.topic, '值符', '核心'], ['兑七', '惊门', '天柱', '正西'],
@@ -314,9 +462,49 @@ function buildBoard(chartResult = null) {
   }
 }
 
+function buildZiweiPreviewPalaces() {
+  const palaceNames = ['命宫', '兄弟', '夫妻', '子女', '财帛', '疾厄', '迁移', '仆役', '官禄', '田宅', '福德', '父母']
+  const stars = ['紫微', '天机', '太阳', '武曲', '天同', '廉贞', '天府', '太阴', '贪狼', '巨门', '天相', '天梁']
+  const branches = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
+  const seed = ziweiSeed()
+  const mingIndex = seed % 12
+  const bodyIndex = (mingIndex + shichenToPreviewIndex(profile.value.shichen)) % 12
+  return palaceNames.map((name, index) => {
+    const star = stars[(index + seed) % stars.length]
+    const ageStart = 4 + ((index + seed) % 12) * 10
+    const labels = []
+    if (index === mingIndex) labels.push('命宫')
+    if (index === bodyIndex) labels.push('身宫')
+    if (['官禄', '财帛', '夫妻', '迁移'].includes(name)) labels.push('重点')
+    return {
+      name,
+      branch: branches[(index + seed) % 12],
+      star,
+      note: labels.length ? labels.join(' · ') : '排盘参考',
+      age: `${ageStart}-${ageStart + 9}`,
+      minor: ['天府', '天相', '文昌', '文曲', '左辅', '右弼', '禄存', '擎羊', '陀罗', '火星', '铃星', '天魁'][(index + seed + 3) % 12],
+    }
+  })
+}
+
+function ziweiSeed() {
+  const raw = `${profile.value.name || ''}${profile.value.gender || ''}${profile.value.birthDate || ''}${profile.value.shichen || ''}`
+  return [...raw].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 12
+}
+
+function shichenToPreviewIndex(value) {
+  const index = shichenList.findIndex((item) => item.name === value)
+  return index >= 0 ? index : 0
+}
+
+function ziweiElementClass() {
+  return ['水二局', '木三局', '金四局', '土五局', '火六局'][ziweiSeed() % 5]
+}
+
 async function sendMessage() {
   if (!canSend.value || loading.value) return
   const message = buildMessage()
+  saveRecentRecord(`${skillInfo.value.name} · ${userInput.value || eventForm.value.topic || profile.value.name || '问事'}`, `/divine/${skillId.value}`)
   const chartPayload = buildChartPayload(message)
   let chartResult = null
   try {
@@ -409,7 +597,13 @@ function renderBoard(board) {
     qimen: renderQimenBoard,
     liuyao: renderLiuyaoBoard,
     meihua: renderMeihuaBoard,
+    daliuren: renderDaliurenBoard,
+    xiaoliuren: renderXiaoliurenBoard,
+    yinyuan: renderYinyuanBoard,
+    hehun: renderHehunBoard,
+    fojiao: renderFojiaoBoard,
     fengshui: renderFengshuiBoard,
+    'daily-fortune': renderDailyFortuneBoard,
     tarot: renderTarotBoard,
   }
   return (renderers[board.type] || renderGenericBoard)(board.data)
@@ -424,49 +618,202 @@ function renderBaziBoard(data) {
 }
 
 function renderZiweiBoard(data) {
-  return h('div', { class: 'ziwei-palace-grid' }, [
-    ...data.palaces.map((palace, index) => h('div', { class: ['palace-cell', index === 0 ? 'is-primary' : ''] }, [
-      h('span', palace.name),
-      h('strong', palace.star),
-      h('em', palace.note),
+  const palaces = normalizeZiweiPalaces(data)
+  const meta = data.meta || {}
+  return h('div', { class: 'ziwei-dial' }, [
+    h('div', { class: 'ziwei-dial-ring outer' }),
+    h('div', { class: 'ziwei-dial-ring middle' }),
+    h('div', { class: 'ziwei-dial-ring inner' }),
+    ...palaces.map((palace, index) => h('div', {
+      class: ['ziwei-dial-palace', palace.note?.includes('命宫') && 'is-ming', palace.note?.includes('身宫') && 'is-body'],
+      style: { '--a': `${index * 30}deg` },
+    }, [
+      h('span', palace.branch || palace.name),
+      h('strong', palace.name),
+      h('b', palace.star),
+      h('em', palace.minor || palace.note || '排盘参考'),
+      h('small', palace.age || ''),
     ])),
-    h('div', { class: 'ziwei-center' }, [h('b', '命盘'), h('small', data.center)]),
+    h('div', { class: 'ziwei-dial-center' }, [
+      h('b', '紫微斗数'),
+      h('strong', meta.soul || '命宫未定'),
+      h('span', meta.body || '身宫待定'),
+      h('small', `${meta.fiveElementsClass || '五行局待定'} · ${data.center || '命主信息待填'}`),
+    ]),
   ])
 }
 
+function normalizeZiweiPalaces(data) {
+  const fallback = buildZiweiPreviewPalaces()
+  const source = Array.isArray(data?.palaces) && data.palaces.length ? data.palaces : fallback
+  return source.slice(0, 12).map((palace, index) => {
+    if (Array.isArray(palace)) {
+      return {
+        name: palace[0] || fallback[index].name,
+        star: palace[1] || fallback[index].star,
+        note: palace[2] || fallback[index].note,
+        branch: fallback[index].branch,
+        minor: fallback[index].minor,
+        age: fallback[index].age,
+      }
+    }
+    return {
+      name: palace.name || palace.label || fallback[index].name,
+      branch: palace.branch || palace.earthlyBranch || fallback[index].branch,
+      star: palace.star || palace.mainStar || palace.majorStars?.[0]?.name || fallback[index].star,
+      minor: palace.minor || palace.minorStar || palace.stars?.[0]?.name || fallback[index].minor,
+      note: palace.note || palace.description || fallback[index].note,
+      age: palace.age || palace.range || fallback[index].age,
+    }
+  })
+}
+
 function renderQimenBoard(data) {
-  return h('div', { class: 'qimen-nine-grid' }, data.cells.map((cell) => h('div', { class: cell[0] === '中五' ? 'nine-cell center' : 'nine-cell' }, [
-    h('span', cell[0]),
-    h('strong', cell[1]),
-    h('em', cell[2]),
-    h('small', cell[3]),
-  ])))
+  const cells = (data.cells || []).filter((cell) => cell[0] !== '中五')
+  const center = data.center || {}
+  const meta = data.meta || {}
+  return h('div', { class: 'qimen-wheel' }, [
+    h('div', { class: 'qimen-ring outer' }),
+    h('div', { class: 'qimen-ring middle' }),
+    h('div', { class: 'qimen-ring inner' }),
+    ...cells.map((cell, index) => h('div', {
+      class: 'qimen-sector',
+      style: { '--a': `${index * 45}deg` },
+    }, [
+      h('span', cell[3]),
+      h('strong', cell[1]),
+      h('em', cell[2]),
+      h('small', cell[0]),
+    ])),
+    h('div', { class: 'qimen-wheel-center' }, [
+      h('b', center.topic || meta.juShu || '奇门盘式'),
+      h('span', center.time || '起局时间'),
+      h('small', `值符：${meta.zhiFu || '天心'} · 值使：${meta.zhiShi || '开门'} · ${center.place || '方位待定'}`),
+    ]),
+    h('div', { class: 'qimen-compass north' }, '北'),
+    h('div', { class: 'qimen-compass east' }, '东'),
+    h('div', { class: 'qimen-compass south' }, '南'),
+    h('div', { class: 'qimen-compass west' }, '西'),
+  ])
 }
 
 function renderLiuyaoBoard(data) {
-  return h('div', { class: 'liuyao-pro-lines' }, data.lines.map((line) => h('div', { class: 'yao-row' }, [
-    h('span', line[0]),
-    h('i', { class: line[1] === '阳爻' ? 'yao-line yang' : 'yao-line yin' }),
-    h('strong', line[2]),
-    h('b', line[3]),
-    h('em', line[4]),
-  ])))
+  const meta = data.meta || {}
+  return h('div', { class: 'liuyao-layout' }, [
+    h('div', { class: 'liuyao-title-strip' }, [
+      h('strong', meta.originalName || '本卦待定'),
+      h('span', meta.changedName ? `变卦：${meta.changedName}` : '变卦随动爻而定'),
+      h('em', meta.palace || '世应用神'),
+    ]),
+    h('div', { class: 'liuyao-pro-lines' }, (data.lines || []).map((line) => h('div', { class: ['yao-row', line[3] && 'is-marked'] }, [
+      h('span', line[0]),
+      h('i', { class: line[1] === '阳爻' ? 'yao-line yang' : 'yao-line yin' }),
+      h('strong', line[2]),
+      h('b', line[3]),
+      h('em', line[4]),
+    ]))),
+    h('div', { class: 'liuyao-footnotes' }, [
+      h('span', meta.interName ? `互卦 ${meta.interName}` : '互卦待排'),
+      h('span', meta.specialPattern || '以世应、用神、动爻为判断核心'),
+    ]),
+  ])
 }
 
 function renderMeihuaBoard(data) {
-  return h('div', { class: 'meihua-pro-grid' }, data.blocks.map((block) => h('div', { class: 'meihua-cell' }, [
-    h('span', block[0]),
-    h('strong', block[1]),
-    h('em', block[2]),
-  ])))
+  const blocks = data.blocks || []
+  return h('div', { class: 'meihua-flow' }, [
+    ...blocks.map((block, index) => h('div', { class: ['meihua-node', index === 3 && 'is-relation'] }, [
+      h('span', block[0]),
+      h('strong', block[1]),
+      h('em', block[2]),
+    ])),
+  ])
+}
+
+function renderDaliurenBoard(data) {
+  const items = data.items || []
+  return h('div', { class: 'daliuren-board' }, [
+    h('div', { class: 'daliuren-core' }, [
+      h('span', '课体'),
+      h('strong', items[0]?.[1] || '四课待排'),
+      h('em', '四课定事体，三传看流转'),
+    ]),
+    h('div', { class: 'daliuren-pass' }, ['初传', '中传', '末传'].map((name, index) => h('div', [
+      h('span', name),
+      h('strong', (items[1]?.[1] || '初传 -> 中传 -> 末传').split('->')[index]?.trim() || '待排'),
+    ]))),
+    h('div', { class: 'daliuren-grid' }, items.slice(2).map((item) => h('div', [
+      h('span', item[0]),
+      h('strong', item[1]),
+    ]))),
+  ])
+}
+
+function renderXiaoliurenBoard(data) {
+  const items = data.items || []
+  return h('div', { class: 'xiaoliuren-wheel' }, [
+    h('div', { class: 'xiaoliuren-center' }, [h('strong', '小六壬'), h('span', '六宫速断')]),
+    ...items.slice(0, 6).map((item, index) => h('div', { class: 'xiaoliuren-gate', style: { '--a': `${index * 60}deg` } }, [
+      h('span', item[0]),
+      h('em', item[1]),
+    ])),
+  ])
+}
+
+function renderYinyuanBoard(data) {
+  const items = data.items || []
+  return h('div', { class: 'relation-board yinyuan-board' }, [
+    h('div', { class: 'relation-orbit' }, [
+      h('span', '缘'),
+      h('strong', items[0]?.[1] || '关系阶段待定'),
+    ]),
+    h('div', { class: 'relation-panels' }, items.slice(1).map((item) => h('div', [
+      h('span', item[0]),
+      h('strong', item[1]),
+    ]))),
+  ])
+}
+
+function renderHehunBoard(data) {
+  const items = data.items || []
+  return h('div', { class: 'hehun-board' }, [
+    h('div', { class: 'hehun-person left' }, [h('span', '甲方'), h('strong', items[0]?.[1] || '你的信息待填')]),
+    h('div', { class: 'hehun-score' }, [h('b', '合'), h('span', items[2]?.[1] || '合盘重点待定')]),
+    h('div', { class: 'hehun-person right' }, [h('span', '乙方'), h('strong', items[1]?.[1] || '对方信息待填')]),
+    h('div', { class: 'hehun-note' }, items.slice(2).map((item) => h('p', [h('strong', `${item[0]}：`), item[1]]))),
+  ])
+}
+
+function renderFojiaoBoard(data) {
+  const items = data.items || []
+  return h('div', { class: 'fojiao-scroll' }, [
+    h('div', { class: 'fojiao-seal' }, '禅'),
+    h('div', { class: 'fojiao-lines' }, items.map((item) => h('section', [
+      h('span', item[0]),
+      h('p', item[1]),
+    ]))),
+  ])
 }
 
 function renderFengshuiBoard(data) {
-  return h('div', { class: 'fengshui-nine-grid' }, data.cells.map((cell) => h('div', { class: cell[0] === '中宫' ? 'feng-cell center' : 'feng-cell' }, [
-    h('span', cell[0]),
-    h('strong', cell[1]),
-    h('em', cell[2]),
-  ])))
+  return h('div', { class: 'fengshui-compass' }, [
+    h('div', { class: 'fengshui-nine-grid' }, (data.cells || []).map((cell) => h('div', { class: cell[0] === '中宫' ? 'feng-cell center' : 'feng-cell' }, [
+      h('span', cell[0]),
+      h('strong', cell[1]),
+      h('em', cell[2]),
+    ]))),
+  ])
+}
+
+function renderDailyFortuneBoard(data) {
+  const items = data.items || []
+  return h('div', { class: 'daily-board' }, [
+    h('div', { class: 'daily-sun' }, [h('strong', '今日'), h('span', items[0]?.[1] || '先稳后动')]),
+    h('div', { class: 'daily-rhythm' }, items.slice(1).map((item) => h('div', [
+      h('span', item[0]),
+      h('strong', item[1]),
+    ]))),
+  ])
 }
 
 function renderTarotBoard(data) {
@@ -486,7 +833,7 @@ function renderGenericBoard(data) {
 
 <style scoped>
 .divine-page {
-  padding: 18px 0 54px;
+  padding-bottom: 28px;
 }
 
 .title-center {
@@ -521,12 +868,33 @@ function renderGenericBoard(data) {
 }
 
 .divine-shell {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: 18px;
-  padding-top: 24px;
+  align-items: start;
+}
+
+.skill-hero {
+  display: flex;
+  min-height: 220px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 22px;
+  background:
+    linear-gradient(90deg, rgba(13, 9, 7, 0.84), rgba(13, 9, 7, 0.22)),
+    radial-gradient(circle at 82% 30%, rgba(215, 179, 95, 0.18), transparent 32%),
+    linear-gradient(145deg, rgba(255, 247, 231, 0.08), transparent);
+}
+
+.skill-hero h1 {
+  margin: 12px 0 0;
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: clamp(48px, 7vw, 78px);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.skill-hero p {
+  max-width: 720px;
+  color: var(--paper-dim);
 }
 
 .method-panel,
@@ -535,6 +903,51 @@ function renderGenericBoard(data) {
 .empty-card,
 .answer-card {
   padding: 22px;
+}
+
+.primary-work-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 0.92fr) minmax(480px, 1.08fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.primary-work-grid .form-panel,
+.board-preview-panel {
+  min-height: 560px;
+}
+
+.primary-work-grid .form-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.inline-question {
+  margin-top: 14px;
+}
+
+.inline-question textarea {
+  min-height: 88px;
+}
+
+.board-preview-panel {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 22px;
+}
+
+.board-preview-panel .visual-board {
+  margin-bottom: 0;
+}
+
+.preview-note {
+  margin: 0;
+  color: var(--paper-dim);
+  font-size: 13px;
+}
+
+.left-rail.method-panel {
+  padding: 14px;
 }
 
 .method-panel > *,
@@ -570,6 +983,57 @@ function renderGenericBoard(data) {
   margin-top: 16px;
 }
 
+.dimension-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-sm);
+  background: rgba(34, 21, 14, 0.54);
+}
+
+.dimension-filter span {
+  color: var(--paper-dim);
+}
+
+.dimension-filter button {
+  min-height: 34px;
+  padding: 6px 14px;
+  border: 1px solid rgba(215, 179, 95, 0.2);
+  border-radius: 999px;
+  color: var(--paper-dim);
+  background: rgba(255, 247, 231, 0.04);
+}
+
+.dimension-filter button.active,
+.dimension-filter button:hover {
+  border-color: rgba(240, 217, 132, 0.52);
+  color: var(--gold-bright);
+  background: rgba(215, 179, 95, 0.12);
+}
+
+.tip-item {
+  grid-template-columns: 28px minmax(0, 1fr);
+}
+
+.tip-item::before {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid rgba(215, 179, 95, 0.24);
+  border-radius: 50%;
+  color: var(--gold-bright);
+  content: "•";
+}
+
+.tip-item strong,
+.tip-item span {
+  grid-column: 2;
+}
+
 .method-menu {
   display: grid;
   gap: 8px;
@@ -601,6 +1065,25 @@ function renderGenericBoard(data) {
   place-items: center;
   border: 1px solid var(--line);
   border-radius: 50%;
+}
+
+.mini-record {
+  display: grid;
+  gap: 4px;
+  padding: 11px 0;
+  border: 0;
+  border-top: 1px solid rgba(215, 179, 95, 0.12);
+  color: var(--paper-dim);
+  background: transparent;
+  text-align: left;
+}
+
+.mini-record:first-child {
+  border-top: 0;
+}
+
+.mini-record strong {
+  color: var(--paper);
 }
 
 .workbench {
@@ -687,10 +1170,20 @@ function renderGenericBoard(data) {
 
 .bazi-pro-table,
 .ziwei-palace-grid,
+.ziwei-dial,
 .qimen-nine-grid,
+.qimen-wheel,
+.liuyao-layout,
 .liuyao-pro-lines,
-.meihua-pro-grid,
+.meihua-flow,
+.daliuren-board,
+.xiaoliuren-wheel,
+.relation-board,
+.hehun-board,
+.fojiao-scroll,
+.fengshui-compass,
 .fengshui-nine-grid,
+.daily-board,
 .tarot-spread,
 .generic-pro-grid {
   position: relative;
@@ -764,6 +1257,217 @@ function renderGenericBoard(data) {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   min-height: 390px;
 }
+
+.ziwei-dial {
+  display: grid;
+  width: min(680px, 100%);
+  aspect-ratio: 1;
+  place-items: center;
+  justify-self: center;
+  overflow: visible;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(13, 9, 7, 0.9) 0 22%, rgba(215, 179, 95, 0.08) 23% 31%, transparent 32%),
+    conic-gradient(from -15deg, rgba(215, 179, 95, 0.06) 0 30deg, rgba(184, 58, 47, 0.1) 30deg 60deg, rgba(79, 155, 131, 0.08) 60deg 90deg, rgba(215, 179, 95, 0.06) 90deg 120deg, rgba(109, 150, 170, 0.08) 120deg 150deg, rgba(215, 179, 95, 0.06) 150deg 180deg, rgba(184, 58, 47, 0.08) 180deg 210deg, rgba(215, 179, 95, 0.06) 210deg 240deg, rgba(79, 155, 131, 0.08) 240deg 270deg, rgba(215, 179, 95, 0.06) 270deg 300deg, rgba(109, 150, 170, 0.08) 300deg 330deg, rgba(215, 179, 95, 0.06) 330deg 360deg),
+    rgba(0, 0, 0, 0.14);
+  box-shadow: inset 0 0 62px rgba(0, 0, 0, 0.46), 0 0 36px rgba(215, 179, 95, 0.12);
+}
+
+.ziwei-dial-ring,
+.ziwei-dial-palace,
+.ziwei-dial-center {
+  position: absolute;
+}
+
+.ziwei-dial-ring {
+  border: 1px solid rgba(215, 179, 95, 0.28);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.ziwei-dial-ring.outer { inset: 3%; }
+.ziwei-dial-ring.middle { inset: 19%; }
+.ziwei-dial-ring.inner { inset: 36%; }
+
+.ziwei-dial-palace {
+  display: grid;
+  width: 112px;
+  min-height: 104px;
+  place-items: center;
+  gap: 2px;
+  padding: 9px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-xs);
+  background: rgba(13, 9, 7, 0.6);
+  text-align: center;
+  transform: rotate(var(--a)) translateY(-246px) rotate(calc(-1 * var(--a)));
+}
+
+.ziwei-dial-palace.is-ming {
+  border-color: rgba(240, 217, 132, 0.5);
+  background: radial-gradient(circle, rgba(215, 179, 95, 0.16), rgba(13, 9, 7, 0.66));
+}
+
+.ziwei-dial-palace.is-body {
+  box-shadow: 0 0 18px rgba(184, 58, 47, 0.18);
+}
+
+.ziwei-dial-palace span,
+.ziwei-dial-palace small {
+  color: rgba(245, 234, 212, 0.58);
+  font-size: 11px;
+}
+
+.ziwei-dial-palace strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.ziwei-dial-palace b {
+  color: var(--paper);
+  font-size: 14px;
+}
+
+.ziwei-dial-palace em {
+  color: #e59686;
+  font-size: 12px;
+  font-style: normal;
+}
+
+.ziwei-dial-center {
+  display: grid;
+  width: 218px;
+  min-height: 168px;
+  place-items: center;
+  gap: 6px;
+  padding: 18px;
+  border: 1px solid rgba(240, 217, 132, 0.42);
+  border-radius: 50%;
+  background: rgba(13, 9, 7, 0.92);
+  text-align: center;
+}
+
+.ziwei-dial-center b {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 29px;
+  font-weight: 400;
+}
+
+.ziwei-dial-center strong {
+  color: var(--paper);
+}
+
+.ziwei-dial-center span,
+.ziwei-dial-center small {
+  color: var(--paper-dim);
+}
+
+.qimen-wheel {
+  display: grid;
+  width: min(620px, 100%);
+  aspect-ratio: 1;
+  place-items: center;
+  justify-self: center;
+  overflow: visible;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(13, 9, 7, 0.86) 0 25%, rgba(215, 179, 95, 0.08) 26% 32%, transparent 33%),
+    conic-gradient(from -22.5deg, rgba(215, 179, 95, 0.06) 0 45deg, rgba(184, 58, 47, 0.09) 45deg 90deg, rgba(215, 179, 95, 0.06) 90deg 135deg, rgba(79, 155, 131, 0.08) 135deg 180deg, rgba(215, 179, 95, 0.06) 180deg 225deg, rgba(109, 150, 170, 0.09) 225deg 270deg, rgba(215, 179, 95, 0.06) 270deg 315deg, rgba(184, 58, 47, 0.08) 315deg 360deg),
+    rgba(0, 0, 0, 0.16);
+  box-shadow: inset 0 0 55px rgba(0, 0, 0, 0.42), 0 0 32px rgba(215, 179, 95, 0.12);
+}
+
+.qimen-ring,
+.qimen-sector,
+.qimen-wheel-center,
+.qimen-compass {
+  position: absolute;
+}
+
+.qimen-ring {
+  border: 1px solid rgba(215, 179, 95, 0.3);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.qimen-ring.outer {
+  inset: 4%;
+}
+
+.qimen-ring.middle {
+  inset: 18%;
+}
+
+.qimen-ring.inner {
+  inset: 34%;
+}
+
+.qimen-sector {
+  display: grid;
+  width: 110px;
+  min-height: 94px;
+  place-items: center;
+  gap: 2px;
+  padding: 10px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-xs);
+  background: rgba(13, 9, 7, 0.54);
+  text-align: center;
+  transform: rotate(var(--a)) translateY(-220px) rotate(calc(-1 * var(--a)));
+}
+
+.qimen-sector span,
+.qimen-compass {
+  color: var(--gold-bright);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.qimen-sector strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+.qimen-sector em,
+.qimen-sector small,
+.qimen-wheel-center span,
+.qimen-wheel-center small {
+  color: var(--paper-dim);
+  font-style: normal;
+}
+
+.qimen-wheel-center {
+  display: grid;
+  width: 188px;
+  min-height: 148px;
+  place-items: center;
+  gap: 7px;
+  padding: 18px;
+  border: 1px solid rgba(240, 217, 132, 0.42);
+  border-radius: 50%;
+  background: rgba(13, 9, 7, 0.9);
+  text-align: center;
+  box-shadow: 0 0 24px rgba(215, 179, 95, 0.15);
+}
+
+.qimen-wheel-center b {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+}
+
+.qimen-compass.north { top: 1%; }
+.qimen-compass.south { bottom: 1%; }
+.qimen-compass.east { right: 1%; }
+.qimen-compass.west { left: 1%; }
 
 .ziwei-palace-grid {
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -859,6 +1563,39 @@ function renderGenericBoard(data) {
   gap: 0;
 }
 
+.liuyao-layout {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.liuyao-title-strip,
+.liuyao-footnotes {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(215, 179, 95, 0.14);
+  border-radius: var(--radius-xs);
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.liuyao-title-strip strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+}
+
+.liuyao-title-strip span,
+.liuyao-title-strip em,
+.liuyao-footnotes span {
+  color: var(--paper-dim);
+  font-style: normal;
+}
+
 .yao-row {
   display: grid;
   grid-template-columns: 52px minmax(120px, 1fr) 64px 44px minmax(120px, 1fr);
@@ -908,6 +1645,346 @@ function renderGenericBoard(data) {
 .yao-row b {
   min-height: 24px;
   color: var(--gold-bright);
+}
+
+.yao-row.is-marked {
+  background: rgba(184, 58, 47, 0.08);
+}
+
+.meihua-flow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+}
+
+.meihua-node {
+  position: relative;
+  display: grid;
+  min-height: 164px;
+  align-content: center;
+  gap: 9px;
+  padding: 16px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-xs);
+  background: radial-gradient(circle at 50% 0%, rgba(215, 179, 95, 0.12), transparent 46%), rgba(0, 0, 0, 0.12);
+  text-align: center;
+}
+
+.meihua-node:not(:last-child)::after {
+  position: absolute;
+  top: 50%;
+  right: -13px;
+  z-index: 2;
+  color: var(--gold-bright);
+  content: ">";
+  transform: translateY(-50%);
+}
+
+.meihua-node.is-relation {
+  background: radial-gradient(circle, rgba(184, 58, 47, 0.18), rgba(215, 179, 95, 0.06));
+}
+
+.meihua-node span,
+.daliuren-core span,
+.daliuren-pass span,
+.daliuren-grid span,
+.relation-panels span,
+.hehun-person span,
+.fojiao-lines span,
+.daily-rhythm span {
+  color: var(--seal);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.meihua-node strong,
+.daliuren-core strong,
+.daliuren-pass strong,
+.daliuren-grid strong,
+.relation-panels strong,
+.hehun-person strong,
+.daily-rhythm strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.meihua-node em {
+  color: var(--paper-dim);
+  font-style: normal;
+}
+
+.daliuren-board {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 14px;
+  padding: 14px;
+}
+
+.daliuren-core {
+  display: grid;
+  min-height: 250px;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid rgba(240, 217, 132, 0.28);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(215, 179, 95, 0.16), rgba(0, 0, 0, 0.2) 68%);
+  text-align: center;
+}
+
+.daliuren-core em {
+  color: var(--paper-dim);
+  font-style: normal;
+}
+
+.daliuren-pass {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.daliuren-pass div,
+.daliuren-grid div {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  min-height: 112px;
+  padding: 14px;
+  border: 1px solid rgba(215, 179, 95, 0.14);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.04);
+}
+
+.daliuren-grid {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.xiaoliuren-wheel {
+  display: grid;
+  width: min(520px, 100%);
+  aspect-ratio: 1;
+  place-items: center;
+  justify-self: center;
+  overflow: visible;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(13, 9, 7, 0.82) 0 28%, transparent 29%), conic-gradient(rgba(215, 179, 95, 0.08), rgba(184, 58, 47, 0.12), rgba(79, 155, 131, 0.1), rgba(215, 179, 95, 0.08));
+}
+
+.xiaoliuren-center,
+.xiaoliuren-gate {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.xiaoliuren-center {
+  width: 140px;
+  height: 140px;
+  border: 1px solid rgba(240, 217, 132, 0.4);
+  border-radius: 50%;
+  background: rgba(13, 9, 7, 0.9);
+}
+
+.xiaoliuren-center strong,
+.relation-orbit strong,
+.hehun-score b,
+.daily-sun strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 400;
+}
+
+.xiaoliuren-center span,
+.xiaoliuren-gate em,
+.relation-orbit span,
+.hehun-score span,
+.daily-sun span {
+  color: var(--paper-dim);
+}
+
+.xiaoliuren-gate {
+  width: 104px;
+  min-height: 82px;
+  padding: 10px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-xs);
+  background: rgba(13, 9, 7, 0.62);
+  transform: rotate(var(--a)) translateY(-178px) rotate(calc(-1 * var(--a)));
+}
+
+.xiaoliuren-gate span {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 24px;
+}
+
+.relation-board {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 14px;
+  padding: 14px;
+}
+
+.relation-orbit {
+  display: grid;
+  min-height: 260px;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  border: 1px solid rgba(215, 179, 95, 0.24);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(184, 58, 47, 0.16), rgba(215, 179, 95, 0.08), transparent 70%);
+  text-align: center;
+}
+
+.relation-orbit span {
+  font-family: var(--font-display);
+  font-size: 56px;
+}
+
+.relation-panels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.relation-panels div {
+  display: grid;
+  align-content: center;
+  gap: 7px;
+  min-height: 120px;
+  padding: 14px;
+  border: 1px solid rgba(215, 179, 95, 0.14);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.04);
+}
+
+.hehun-board {
+  display: grid;
+  grid-template-columns: 1fr 150px 1fr;
+  gap: 12px;
+  padding: 14px;
+}
+
+.hehun-person,
+.hehun-score {
+  display: grid;
+  min-height: 180px;
+  place-items: center;
+  align-content: center;
+  gap: 9px;
+  padding: 14px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.04);
+  text-align: center;
+}
+
+.hehun-score {
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(184, 58, 47, 0.2), rgba(215, 179, 95, 0.08));
+}
+
+.hehun-note {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(215, 179, 95, 0.12);
+  border-radius: var(--radius-xs);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.hehun-note p,
+.fojiao-lines p {
+  margin: 0;
+  color: var(--paper-dim);
+}
+
+.fojiao-scroll {
+  display: grid;
+  grid-template-columns: 96px minmax(0, 1fr);
+  gap: 16px;
+  padding: 22px;
+  background:
+    linear-gradient(90deg, rgba(245, 234, 212, 0.08), transparent),
+    rgba(13, 9, 7, 0.28);
+}
+
+.fojiao-seal {
+  display: grid;
+  width: 72px;
+  height: 72px;
+  place-items: center;
+  border: 1px solid rgba(184, 58, 47, 0.46);
+  border-radius: 50%;
+  color: var(--paper-soft);
+  background: linear-gradient(145deg, var(--seal), var(--seal-dark));
+  font-family: var(--font-display);
+  font-size: 38px;
+}
+
+.fojiao-lines {
+  display: grid;
+  gap: 10px;
+}
+
+.fojiao-lines section {
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(215, 179, 95, 0.13);
+}
+
+.fengshui-compass {
+  padding: 14px;
+  background:
+    radial-gradient(circle at 50% 50%, rgba(215, 179, 95, 0.12), transparent 32%),
+    rgba(0, 0, 0, 0.08);
+}
+
+.daily-board {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 14px;
+  padding: 14px;
+}
+
+.daily-sun {
+  display: grid;
+  min-height: 220px;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  border: 1px solid rgba(240, 217, 132, 0.3);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(240, 217, 132, 0.2), rgba(184, 58, 47, 0.1), transparent 72%);
+  text-align: center;
+}
+
+.daily-rhythm {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.daily-rhythm div {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  min-height: 112px;
+  padding: 14px;
+  border: 1px solid rgba(215, 179, 95, 0.14);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.04);
 }
 
 .meihua-pro-grid,
@@ -996,6 +2073,10 @@ function renderGenericBoard(data) {
     grid-template-columns: 1fr;
   }
 
+  .primary-work-grid {
+    grid-template-columns: 1fr;
+  }
+
   .method-menu {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -1009,10 +2090,24 @@ function renderGenericBoard(data) {
   }
 
   .form-grid,
+  .daliuren-board,
+  .relation-board,
+  .hehun-board,
+  .daily-board,
   .meihua-pro-grid,
+  .meihua-flow,
   .generic-pro-grid,
   .tarot-spread {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .daliuren-core,
+  .daily-sun {
+    min-height: 190px;
+  }
+
+  .hehun-score {
+    border-radius: var(--radius-xs);
   }
 
   .ziwei-palace-grid {
@@ -1032,12 +2127,26 @@ function renderGenericBoard(data) {
 
   .method-menu,
   .form-grid,
+  .primary-work-grid .form-grid,
   .ziwei-palace-grid,
   .qimen-nine-grid,
   .fengshui-nine-grid,
   .meihua-pro-grid,
   .generic-pro-grid,
   .tarot-spread {
+    grid-template-columns: 1fr;
+  }
+
+  .daliuren-board,
+  .relation-board,
+  .hehun-board,
+  .daily-board,
+  .meihua-flow,
+  .daliuren-pass,
+  .daliuren-grid,
+  .relation-panels,
+  .daily-rhythm,
+  .fojiao-scroll {
     grid-template-columns: 1fr;
   }
 
@@ -1067,6 +2176,106 @@ function renderGenericBoard(data) {
   .yao-row b,
   .yao-row em {
     grid-column: 2 / -1;
+  }
+
+  .qimen-wheel {
+    width: min(340px, 94vw);
+  }
+
+  .ziwei-dial {
+    width: min(350px, 94vw);
+  }
+
+  .ziwei-dial-palace {
+    width: 72px;
+    min-height: 66px;
+    padding: 5px;
+    transform: rotate(var(--a)) translateY(-128px) rotate(calc(-1 * var(--a)));
+  }
+
+  .ziwei-dial-palace strong {
+    font-size: 15px;
+  }
+
+  .ziwei-dial-palace b {
+    font-size: 11px;
+  }
+
+  .ziwei-dial-palace em,
+  .ziwei-dial-palace small {
+    display: none;
+  }
+
+  .ziwei-dial-center {
+    width: 122px;
+    min-height: 104px;
+    padding: 10px;
+  }
+
+  .ziwei-dial-center b {
+    font-size: 19px;
+  }
+
+  .qimen-sector {
+    width: 76px;
+    min-height: 70px;
+    padding: 6px;
+    transform: rotate(var(--a)) translateY(-124px) rotate(calc(-1 * var(--a)));
+  }
+
+  .qimen-sector strong {
+    font-size: 18px;
+  }
+
+  .qimen-sector em,
+  .qimen-sector small {
+    display: none;
+  }
+
+  .qimen-wheel-center {
+    width: 126px;
+    min-height: 104px;
+    padding: 10px;
+  }
+
+  .qimen-wheel-center b {
+    font-size: 20px;
+  }
+
+  .meihua-node:not(:last-child)::after {
+    top: auto;
+    right: 50%;
+    bottom: -18px;
+    transform: translateX(50%) rotate(90deg);
+  }
+
+  .xiaoliuren-wheel {
+    width: min(330px, 94vw);
+  }
+
+  .xiaoliuren-gate {
+    width: 76px;
+    min-height: 64px;
+    padding: 6px;
+    transform: rotate(var(--a)) translateY(-118px) rotate(calc(-1 * var(--a)));
+  }
+
+  .xiaoliuren-gate span {
+    font-size: 18px;
+  }
+
+  .xiaoliuren-gate em {
+    display: none;
+  }
+
+  .xiaoliuren-center {
+    width: 112px;
+    height: 112px;
+  }
+
+  .fojiao-seal {
+    width: 62px;
+    height: 62px;
   }
 }
 </style>

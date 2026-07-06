@@ -1,6 +1,6 @@
 <template>
-  <main class="home-page ritual-page">
-    <header class="page-nav app-shell">
+  <main class="home-page mystic-app">
+    <header class="mystic-topbar">
       <a class="brand" href="/" aria-label="乾坤之道首页">
         <span class="brand-seal">卦</span>
         <span>
@@ -9,114 +9,133 @@
         </span>
       </a>
       <nav class="nav-links" aria-label="主导航">
-        <a href="#ritual">起卦</a>
-        <a href="#skills">Skills</a>
-        <a href="#tools">工具</a>
+        <a href="#ritual">首页</a>
+        <a href="#skills">AI问卦</a>
+        <a href="#tools">功能中心</a>
+        <a href="#boundary">说明</a>
       </nav>
-      <button class="ds-button gold" type="button" @click="go('/zhouyi')">进入起卦</button>
+      <div class="mystic-actions">
+        <button class="ds-button ghost" type="button">会员中心</button>
+        <span class="icon-pill">铃</span>
+        <button class="ds-button primary" type="button" @click="go('/zhouyi')">开始问卦</button>
+      </div>
     </header>
 
-    <section id="ritual" class="hero app-shell">
-      <div class="hero-copy">
-        <span class="section-kicker">Zhouyi Ritual</span>
-        <h1>一站式玄学问事台</h1>
-        <p>
-          在原有周易起卦、八字、姻缘、佛学和奇门基础上，补入紫微斗数、梅花易数、大六壬、小六壬、塔罗、风水阳宅、生肖合婚与每日运势。
-        </p>
-        <div class="hero-actions">
-          <button class="ds-button primary" type="button" @click="go('/zhouyi')">开始周易起卦</button>
-          <button class="ds-button ghost" type="button" @click="go('/divine/ziwei')">看紫微斗数</button>
-          <button class="ds-button ghost" type="button" @click="go('/divine/fengshui')">测风水布局</button>
-        </div>
-      </div>
+    <section class="mystic-layout">
+      <aside class="left-rail">
+        <button class="rail-link active" type="button" @click="go('/')"><i>⌂</i><span>首页</span></button>
+        <span class="rail-section-title">术数工具</span>
+        <button v-for="item in railSkills" :key="item.id" class="rail-link" type="button" @click="go(item.path)"><i>{{ item.icon }}</i><span>{{ item.name }}</span></button>
+        <button class="rail-link rail-record" type="button"><i>记</i><span>我的记录</span></button>
+      </aside>
 
-      <div class="hero-plate ds-card">
-        <div class="bagua-orbit" aria-hidden="true">
-          <span v-for="item in trigrams" :key="item">{{ item }}</span>
-        </div>
-        <div class="plate-center">
-          <span>今日</span>
-          <strong>{{ today }}</strong>
-          <em>先定问题，再选术法</em>
-        </div>
-      </div>
-    </section>
-
-    <section id="skills" class="app-shell section-block">
-      <div class="section-head split-head">
-        <div>
-          <span class="section-kicker">Skill Matrix</span>
-          <h2 class="section-title">玄学 Skills 能力库</h2>
-          <p class="section-copy">
-            参考你给的 14 个玄学 Skill 项目，把网站重组为“起卦仪式 + 命理排盘 + 关系情感 + 决策占问 + 空间风水 + 西式牌阵”的入口矩阵。
-          </p>
-        </div>
-        <div class="coverage-card ds-card">
-          <strong>{{ coverage.added }} 个新增入口</strong>
-          <span>已覆盖：紫微、梅花、大六壬、小六壬、塔罗、风水、生肖合婚、每日运势</span>
-        </div>
-      </div>
-
-      <div class="skill-rail">
-        <button
-          v-for="group in groups"
-          :key="group.id"
-          type="button"
-          :class="{ active: activeGroup === group.id }"
-          @click="activeGroup = group.id"
-        >
-          {{ group.name }}
-        </button>
-      </div>
-
-      <div class="skill-grid">
-        <article
-          v-for="item in visibleSkills"
-          :key="item.id"
-          class="skill-card ds-card"
-          @click="go(item.path)"
-        >
-          <div class="skill-top">
-            <span class="round-mark">{{ item.icon }}</span>
-            <span class="ds-badge" :class="item.added ? 'green' : 'gold'">{{ item.added ? '新增' : '已有' }}</span>
+      <section class="main-workspace">
+        <article id="ritual" class="home-hero hero-workspace">
+          <div class="hero-copy">
+            <span class="section-kicker">东方术数与 AI 智慧工具台</span>
+            <h1>乾坤之道</h1>
+            <p>集千年术数智慧与 AI 洞察于一体，助你洞察天时、明晰人事、把握机遇、趋吉避凶。</p>
+            <div class="hero-actions">
+              <button class="ds-button primary" type="button" @click="go('/zhouyi')">开始问卦</button>
+              <button class="ds-button ghost" type="button" @click="go('/divine/qimen')">查看功能</button>
+            </div>
           </div>
-          <h3>{{ item.name }}</h3>
-          <p>{{ item.description }}</p>
-          <div class="source-row">
-            <span v-for="source in item.sources" :key="source">{{ source }}</span>
-          </div>
-          <button class="ds-button ghost" type="button">进入{{ item.short }}</button>
-        </article>
-      </div>
-    </section>
-
-    <section id="tools" class="app-shell section-block">
-      <div class="section-head">
-        <div>
-          <span class="section-kicker">Classic Tools</span>
-          <h2 class="section-title">轻量工具与仪式入口</h2>
-          <p class="section-copy">这些是独立工具页，适合快速记录、抽签、起名或进入完整周易起卦流程。</p>
-        </div>
-      </div>
-      <div class="tool-grid">
-        <article v-for="item in tools" :key="item.id" class="tool-card ds-card" @click="go(item.path)">
-          <span>{{ item.icon }}</span>
-          <div>
-            <strong>{{ item.name }}</strong>
-            <p>{{ item.description }}</p>
+          <div class="hero-plate">
+            <div class="bagua-orbit" aria-hidden="true">
+              <span v-for="item in trigrams" :key="item">{{ item }}</span>
+            </div>
+            <div class="plate-center"><strong>易</strong><em>先定问题，再选术法</em></div>
           </div>
         </article>
-      </div>
-    </section>
 
-    <section class="app-shell boundary-section">
-      <article class="ds-card">
-        <span class="section-kicker">Boundary</span>
-        <h2>使用边界</h2>
-        <p>
-          本站内容用于传统文化体验、娱乐和自我观察，不构成医疗、法律、财务、婚恋等现实决策建议。重要事项请结合现实信息与专业人士意见。
-        </p>
-      </article>
+        <article id="tools" class="function-center hero-workspace">
+          <div class="function-hero-copy">
+            <span class="section-kicker">功能中心</span>
+            <h2>功能中心</h2>
+            <p>集千年术数智慧与 AI 能力于一体，助你洞察天时、明晰人事、趋吉避凶。</p>
+          </div>
+          <div class="function-search-row">
+            <label class="function-search">
+              <input v-model.trim="toolSearch" placeholder="搜索工具名称或关键词" />
+              <span>⌕</span>
+            </label>
+            <button v-for="group in functionGroups" :key="group.id" type="button" :class="{ active: activeFunctionGroup === group.id }" @click="activeFunctionGroup = group.id">
+              {{ group.name }}
+            </button>
+          </div>
+          <section v-for="section in visibleFunctionSections" :key="section.id" class="function-section">
+            <div class="function-section-head">
+              <h3>{{ section.name }}</h3>
+              <button type="button" @click="activeFunctionGroup = section.id">展开全部 ›</button>
+            </div>
+            <div class="function-card-grid">
+              <article v-for="item in section.items" :key="item.id" class="function-card" @click="go(item.path)">
+                <span class="function-icon">{{ item.icon }}</span>
+                <div>
+                  <strong>{{ item.name }}</strong>
+                  <p>{{ item.description }}</p>
+                </div>
+                <em>{{ item.badge }}</em>
+                <button type="button">进入使用</button>
+              </article>
+            </div>
+          </section>
+        </article>
+
+        <div class="dashboard-grid">
+          <article class="oracle-card today-card">
+            <div class="card-title-row"><h3>今日观象</h3><span class="ds-badge gold">查看详情</span></div>
+            <strong>晴转多云</strong>
+            <p>农历四月廿五，乙巳年 辛巳月 甲子日。</p>
+            <div class="mini-metrics"><span>五行 海中金</span><span>冲煞 马日冲鼠</span><span>值神 金匮</span></div>
+          </article>
+          <article id="skills" class="oracle-card recommend-card">
+            <div class="card-title-row"><h3>推荐功能</h3><button type="button" @click="activeGroup = 'all'">更多功能</button></div>
+            <div class="recommend-row">
+              <button v-for="item in featuredSkills" :key="item.id" type="button" @click="go(item.path)">
+                <i>{{ item.icon }}</i><strong>{{ item.name }}</strong><span>{{ item.short }}</span>
+              </button>
+            </div>
+          </article>
+        </div>
+
+        <section class="tool-strip">
+          <article v-for="item in tools" :key="item.id" class="tool-card oracle-card" @click="go(item.path)">
+            <span>{{ item.icon }}</span>
+            <div><strong>{{ item.name }}</strong><p>{{ item.description }}</p></div>
+          </article>
+        </section>
+
+        <article id="boundary" class="oracle-card boundary-section">
+          <span class="section-kicker">Boundary</span>
+          <h2>使用边界</h2>
+          <p>本站内容用于传统文化体验、娱乐和自我观察，不构成医疗、法律、财务、婚恋等现实决策建议。重要事项请结合现实信息与专业人士意见。</p>
+        </article>
+      </section>
+
+      <aside class="right-rail">
+        <article class="right-rail-card">
+          <div class="card-title-row"><h3>今日卦象</h3><span class="ds-badge">查看详情</span></div>
+          <div class="today-hex">☴</div>
+          <strong>天风姤</strong>
+          <p>姤者，遇也。阴长阳消，凡事宜谨慎观察，静待时机。</p>
+          <div class="hex-tags"><span>卦象 乾上巽下</span><span>卦德 遇合·进退</span><span>运势 平中有变</span></div>
+        </article>
+        <article class="right-rail-card">
+          <h3>今日宜忌</h3>
+          <div class="mini-item"><strong>宜</strong><span>祭祀 祈福 求嗣 出行 解除 纳采 订盟</span></div>
+          <div class="mini-item"><strong>忌</strong><span>动土 破土 安葬 冠笄 造桥</span></div>
+        </article>
+        <article class="right-rail-card">
+          <h3>快捷入口</h3>
+          <div class="quick-icons">
+            <button v-for="item in quickTools" :key="item.id" type="button" @click="go(item.path)"><b>{{ item.icon }}</b>{{ item.name }}</button>
+          </div>
+        </article>
+        <article class="right-rail-card quote-card">
+          <p>知天地之数，明阴阳之理，趋吉避凶，顺势而为。</p>
+        </article>
+      </aside>
     </section>
   </main>
 </template>
@@ -129,6 +148,8 @@ const router = useRouter()
 const today = computed(() => new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }).format(new Date()))
 const trigrams = ['乾', '兑', '离', '震', '巽', '坎', '艮', '坤']
 const activeGroup = ref('all')
+const activeFunctionGroup = ref('all')
+const toolSearch = ref('')
 
 const groups = [
   { id: 'all', name: '全部' },
@@ -166,6 +187,64 @@ const tools = [
 
 const visibleSkills = computed(() => activeGroup.value === 'all' ? skills : skills.filter((item) => item.group === activeGroup.value))
 const coverage = computed(() => ({ added: skills.filter((item) => item.added).length }))
+const railSkills = computed(() => skills.filter((item) => ['bazi', 'ziwei', 'qimen', 'liuyao-ai', 'meihua', 'daliuren', 'xiaoliuren', 'fengshui', 'hehun', 'daily-fortune'].includes(item.id)))
+const featuredSkills = computed(() => skills.filter((item) => ['liuyao-ai', 'qimen', 'meihua', 'ziwei'].includes(item.id)))
+const quickTools = computed(() => [
+  { id: 'zhouyi', path: '/zhouyi', icon: '卦', name: '起卦占问' },
+  { id: 'huangli', path: '/tools/huangli', icon: '历', name: '择吉日课' },
+  { id: 'bazi', path: '/divine/bazi', icon: '命', name: '八字排盘' },
+  { id: 'fengshui', path: '/divine/fengshui', icon: '宅', name: '风水布局' },
+])
+const functionGroups = [
+  { id: 'all', name: '全部' },
+  { id: 'core', name: 'AI推荐' },
+  { id: 'mingli', name: '命理解析' },
+  { id: 'oracle', name: '占卜预测' },
+  { id: 'life', name: '生活辅助' },
+]
+const functionSections = computed(() => [
+  {
+    id: 'core',
+    name: '核心问卦',
+    items: [
+      { ...skills.find((item) => item.id === 'liuyao-ai'), badge: '热门' },
+      { ...skills.find((item) => item.id === 'qimen'), badge: 'AI推荐' },
+      { id: 'lingqian', icon: '签', name: '灵签占问', path: '/tools/lingqian', description: '抽签问事，指点迷津。', badge: '热门' },
+      { ...skills.find((item) => item.id === 'meihua'), badge: 'AI推荐' },
+    ].filter(Boolean),
+  },
+  {
+    id: 'mingli',
+    name: '命理分析',
+    items: [
+      { ...skills.find((item) => item.id === 'bazi'), badge: 'AI推荐' },
+      { ...skills.find((item) => item.id === 'ziwei'), badge: '热门' },
+      { ...skills.find((item) => item.id === 'daliuren'), badge: 'AI推荐' },
+      { ...skills.find((item) => item.id === 'xiaoliuren'), badge: '热门' },
+    ].filter(Boolean),
+  },
+  {
+    id: 'life',
+    name: '生活工具',
+    items: [
+      { id: 'huangli', icon: '历', name: '今日黄历', path: '/tools/huangli', description: '宜忌择日，趋吉避凶。', badge: '每日必看' },
+      { id: 'qiming', icon: '名', name: '宝宝起名', path: '/tools/qiming', description: '五行八字，吉祥好名。', badge: 'AI推荐' },
+      { ...skills.find((item) => item.id === 'hehun'), badge: '热门' },
+      { id: 'jiemeng', icon: '梦', name: '梦境解析', path: '/tools/jiemeng', description: '解析梦境，指引方向。', badge: 'AI推荐' },
+      { id: 'xianghuo', icon: '香', name: '祈福上香', path: '/tools/xianghuo', description: '在线祈福，心诚则灵。', badge: '安心祈福' },
+    ].filter(Boolean),
+  },
+])
+const visibleFunctionSections = computed(() => {
+  const keyword = toolSearch.value.trim().toLowerCase()
+  return functionSections.value
+    .filter((section) => activeFunctionGroup.value === 'all' || section.id === activeFunctionGroup.value)
+    .map((section) => ({
+      ...section,
+      items: section.items.filter((item) => !keyword || `${item.name}${item.description}`.toLowerCase().includes(keyword)),
+    }))
+    .filter((section) => section.items.length)
+})
 
 function go(path) {
   router.push(path)
@@ -174,18 +253,30 @@ function go(path) {
 
 <style scoped>
 .home-page {
-  padding: 18px 0 72px;
+  padding-bottom: 28px;
 }
 
-.hero {
-  position: relative;
-  z-index: 1;
+.home-hero {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 420px;
-  gap: 34px;
+  gap: 28px;
   align-items: center;
-  min-height: 620px;
-  padding: 58px 0 24px;
+  background:
+    linear-gradient(90deg, rgba(13, 9, 7, 0.84), rgba(13, 9, 7, 0.28)),
+    radial-gradient(circle at 78% 54%, rgba(215, 179, 95, 0.22), transparent 32%),
+    linear-gradient(145deg, rgba(255, 247, 231, 0.08), transparent);
+}
+
+.home-hero::before {
+  position: absolute;
+  right: 20px;
+  bottom: 18px;
+  width: 42%;
+  height: 46%;
+  pointer-events: none;
+  content: "";
+  background: radial-gradient(ellipse, rgba(184, 58, 47, 0.18), transparent 68%);
+  filter: blur(10px);
 }
 
 .hero-copy h1 {
@@ -217,13 +308,268 @@ function go(path) {
 }
 
 .hero-plate {
+  position: relative;
   display: grid;
-  min-height: 420px;
+  min-height: 300px;
   place-items: center;
   border-radius: 50%;
   background:
     radial-gradient(circle, rgba(215, 179, 95, 0.16), transparent 58%),
     rgba(34, 21, 14, 0.7);
+}
+
+.function-center {
+  display: grid;
+  min-height: auto;
+  gap: 18px;
+  padding: 28px;
+}
+
+.function-hero-copy h2 {
+  margin: 8px 0 0;
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: clamp(42px, 6vw, 68px);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.function-hero-copy p {
+  max-width: 720px;
+  color: var(--paper-dim);
+}
+
+.function-search-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.function-search {
+  position: relative;
+  width: min(360px, 100%);
+}
+
+.function-search input {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 44px 10px 14px;
+  border: 1px solid rgba(215, 179, 95, 0.24);
+  border-radius: var(--radius-xs);
+  color: var(--paper);
+  background: rgba(13, 9, 7, 0.48);
+}
+
+.function-search span {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  color: var(--gold-bright);
+  transform: translateY(-50%);
+}
+
+.function-search-row button {
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: 999px;
+  color: var(--paper-dim);
+  background: rgba(255, 247, 231, 0.04);
+}
+
+.function-search-row button.active,
+.function-search-row button:hover {
+  border-color: rgba(240, 217, 132, 0.46);
+  color: var(--gold-bright);
+  background: rgba(184, 58, 47, 0.22);
+}
+
+.function-section {
+  display: grid;
+  gap: 12px;
+}
+
+.function-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.function-section-head h3 {
+  margin: 0;
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 400;
+}
+
+.function-section-head button {
+  border: 0;
+  color: var(--paper-dim);
+  background: transparent;
+}
+
+.function-card-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.function-card {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 12px;
+  min-height: 148px;
+  padding: 16px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.045);
+}
+
+.function-icon {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border: 1px solid rgba(215, 179, 95, 0.36);
+  border-radius: 50%;
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 28px;
+}
+
+.function-card strong {
+  color: var(--paper);
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.function-card p {
+  margin: 4px 0 0;
+  color: var(--paper-dim);
+  font-size: 13px;
+}
+
+.function-card em {
+  grid-column: 2;
+  width: fit-content;
+  padding: 2px 8px;
+  border-radius: 999px;
+  color: #ffb0a5;
+  background: rgba(184, 58, 47, 0.22);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.function-card > button {
+  grid-column: 1 / -1;
+  min-height: 34px;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: var(--radius-xs);
+  color: var(--gold-bright);
+  background: rgba(215, 179, 95, 0.08);
+}
+
+.card-title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.card-title-row button {
+  border: 0;
+  color: var(--paper-dim);
+  background: transparent;
+}
+
+.today-card > strong {
+  display: block;
+  margin: 8px 0;
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 400;
+}
+
+.today-card p,
+.quote-card p {
+  color: var(--paper-dim);
+}
+
+.mini-metrics,
+.hex-tags {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.mini-metrics span,
+.hex-tags span {
+  padding: 8px;
+  border: 1px solid rgba(215, 179, 95, 0.14);
+  border-radius: var(--radius-xs);
+  color: rgba(245, 234, 212, 0.72);
+  background: rgba(0, 0, 0, 0.12);
+  font-size: 12px;
+}
+
+.recommend-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.recommend-row button {
+  display: grid;
+  min-height: 150px;
+  place-items: center;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: var(--radius-xs);
+  color: var(--paper);
+  background: rgba(255, 247, 231, 0.04);
+}
+
+.recommend-row i {
+  display: grid;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border: 1px solid rgba(215, 179, 95, 0.35);
+  border-radius: 50%;
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-style: normal;
+}
+
+.recommend-row strong {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 400;
+}
+
+.recommend-row span {
+  color: rgba(245, 234, 212, 0.56);
+  font-size: 12px;
+}
+
+.tool-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.today-hex {
+  color: var(--gold-bright);
+  font-size: 72px;
+  line-height: 1;
 }
 
 .bagua-orbit {
@@ -458,6 +804,10 @@ function go(path) {
   .skill-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .function-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 980px) {
@@ -506,7 +856,8 @@ function go(path) {
   }
 
   .skill-grid,
-  .tool-grid {
+  .tool-grid,
+  .function-card-grid {
     grid-template-columns: 1fr;
   }
 }
