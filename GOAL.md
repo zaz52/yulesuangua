@@ -4,6 +4,8 @@
 
 把 `yulesuangua` 从旧工具站改成沉浸式玄学问事产品，并继续完善各个术法页面的结果表达。当前重点是：不同术法“算出来”的盘面不能都长成同一种卡片网格，而要按术法本身的专业表达呈现。
 
+当前动态组件任务：在静态页面和现有状态提示组件基础上，新增一个可复用、可访问、可用于生产环境的动态 UI 边界组件，用于承载异步数据加载、空状态、错误状态、刷新/重试、竞态处理、响应式布局和插槽复用；组件必须有清晰 Props 设计、完整实现和使用示例。
+
 当前修正任务：奇门遁甲页面必须按用户参考图呈现为真正的九宫排盘界面，包含排盘设置、顶部起局信息、九宫格、东西南北方位、每宫门/星/神/干信息和底部值符值使摘要；不能只输出文字列表或普通说明。
 
 当前架构任务：把奇门遁甲从 `Divine.vue` 内联渲染升级为最小但可扩展的 MVP 子系统，明确系统架构、API DTO、数据库记录模型、前端领域模型和 UI 组件边界，避免后续继续退化成纯文字展示。
@@ -360,3 +362,27 @@
 - 剩余边界：
   - 姻缘、合婚、佛学、每日运势当前仍属于结构化结果面板，不是严格排盘；后续可以按相同模式继续拆组件。
   - 部分真实算法字段仍依赖 `mingyu-core` 返回形态，已通过归一化层做兼容 fallback。
+
+### 2026-07-06 动态异步 UI 边界组件
+
+- 根据用户要求“现在是静态网页，然后可以做动态的了”，新增 `frontend/src/components/AsyncBoundary.vue`，用于承载动态数据加载、空状态、错误状态、重试/刷新、竞态取消和响应式布局。
+- 组件支持两种模式：
+  - 非受控模式：传入 `loader`，组件内部管理 `idle/loading/success/empty/error`。
+  - 受控模式：父组件传入 `status/data/error`，组件只负责渲染状态。
+- 生产级细节：
+  - 使用 `AbortController` 中止旧请求。
+  - 使用递增 `requestId` 忽略过期响应。
+  - 支持 `emptyWhen` 自定义空态和 `transform` 数据转换。
+  - 支持 `header/default/loading/empty/error/idle/footer` 插槽。
+  - 支持 `aria-busy`、`aria-live`、错误 `role="alert"`、heading 层级和响应式布局。
+  - 复用 `RitualState`，保持现有视觉系统一致。
+- 新增 `docs/async-boundary-component.md`，包含组件架构、Props 设计、完整实现位置、使用示例、边缘情况说明。
+- 已接入真实页面：
+  - `/divine/:skill` 右侧“最近记录”改为 `AsyncBoundary` 承载。
+  - 使用 `loadRecentRecordsAsync` 作为 loader，`recentRecordsVersion` 作为刷新键。
+  - 保存问卦记录后自动触发重新加载。
+- 验证通过：
+  - `npm run build` 成功。
+  - 使用 `@vue/compiler-sfc` 对 `AsyncBoundary.vue` 做单文件编译检查通过。
+  - Chrome CDP 验证 `/divine/bazi`：最近记录空态渲染 1 个 `.async-boundary`，`role="region"`、`aria-live="polite"`、无多余按钮、无横向溢出。
+  - Chrome CDP 验证写入本地记录后：`.mini-record` 渲染 1 条，仍无横向溢出。

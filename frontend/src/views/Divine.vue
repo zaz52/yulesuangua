@@ -189,21 +189,30 @@
         </article>
         <article class="right-rail-card">
           <div class="card-title-row"><h3>最近记录</h3><span>全部记录</span></div>
-          <div v-if="recentRecords.length" class="mini-list">
-            <button v-for="item in recentRecords" :key="`${item.title}-${item.time}`" type="button" class="mini-record" @click="item.path && router.push(item.path)">
-              <strong>{{ item.title }}</strong>
-              <span>{{ item.time }}</span>
-            </button>
-          </div>
-          <RitualState
-            v-else
+          <AsyncBoundary
             compact
             :bordered="false"
-            variant="empty"
+            immediate
+            :loader="loadRecentRecordsAsync"
+            :reload-key="recentRecordsVersion"
+            :empty-when="(items) => items.length === 0"
+            empty-title="暂无最近记录"
+            empty-description="完成一次问卦后会自动显示在这里。"
+            loading-title="正在读取记录"
+            aria-label="最近问卦记录"
+            :show-retry="false"
+            :show-refresh="false"
             heading-level="3"
-            title="暂无最近记录"
-            description="完成一次问卦后会自动显示在这里。"
-          />
+          >
+            <template #default="{ data }">
+              <div class="mini-list">
+                <button v-for="item in data" :key="`${item.title}-${item.time}`" type="button" class="mini-record" @click="item.path && router.push(item.path)">
+                  <strong>{{ item.title }}</strong>
+                  <span>{{ item.time }}</span>
+                </button>
+              </div>
+            </template>
+          </AsyncBoundary>
         </article>
         <article class="right-rail-card">
           <h3>推荐功能</h3>
@@ -222,6 +231,7 @@
 import { computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { calculateChart, divineStream } from '../api/divine'
+import AsyncBoundary from '../components/AsyncBoundary.vue'
 import BaziBoard from '../components/BaziBoard.vue'
 import DaliurenBoard from '../components/DaliurenBoard.vue'
 import FengshuiBoard from '../components/FengshuiBoard.vue'
@@ -310,6 +320,7 @@ const today = new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit
 const userInput = ref('')
 const loading = ref(false)
 const responses = ref([])
+const recentRecordsVersion = ref(0)
 const profile = ref({ name: '', gender: '男', birthDate: '', shichen: '', place: '' })
 const relation = ref({ name: '', birthday: '', partner: '', status: '', focus: '' })
 const mind = ref({ topic: '', mood: '', context: '' })
@@ -375,6 +386,11 @@ function saveRecentRecord(title, path) {
   const next = [record, ...loadRecentRecords()].slice(0, 8)
   localStorage.setItem('qk_recent_records', JSON.stringify(next))
   recentRecords.value = next
+  recentRecordsVersion.value += 1
+}
+
+async function loadRecentRecordsAsync() {
+  return loadRecentRecords()
 }
 
 function buildMessage() {
