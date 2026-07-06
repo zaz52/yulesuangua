@@ -494,3 +494,16 @@
 - 首次线上测试发现 `nvidia/llama-3.3-nemotron-super-49b-v1.5` 输出过短；`qwen/qwen3-235b-a22b` 在当前 NVIDIA 环境未成功调用。已查询 NVIDIA `/v1/models`，当前改用列表中可用的 `qwen/qwen3.5-122b-a10b` 并保留强化提示词。
 - 已部署并验证 `POST /api/divine/qimen` 返回 1000+ 字符的完整中文模型解读，不再触发内置规则兜底。
 - 已强化系统提示词：要求直接输出完整解读，不输出“示例”或只输出框架。
+
+### 2026-07-07 移除最近记录与本地记录存储
+
+- 根据用户要求，已从 `/divine/:skill` 和 `/tools/:tool` 右侧栏删除“最近记录”模块，不再展示最近记录入口或空状态。
+- 已删除浏览器本地最近记录模块 `frontend/src/storage/recentRecords.js`，并移除 `qk_recent_records`、`qk_incense`、`qk_wish` 相关读写。
+- 已将匿名 `clientId` 从 `localStorage` 持久化改为页面会话内存变量，避免浏览器落盘保存 `qk_` 本地记录。
+- 远端 Cloudflare D1 咨询保存仍作为 best-effort 保留；前端不会再读取最近记录列表，也不会本地兜底保存记录。
+- 验证结果：
+  - `rg` 扫描 `frontend/src` 未发现 `localStorage`、`qk_recent_records`、`最近记录`、`recentRecords` 残留。
+  - `npm run build` 通过。
+  - `node --check frontend/functions/api/[[path]].js` 通过。
+  - 本地 Cloudflare Pages 预览 `http://127.0.0.1:8788/` 返回 200。
+  - Playwright 使用本机 Chrome 检查 `/divine/qimen`、`/tools/qiming`、`/tools/xianghuo` 的桌面端和 390px 移动端：无“最近记录”文本、无页面级横向溢出；上香交互后 `localStorage` 中没有 `qk_` key。

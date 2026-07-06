@@ -118,24 +118,6 @@
           <p>名者，命也。名正则言顺，命善则运通。</p>
         </article>
         <article class="right-rail-card">
-          <h3>最近记录</h3>
-          <div v-if="recentRecords.length" class="mini-list">
-            <button v-for="item in recentRecords" :key="`${item.title}-${item.time}`" type="button" class="mini-record" @click="item.path && router.push(item.path)">
-              <strong>{{ item.title }}</strong>
-              <span>{{ item.time }}</span>
-            </button>
-          </div>
-          <RitualState
-            v-else
-            compact
-            :bordered="false"
-            variant="empty"
-            heading-level="3"
-            title="暂无最近记录"
-            description="使用工具后会自动显示在这里。"
-          />
-        </article>
-        <article class="right-rail-card">
           <h3>推荐功能</h3>
           <div class="quick-icons">
             <button type="button" @click="router.push('/tools/qiming')"><b>名</b>姓名分析</button>
@@ -152,8 +134,6 @@
 <script setup>
 import { computed, defineComponent, h, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import RitualState from '../components/RitualState.vue'
-import { loadLocalRecentRecords, saveLocalRecentRecord } from '../storage/recentRecords'
 
 const ResultBlock = defineComponent({
   props: { title: String, copy: String },
@@ -218,36 +198,21 @@ const nameForm = ref({ familyName: '', gender: '不限', birth: '', style: '' })
 const nameResult = ref('填写姓氏、农历生日和偏好后生成候选名册。')
 const nameCandidates = ref(buildNameCandidates('林', '清雅、自然'))
 const wishForm = ref({ target: '自己', text: '' })
-const wishResult = ref('写下心愿后，点击上香会记录在当前浏览器中。')
+const wishResult = ref('写下心愿后，点击上香会在当前页面显示，不会保存到本地浏览器。')
 const incenseCount = ref(108)
-const recentRecords = ref([])
 
 onMounted(() => {
   if (toolId.value === 'liuyao') router.replace('/zhouyi')
-  incenseCount.value = Number(localStorage.getItem('qk_incense') || 108)
-  wishForm.value.text = localStorage.getItem('qk_wish') || ''
-  recentRecords.value = loadRecentRecords()
 })
-
-function loadRecentRecords() {
-  return loadLocalRecentRecords()
-}
-
-function saveRecentRecord(title, path = `/tools/${toolId.value}`) {
-  const next = saveLocalRecentRecord({ title, path })
-  recentRecords.value = next
-}
 
 function drawLot() {
   lotIndex.value += 1
-  saveRecentRecord(`灵签占问 · ${question.value || lot.value.title}`)
 }
 
 function analyzeDream() {
   const mood = dreamForm.value.mood
   const context = dreamForm.value.context || '未填写现实背景'
   dreamResult.value = `梦境可先看三层：一是画面象意，二是醒来时的${mood}情绪，三是它和现实背景“${context}”的关系。建议把梦中最强烈的画面写成一句问题，再进入佛学开示继续深问。`
-  saveRecentRecord(`梦境解析 · ${mood}`)
 }
 
 function generateNames() {
@@ -255,7 +220,6 @@ function generateNames() {
   const style = nameForm.value.style || '清雅、自然、易读'
   nameCandidates.value = buildNameCandidates(family, style)
   nameResult.value = `${family}姓 · ${nameForm.value.gender} · 农历 ${nameForm.value.birth || '未填'} · ${style}`
-  saveRecentRecord(`宝宝起名 · ${family}姓${nameForm.value.gender}`)
 }
 
 function buildNameCandidates(family, style) {
@@ -279,10 +243,7 @@ function buildNameCandidates(family, style) {
 
 function offerIncense() {
   incenseCount.value += 3
-  localStorage.setItem('qk_incense', String(incenseCount.value))
-  localStorage.setItem('qk_wish', wishForm.value.text)
-  wishResult.value = `已为${wishForm.value.target}敬上三炷香。心愿已保存在当前浏览器：${wishForm.value.text || '愿心安定，所行有度。'}`
-  saveRecentRecord(`祈福上香 · ${wishForm.value.target}`)
+  wishResult.value = `已为${wishForm.value.target}敬上三炷香。心愿仅在当前页面显示，不会保存到本地浏览器：${wishForm.value.text || '愿心安定，所行有度。'}`
 }
 </script>
 

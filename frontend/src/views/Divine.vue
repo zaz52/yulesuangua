@@ -188,33 +188,6 @@
           </div>
         </article>
         <article class="right-rail-card">
-          <div class="card-title-row"><h3>最近记录</h3><span>全部记录</span></div>
-          <AsyncBoundary
-            compact
-            :bordered="false"
-            immediate
-            :loader="loadRecentRecordsAsync"
-            :reload-key="recentRecordsVersion"
-            :empty-when="(items) => items.length === 0"
-            empty-title="暂无最近记录"
-            empty-description="完成一次问卦后会自动显示在这里。"
-            loading-title="正在读取记录"
-            aria-label="最近问卦记录"
-            :show-retry="false"
-            :show-refresh="false"
-            heading-level="3"
-          >
-            <template #default="{ data }">
-              <div class="mini-list">
-                <button v-for="item in data" :key="`${item.title}-${item.time}`" type="button" class="mini-record" @click="item.path && router.push(item.path)">
-                  <strong>{{ item.title }}</strong>
-                  <span>{{ item.time }}</span>
-                </button>
-              </div>
-            </template>
-          </AsyncBoundary>
-        </article>
-        <article class="right-rail-card">
           <h3>推荐功能</h3>
           <div class="quick-icons">
             <button v-for="item in sideRecommendations" :key="item.id" type="button" @click="switchSkill(item.id)">
@@ -230,8 +203,7 @@
 <script setup>
 import { computed, defineComponent, h, nextTick, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { calculateChart, createConsultationRecord, divineStream, listConsultationRecords } from '../api/divine'
-import AsyncBoundary from '../components/AsyncBoundary.vue'
+import { calculateChart, createConsultationRecord, divineStream } from '../api/divine'
 import BaziBoard from '../components/BaziBoard.vue'
 import DaliurenBoard from '../components/DaliurenBoard.vue'
 import FengshuiBoard from '../components/FengshuiBoard.vue'
@@ -244,7 +216,6 @@ import XiaoliurenBoard from '../components/XiaoliurenBoard.vue'
 import ZiweiBoard from '../components/ZiweiBoard.vue'
 import { buildMeihuaBoard } from '../domain/meihua'
 import { buildQimenFallbackBoard } from '../domain/qimen'
-import { formatRecordTime, loadLocalRecentRecords, remoteConsultationToRecentRecord, saveLocalRecentRecord } from '../storage/recentRecords'
 
 const route = useRoute()
 const router = useRouter()
@@ -274,7 +245,6 @@ const shichenList = [
 
 const skillInfo = computed(() => skillList.find((item) => item.id === skillId.value) || skillList[0])
 const sideRecommendations = computed(() => skillList.filter((item) => item.id !== skillId.value).slice(0, 4))
-const recentRecords = ref([])
 const previewableSkills = ['bazi', 'ziwei', 'qimen', 'liuyao', 'meihua', 'daliuren', 'xiaoliuren', 'yinyuan', 'hehun', 'fojiao', 'fengshui', 'daily-fortune', 'tarot']
 const dimensionMap = {
   bazi: ['全部', '命理', '阶段', '流年', '关系', '风水', '六亲'],
@@ -321,7 +291,6 @@ const today = new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit
 const userInput = ref('')
 const loading = ref(false)
 const responses = ref([])
-const recentRecordsVersion = ref(0)
 const profile = ref({ name: '', gender: '男', birthDate: '', shichen: '', place: '' })
 const relation = ref({ name: '', birthday: '', partner: '', status: '', focus: '' })
 const mind = ref({ topic: '', mood: '', context: '' })
@@ -341,7 +310,6 @@ const canSend = computed(() => {
 onMounted(() => {
   profile.value.shichen = currentShichen()
   eventForm.value.datetime = nowDatetimeLocal()
-  recentRecords.value = loadRecentRecords()
 })
 
 watch(skillId, () => {
@@ -365,28 +333,11 @@ function nowDatetimeLocal() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
-function loadRecentRecords() {
-  return loadLocalRecentRecords()
-}
-
-function saveRecentRecord(title, path) {
-  const next = saveLocalRecentRecord({ title, path })
-  recentRecords.value = next
-  recentRecordsVersion.value += 1
-}
-
 async function persistConsultation({ title, message, board, reading }) {
   const localId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(16).slice(2)}`
-  const record = {
-    id: localId,
-    title,
-    path: `/divine/${skillId.value}`,
-    skill: skillId.value,
-    time: formatRecordTime(),
-  }
 
   try {
-    const result = await createConsultationRecord({
+    await createConsultationRecord({
       id: localId,
       skill: skillId.value,
       title,
@@ -395,28 +346,9 @@ async function persistConsultation({ title, message, board, reading }) {
       board,
       reading,
     })
-    if (result?.record?.id) record.id = result.record.id
-    if (result?.ok) record.path = `/share/${record.id}`
   } catch {
-    record.path = `/divine/${skillId.value}`
+    // Remote persistence is best-effort; local recent records are intentionally disabled.
   }
-
-  const next = saveLocalRecentRecord(record)
-  recentRecords.value = next
-  recentRecordsVersion.value += 1
-  return record
-}
-
-async function loadRecentRecordsAsync() {
-  try {
-    const remote = await listConsultationRecords(8)
-    if (remote?.ok && Array.isArray(remote.records)) {
-      return remote.records.map(remoteConsultationToRecentRecord)
-    }
-  } catch {
-    // Fall back to browser-local records when the production database is not bound.
-  }
-  return loadRecentRecords()
 }
 
 function buildMessage() {
@@ -576,7 +508,6 @@ function ziweiElementClass() {
 async function sendMessage() {
   if (!canSend.value || loading.value) return
   const message = buildMessage()
-  saveRecentRecord(`${skillInfo.value.name} · ${userInput.value || eventForm.value.topic || profile.value.name || '问事'}`, `/divine/${skillId.value}`)
   const consultationTitle = `${skillInfo.value.name} · ${userInput.value || eventForm.value.topic || profile.value.name || '问事'}`
   const chartPayload = buildChartPayload(message)
   let chartResult = null

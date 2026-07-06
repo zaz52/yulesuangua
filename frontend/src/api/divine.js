@@ -1,5 +1,4 @@
 import {
-  API_BASE,
   checkBackend,
   getClientId,
   getJson,
@@ -39,19 +38,6 @@ export async function createConsultationRecord(payload = {}) {
     { ...payload, clientId: payload.clientId || getClientId() },
     { tolerateCodes: ['persistence_unavailable'] },
   )
-}
-
-export async function listConsultationRecords(limit = 8) {
-  const available = await checkBackend()
-  if (!available) return { ok: false, records: [] }
-  const clientId = encodeURIComponent(getClientId())
-  const safeLimit = Math.min(Math.max(Number(limit) || 8, 1), 50)
-  const res = await fetch(`${API_BASE}/consultations?clientId=${clientId}&limit=${safeLimit}`)
-  const data = await res.json().catch(() => ({}))
-  if (!res.ok && data.code !== 'persistence_unavailable') {
-    throw new Error(data.error || data.code || `读取记录失败：${res.status}`)
-  }
-  return data
 }
 
 export async function getConsultationRecord(id) {

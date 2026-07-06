@@ -1,7 +1,7 @@
 export const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
 
-const CLIENT_ID_KEY = 'qk_client_id'
 let backendAvailable = null
+let clientId = null
 
 export async function checkBackend() {
   if (backendAvailable !== null) return backendAvailable
@@ -20,12 +20,10 @@ export function isBackendAvailable() {
 }
 
 export function getClientId() {
-  let value = localStorage.getItem(CLIENT_ID_KEY)
-  if (!value) {
-    value = `web_${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(16).slice(2)}`}`
-    localStorage.setItem(CLIENT_ID_KEY, value)
+  if (!clientId) {
+    clientId = `web_${crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}_${Math.random().toString(16).slice(2)}`}`
   }
-  return value
+  return clientId
 }
 
 export async function getJson(path, { requireBackend = true } = {}) {
