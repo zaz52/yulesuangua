@@ -530,3 +530,16 @@
   - `https://suangua.weiyiai.top/` 返回 HTTP 200。
   - `https://suangua.weiyiai.top/divine/qimen` 返回 HTTP 200。
   - Playwright 使用本机 Chrome 在 390px 移动视口检查首页和奇门页均正常渲染，无页面级横向溢出。
+
+### 2026-07-07 网站细节巡检与隐私文案统一
+
+- 已对线上 `https://suangua.weiyiai.top` 的首页、核心术法页、工具页和周易起卦页做桌面端与 390px 移动端巡检。
+- 巡检确认：主要页面 HTTP 200，无控制台错误，无页面级横向溢出，首页、术法页、工具页和周易页均可正常渲染。
+- 修复细节：
+  - 工具页统一增加隐私说明：输入内容只用于当前页面生成结果，不写入本地浏览器或远端数据库。
+  - 周易起卦结果页移除未实现且容易误导的“保存结果”“分享结果”按钮。
+  - 周易起卦页补充“隐私保护”说明，明确不会自动保存问题或结果。
+- 验证结果：
+  - `npm run build` 通过。
+  - `rg` 扫描 `frontend/src` 未发现 `保存结果`、`分享结果`、`我的记录`、`最近记录`、`本地记录`、`localStorage` 残留。
+  - Playwright 检查 `/tools/qiming`、`/tools/jiemeng`、`/tools/xianghuo`、`/zhouyi` 的桌面端和移动端：均有隐私说明、无保存/分享空按钮、无最近记录文案、无 `qk_` 本地 key、无横向溢出。

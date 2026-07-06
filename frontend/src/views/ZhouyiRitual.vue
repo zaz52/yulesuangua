@@ -94,10 +94,9 @@
           <div class="reading-block"><strong>爻辞</strong><p>初九，潜龙勿用。</p></div>
           <div class="reading-block"><strong>白话解析</strong><p>此卦象征刚健、主动、向上，但当前仍需审时度势，不宜急进。</p></div>
           <div class="reading-block"><strong>行动建议</strong><p>宜稳中求进，先蓄势，再行动。若有变爻发光，代表当前局面正在转动，需要保留余地。</p></div>
+          <p class="ritual-privacy-note">隐私保护：本次起卦问题和结果只保留在当前页面，不会自动保存到本地或远端。</p>
           <div class="action-row">
             <button class="ds-button primary" type="button" @click="resetRitual">重新起卦</button>
-            <button class="ds-button ghost" type="button">保存结果</button>
-            <button class="ds-button ghost" type="button">分享结果</button>
             <button class="ds-button ghost" type="button" @click="goHome">返回首页</button>
           </div>
         </section>
@@ -118,6 +117,7 @@
         </article>
         <article class="right-rail-card quote-card">
           <p>观象取意，推演吉凶；心念既定，卦象自明。</p>
+          <p class="ritual-privacy-note">隐私保护：起卦过程不会自动保存问题或结果。</p>
         </article>
       </aside>
     </section>
@@ -664,6 +664,13 @@ const HexagramLines = defineComponent({
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+}
+
+.ritual-privacy-note {
+  margin: 0;
+  color: rgba(245, 234, 212, 0.62);
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 .tag-row span {

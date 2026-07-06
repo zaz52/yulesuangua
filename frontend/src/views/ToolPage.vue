@@ -39,6 +39,7 @@
           <button class="ds-button ghost" type="button" @click="router.push(`/divine/${tool.related}`)">AI 深问</button>
         </article>
         <div class="work-tabs"><span class="active">基础信息</span><span>{{ toolId === 'qiming' ? '起名结果' : '推演结果' }}</span></div>
+        <p class="tool-privacy-note">隐私保护：工具页输入内容只用于当前页面生成结果，不写入本地浏览器或远端数据库。</p>
 
         <article v-if="toolId === 'huangli'" class="work-card oracle-card">
           <PanelHead kicker="Daily Almanac" title="今日宜忌" :badge="today" />
@@ -352,6 +353,13 @@ function offerIncense() {
 .tool-main {
   display: grid;
   gap: 16px;
+}
+
+.tool-privacy-note {
+  margin: -4px 0 0;
+  color: rgba(245, 234, 212, 0.64);
+  font-size: 13px;
+  line-height: 1.7;
 }
 
 .work-card {
