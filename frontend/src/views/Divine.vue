@@ -105,8 +105,9 @@
             </label>
 
             <p class="privacy-note">隐私保护：本站不会在本地浏览器或远端数据库自动保存你的姓名、生日、地点、问题和解读结果。</p>
+            <p id="form-submit-hint" class="form-submit-hint" :class="{ ready: canSend }">{{ formSubmitHint }}</p>
             <div class="actions">
-              <button class="ds-button primary" type="button" :disabled="loading || !canSend" @click="sendMessage">{{ loading ? '推演中...' : '开始排盘' }}</button>
+              <button class="ds-button primary" type="button" :disabled="loading || !canSend" :title="formSubmitHint" aria-describedby="form-submit-hint" @click="sendMessage">{{ loading ? '推演中...' : '开始排盘' }}</button>
               <button class="ds-button ghost" type="button" :disabled="loading" @click="responses = []">重置</button>
             </div>
           </article>
@@ -154,7 +155,7 @@
             class="oracle-card"
             variant="loading"
             title="正在推演"
-            description="正在连接后端和术法提示词，请稍候。"
+            description="盘面已经先行生成，AI 正在结合盘面要点补充文字解读。"
           />
 
           <article v-for="(resp, index) in responses" :key="index" class="answer-card oracle-card">
@@ -303,6 +304,38 @@ const canSend = computed(() => {
   if (skillId.value === 'fengshui') return Boolean(space.value.layout)
   if (skillId.value === 'tarot') return Boolean(tarot.value.context || userInput.value)
   return Boolean(eventForm.value.datetime && userInput.value)
+})
+const missingFields = computed(() => {
+  if (['bazi', 'ziwei'].includes(skillId.value)) {
+    return [
+      !profile.value.name && '姓名/称呼',
+      !profile.value.birthDate && '农历生日',
+      !profile.value.shichen && '出生时辰',
+    ].filter(Boolean)
+  }
+  if (['yinyuan', 'hehun'].includes(skillId.value)) {
+    return [
+      !relation.value.status && '关系状态',
+      !relation.value.focus && '关注点',
+    ].filter(Boolean)
+  }
+  if (skillId.value === 'fojiao') {
+    return [
+      !mind.value.topic && '困惑类型',
+      !mind.value.mood && '当前心境',
+    ].filter(Boolean)
+  }
+  if (skillId.value === 'fengshui') return space.value.layout ? [] : ['布局描述']
+  if (skillId.value === 'tarot') return (tarot.value.context || userInput.value) ? [] : ['当前背景或抽牌问题']
+  return [
+    !eventForm.value.datetime && '起课时间',
+    !userInput.value && skillInfo.value.questionLabel,
+  ].filter(Boolean)
+})
+const formSubmitHint = computed(() => {
+  if (loading.value) return '正在推演，请稍候。'
+  if (missingFields.value.length) return `还差：${missingFields.value.join('、')}。补全后即可开始排盘。`
+  return '信息已补全，可以开始排盘。'
 })
 
 onMounted(() => {
@@ -575,15 +608,33 @@ const AnswerText = defineComponent({
   props: { text: String },
   setup(props) {
     return () => {
-      const lines = String(props.text || '').split(/\n+/).map((line) => line.trim()).filter(Boolean)
-      const visibleLines = lines.length ? lines : ['解读生成中...']
+      const sections = parseAnswerSections(props.text)
+      const visibleSections = sections.length ? sections : [{ title: '生成中', body: '解读生成中...' }]
       return h('section', { class: 'answer-text' }, [
         h('div', { class: 'answer-text-head' }, [h('span', '解读'), h('strong', 'AI 文字仅作文化娱乐参考')]),
-        h('div', { class: 'answer-text-body' }, visibleLines.map((line) => h('p', { class: line.length > 28 ? 'answer-line' : 'answer-line is-short' }, line))),
+        h('div', { class: 'answer-text-body' }, visibleSections.map((section) => h('article', { class: 'answer-section' }, [
+          h('strong', section.title),
+          h('p', section.body),
+        ]))),
       ])
     }
   },
 })
+
+function parseAnswerSections(text = '') {
+  return String(text || '')
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const bracket = line.match(/^【([^】]{1,16})】\s*(.*)$/)
+      if (bracket) return { title: bracket[1], body: bracket[2] || '请结合盘面继续观察。' }
+      const colon = line.match(/^([^：:]{2,16})[：:]\s*(.+)$/)
+      if (colon) return { title: colon[1], body: colon[2] }
+      if (line.length <= 18) return { title: line, body: '请继续查看下方解读。' }
+      return { title: '解读要点', body: line }
+    })
+}
 
 function renderBoard(board) {
   const renderers = {
@@ -1072,6 +1123,23 @@ function renderGenericBoard(data) {
 .privacy-note {
   margin: 10px 0 0;
   font-size: 13px;
+}
+
+.form-submit-hint {
+  margin: -4px 0 0;
+  padding: 9px 11px;
+  border: 1px solid rgba(184, 58, 47, 0.22);
+  border-radius: var(--radius-xs);
+  color: #ffcec8;
+  background: rgba(184, 58, 47, 0.1);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.form-submit-hint.ready {
+  border-color: rgba(79, 155, 131, 0.3);
+  color: #bfe8d7;
+  background: rgba(79, 155, 131, 0.1);
 }
 
 .result-list {
@@ -2132,20 +2200,30 @@ function renderGenericBoard(data) {
   gap: 8px;
 }
 
-.answer-line {
+.answer-section {
+  display: grid;
+  gap: 6px;
   margin: 0;
   padding: 10px 12px;
   border-left: 2px solid rgba(215, 179, 95, 0.35);
-  color: var(--paper);
+  border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
   background: rgba(0, 0, 0, 0.12);
+}
+
+.answer-section strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.answer-section p {
+  margin: 0;
+  color: var(--paper);
   font-family: var(--font-serif);
   line-height: 1.8;
   word-break: break-word;
-}
-
-.answer-line.is-short {
-  color: var(--gold-bright);
-  font-weight: 700;
 }
 
 @media (max-width: 980px) {
