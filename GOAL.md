@@ -53,3 +53,12 @@
 - 已提交并推送代码：`86af9b0 feat: render naming results as plate`。
 - 已部署 Cloudflare Pages，预览地址：`https://78769d76.yulesuangua.pages.dev`。
 - 已完成生产验收：`https://suangua.weiyiai.top/tools/qiming` 返回 200，移动端浏览器提交后显示 6 行四柱命名盘、5 行五行补益盘和 6 张候选名盘卡；API 来源 `mingyu-core@0.1.8`，无横向溢出、无控制台错误、无 `qk_` 本地记录。
+
+### 2026-07-07 全站视觉审查与同类问题修复
+
+- 当前任务：审查全站核心工具页和术法页，识别是否还有类似宝宝起名的“组件样式写了但线上实际像纯文字”的问题。
+- 成功标准：浏览器自动化覆盖首页、黄历、起名、梦境、灵签、周易起卦和核心术法页；输出问题清单；优先修复因 `scoped CSS` 与内联子组件导致的结果区样式失效；保持无横向溢出、无控制台错误、无 `qk_` 本地记录。
+- 架构思路：先用 Playwright 对桌面端和 390px 移动端做 DOM/样式/隐私检查；对 `ToolPage.vue` 内的 `defineComponent` 子组件使用 `:deep()` 或改为模板内结构，避免父级 scoped 样式失效。
+- 已完成审查：桌面端和 390px 移动端覆盖首页、黄历、起名、灵签、梦境、周易、八字、奇门、紫微、梅花；全部无横向溢出、无控制台错误、无 `qk_` 本地记录。
+- 已发现同类问题：`/tools/huangli` 的 `AlmanacBoard` 同样是内联子组件，`.almanac-hero-card`、`.almanac-meta`、`.almanac-grid` 实际 display 为 `block`，黄历盘样式未穿透。
+- 已完成修复：为 `AlmanacBoard`、`PanelHead`、`ResultBlock` 增加 `:deep()` 样式穿透；复测黄历桌面端和移动端均显示 grid 布局，起名排盘无回归。

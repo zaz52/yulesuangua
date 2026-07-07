@@ -1383,6 +1383,123 @@ function offerIncense() {
   overflow-wrap: anywhere;
 }
 
+:deep(.panel-head) {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+:deep(.panel-head h2) {
+  margin: 12px 0 0;
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 400;
+  line-height: 1.1;
+}
+
+:deep(.result-block) {
+  padding: 14px;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.05);
+}
+
+:deep(.result-block strong) {
+  color: var(--gold-bright);
+  font-weight: 700;
+}
+
+:deep(.result-block p) {
+  margin: 8px 0 0;
+  color: var(--paper-dim);
+}
+
+:deep(.almanac-board) {
+  display: grid;
+  gap: 14px;
+}
+
+:deep(.almanac-hero-card) {
+  display: grid;
+  gap: 8px;
+  min-height: 150px;
+  align-content: center;
+  padding: 22px;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: var(--radius-sm);
+  background:
+    radial-gradient(circle at 84% 22%, rgba(215, 179, 95, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(119, 27, 27, 0.18), rgba(0, 0, 0, 0.1));
+}
+
+:deep(.almanac-hero-card span),
+:deep(.almanac-hero-card em) {
+  color: rgba(245, 234, 212, 0.62);
+  font-size: 13px;
+  font-style: normal;
+}
+
+:deep(.almanac-hero-card strong) {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: clamp(38px, 6vw, 62px);
+  font-weight: 400;
+  line-height: 1;
+}
+
+:deep(.almanac-meta) {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+:deep(.almanac-meta div),
+:deep(.almanac-grid div) {
+  padding: 12px;
+  border: 1px solid rgba(215, 179, 95, 0.14);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.04);
+}
+
+:deep(.almanac-meta span),
+:deep(.almanac-grid span),
+:deep(.almanac-advice strong) {
+  display: block;
+  color: var(--gold-bright);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+:deep(.almanac-meta strong),
+:deep(.almanac-grid strong) {
+  display: block;
+  margin-top: 6px;
+  color: var(--paper);
+  line-height: 1.5;
+}
+
+:deep(.almanac-grid) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+:deep(.almanac-advice) {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-xs);
+  background: rgba(0, 0, 0, 0.14);
+}
+
+:deep(.almanac-advice p) {
+  margin: 0 0 8px;
+  color: var(--paper-dim);
+  line-height: 1.7;
+}
+
 :deep(.name-board-head) {
   display: flex;
   justify-content: space-between;
@@ -1725,7 +1842,9 @@ function offerIncense() {
 
   :deep(.name-analysis),
   :deep(.element-plate),
-  :deep(.name-grid) {
+  :deep(.name-grid),
+  :deep(.almanac-meta),
+  :deep(.almanac-grid) {
     grid-template-columns: 1fr;
   }
 
