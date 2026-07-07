@@ -408,3 +408,30 @@ Progress:
 - Completed GitHub push: `078e38d feat: unify ai reading section schema`.
 - Deployed Cloudflare Pages preview: `https://53e00879.yulesuangua.pages.dev`.
 - Production E2E on `https://suangua.weiyiai.top` passed for `/divine/qimen`, `/divine/bazi`, and `/divine/tarot`: schema strip and rendered sections exactly matched the shared fixed-column contract, with no horizontal overflow, no console errors, and no `qk_` localStorage keys.
+
+## 2026-07-07 runtime error and privacy fallback hardening
+
+Task: unify runtime error handling for divination flows so API failures, timeouts, and backend outages do not leave blank or indefinite states, while preserving the site's privacy model.
+
+Success criteria:
+- API helpers have bounded request timeouts and convert abort/network/backend failures into stable user-facing errors.
+- Divination pages keep the generated board visible when AI text fails.
+- Failed AI text renders through the same fixed-column result schema with local fallback content.
+- Users can retry the current in-memory request or clear the result; no local records are stored.
+- Privacy remains unchanged: no `localStorage` records, no `qk_` keys, no automatic D1 persistence, and no recent-record UI.
+- Build, Function syntax check, privacy scan, browser E2E, GitHub push, Cloudflare deployment, and production verification pass.
+
+Architecture:
+- Add a small shared runtime guard module for timeout and user error normalization.
+- Harden `frontend/src/api/http.js` with timeouts for JSON and streaming requests.
+- Keep retry payloads only in Vue memory inside `Divine.vue`.
+- Reuse the existing `RitualState` and `AnswerText` rendering path instead of adding a separate error UI.
+
+Progress:
+- Started implementation after the full regression and AI schema contract work.
+- Added shared runtime guards for user-facing error normalization, timeout signals, privacy copy, and fixed-column reading fallback content.
+- Hardened JSON and SSE API helpers with bounded request behavior; SSE timeout now only gates the initial connection and does not interrupt an active stream.
+- Updated `Divine.vue` to keep generated boards visible on AI failure, render fixed-column fallback text, and support in-memory retry/clear actions without local persistence.
+- Validation passed: `npm run build`, Function syntax checks, `git diff --check`, and privacy scan. Privacy scan only found documentation references and the unused exported consultation helper, with no active local record storage or recent-record UI.
+- Browser E2E initially found that the error state blocked the fixed-column fallback renderer; fixed the template so `RitualState` and `AnswerText` render together on failures.
+- Clean local browser E2E passed on `http://127.0.0.1:4312` for `/divine/qimen`, `/divine/bazi`, and `/divine/tarot` with backend-unavailable health simulation: each route showed one result board, fixed-column fallback sections, retry/clear actions, no horizontal overflow at 390px, no console errors, and no `qk_` localStorage keys.

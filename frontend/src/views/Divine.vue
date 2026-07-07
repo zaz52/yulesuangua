@@ -169,11 +169,14 @@
               compact
               variant="error"
               title="解读暂时失败"
-              :description="resp.text"
-              :actions="[{ key: 'reset', label: '清空后重试', tone: 'ghost' }]"
+              :description="resp.errorMessage"
+              :actions="[
+                { key: 'retry', label: retryActionLabel, tone: 'primary', disabled: loading || !resp.retryable },
+                { key: 'reset', label: clearActionLabel, tone: 'ghost' },
+              ]"
               @action="handleStateAction"
             />
-            <AnswerText v-else :text="typeof resp === 'string' ? resp : resp.text" :skill-id="skillId" />
+            <AnswerText v-if="typeof resp === 'string' || resp.text" :text="typeof resp === 'string' ? resp : resp.text" :skill-id="skillId" />
           </article>
         </section>
       </section>
@@ -215,7 +218,8 @@ import XiaoliurenBoard from '../components/XiaoliurenBoard.vue'
 import ZiweiBoard from '../components/ZiweiBoard.vue'
 import { buildMeihuaBoard } from '../domain/meihua'
 import { buildQimenFallbackBoard } from '../domain/qimen'
-import { normalizeReadingSections, readingSectionSchemas } from '../domain/readingSchemas'
+import { normalizeReadingSections, normalizeReadingText, readingSectionSchemas } from '../domain/readingSchemas'
+import { buildReadingFallback, normalizeUserError, privacyRuntimeCopy } from '../domain/runtimeGuards'
 
 const route = useRoute()
 const router = useRouter()
@@ -293,6 +297,10 @@ const today = new Intl.DateTimeFormat('zh-CN', { month: '2-digit', day: '2-digit
 const userInput = ref('')
 const loading = ref(false)
 const responses = ref([])
+const lastDivineRequest = ref(null)
+const retryActionLabel = '\u91cd\u65b0\u63a8\u6f14'
+const clearActionLabel = '\u6e05\u7a7a\u7ed3\u679c'
+const pendingReadingText = '\u76d8\u9762\u5df2\u5b9a\uff0c\u6b63\u5728\u751f\u6210\u6587\u5b57\u89e3\u8bfb...'
 const profile = ref({ name: '', gender: '男', birthDate: '', shichen: '', place: '' })
 const relation = ref({ name: '', birthday: '', partner: '', status: '', focus: '' })
 const mind = ref({ topic: '', mood: '', context: '' })
@@ -349,6 +357,7 @@ onMounted(() => {
 watch(skillId, () => {
   userInput.value = ''
   responses.value = []
+  lastDivineRequest.value = null
 })
 
 function switchSkill(id) {
@@ -685,6 +694,12 @@ function ziweiElementClass() {
 
 async function sendMessage() {
   if (!canSend.value || loading.value) return
+  const request = await prepareDivineRequest()
+  userInput.value = ''
+  return runDivineRequest(request)
+}
+
+async function prepareDivineRequest() {
   const message = buildMessage()
   const chartPayload = buildChartPayload(message)
   let chartResult = null
@@ -700,41 +715,89 @@ async function sendMessage() {
   const extra = {}
   if (skillId.value === 'qimen' && eventForm.value.datetime) extra.datetime_str = eventForm.value.datetime.replace('T', ' ')
 
-  loading.value = true
-  userInput.value = ''
-  let answer = ''
-  responses.value.push({ text: '盘面已定，正在生成文字解读...', streaming: true, board })
-  await nextTick()
-
-  try {
-    await divineStream(skillId.value, message, [], {
+  return {
+    skill: skillId.value,
+    skillName: skillInfo.value.name,
+    message,
+    board,
+    payload: {
       ...extra,
       ...chartPayload,
       readingChart,
       board,
       chart: chartResult?.data || null,
       boardType: board.type,
-    }, (chunk) => {
+    },
+  }
+}
+
+async function runDivineRequest(request) {
+  if (!request || loading.value) return
+  loading.value = true
+  lastDivineRequest.value = request
+  let answer = ''
+  responses.value.push({
+    text: pendingReadingText,
+    streaming: true,
+    board: request.board,
+    retryable: false,
+  })
+  const responseIndex = responses.value.length - 1
+  await nextTick()
+
+  try {
+    await divineStream(request.skill, request.message, [], request.payload, (chunk) => {
       answer += chunk
-      const last = responses.value[responses.value.length - 1]
-      if (last?.streaming) last.text = answer
+      const current = responses.value[responseIndex]
+      if (current?.streaming) current.text = answer
     }, () => {
-      const last = responses.value[responses.value.length - 1]
-      if (last && typeof last !== 'string') responses.value[responses.value.length - 1] = { ...last, text: last.text || answer, streaming: false }
+      const current = responses.value[responseIndex]
+      if (current && typeof current !== 'string') {
+        responses.value[responseIndex] = {
+          ...current,
+          text: normalizeReadingText(request.skill, current.text || answer),
+          streaming: false,
+          error: false,
+          retryable: false,
+        }
+      }
       loading.value = false
     })
   } catch (error) {
-    const last = responses.value[responses.value.length - 1]
-    if (last && typeof last !== 'string') {
-      responses.value[responses.value.length - 1] = { ...last, text: `暂时无法完成推演：${error.message}`, streaming: false, error: true }
+    const userError = normalizeUserError(error, 'AI reading is temporarily unavailable. Please retry later.')
+    const fallbackBody = buildReadingFallback(request.skillName, userError.message)
+    const fallbackText = normalizeReadingText(request.skill, fallbackBody, {
+      fallbackBody: fallbackBody + ' ' + privacyRuntimeCopy,
+    })
+    const current = responses.value[responseIndex]
+    const fallbackResponse = {
+      text: fallbackText,
+      streaming: false,
+      error: true,
+      retryable: true,
+      errorMessage: userError.message,
+      board: request.board,
+    }
+    if (current && typeof current !== 'string') {
+      responses.value[responseIndex] = { ...current, ...fallbackResponse }
     } else {
-      responses.value.push({ text: `暂时无法完成推演：${error.message}`, streaming: false, error: true })
+      responses.value.push(fallbackResponse)
     }
     loading.value = false
   }
 }
 
+function retryLastDivineRequest() {
+  if (!lastDivineRequest.value || loading.value) return
+  responses.value = responses.value.filter((item) => !(typeof item !== 'string' && item.error))
+  runDivineRequest(lastDivineRequest.value)
+}
+
 function handleStateAction(action) {
+  if (action?.key === 'retry') {
+    retryLastDivineRequest()
+    return
+  }
   if (action?.key === 'reset') {
     responses.value = []
   }
