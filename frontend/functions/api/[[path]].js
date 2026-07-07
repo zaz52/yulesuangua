@@ -5,6 +5,7 @@ import { generateQimen } from 'mingyu-core/divination/qimen'
 import { generateXiaoliuren } from 'mingyu-core/divination/xiaoliuren'
 import { drawSpreadCards } from 'mingyu-core/divination/tarot'
 import { buildAstrolabeFromInput } from 'mingyu-core/ziwei/iztro'
+import { normalizeReadingText, readingSectionSchemas } from '../../src/domain/readingSchemas.js'
 
 const extendedSkills = [
   { id: 'bazi', name: '四柱八字', description: '通过出生时间排出四柱八字，分析命理节奏与阶段重点。', icon: '命' },
@@ -96,22 +97,7 @@ const skillRubrics = {
   },
 }
 
-const resultSchemas = {
-  bazi: ['四柱总览', '日主五行', '十神关系', '阶段节奏', '关键矛盾', '行动建议', '风险提醒'],
-  ziwei: ['命身总览', '十二宫重点', '主星结构', '事业财帛', '关系迁移', '行动建议', '风险提醒'],
-  qimen: ['九宫总览', '值符值使', '门星神格局', '方位时机', '关键矛盾', '行动策略', '风险提醒'],
-  liuyao: ['本卦变卦', '世应用神', '动爻变化', '六亲关系', '应期倾向', '行动建议', '风险提醒'],
-  meihua: ['本互变卦', '体用生克', '动爻外应', '趋势判断', '关键矛盾', '行动建议', '风险提醒'],
-  daliuren: ['四课三传', '神将月将', '来意脉络', '事件走势', '关键矛盾', '行动建议', '风险提醒'],
-  xiaoliuren: ['六宫落点', '起因过程结果', '速断倾向', '应事时间', '行动建议', '风险提醒'],
-  yinyuan: ['关系现状', '缘分结构', '沟通阻力', '推进时机', '行动建议', '风险提醒'],
-  hehun: ['双方结构', '合盘重点', '磨合风险', '长期相处', '行动建议', '风险提醒'],
-  fojiao: ['当下心境', '执着所在', '观照方向', '当行之事', '风险提醒'],
-  fengshui: ['空间总览', '门窗动线', '床桌主位', '九宫方位', '调整建议', '风险提醒'],
-  'daily-fortune': ['今日主题', '宜行事项', '忌避事项', '情绪节奏', '行动建议', '风险提醒'],
-  tarot: ['牌阵总览', '牌面象征', '当前位置', '选择提醒', '行动建议', '风险提醒'],
-  default: ['盘面摘要', '关键结构', '问题重心', '趋势判断', '行动建议', '风险提醒'],
-}
+const resultSchemas = readingSectionSchemas
 
 export async function onRequest(context) {
   const path = normalizePath(context.params.path)
@@ -270,30 +256,17 @@ async function generateReading(skill, payload, env) {
     if (modelText) return normalizeReadingOutput(skill, modelText)
   }
 
-  const focus = inferFocus(message)
-  const rubricText = `${rubric.fallback} 重点维度：${rubric.dimensions.join('、')}。`
-  const fallbackBodies = {
-    四柱总览: `${contextLines.join('；') || '本次以当前填写内容生成四柱判断框架。'} ${boardSummary}`,
-    日主五行: boardFacts.length ? boardFacts.slice(0, 4).join('；') : rubricText,
-    十神关系: '先看月令与日主，再看十神在现实里的资源、压力、表达和关系互动，不宜只按单一标签下结论。',
-    阶段节奏: '当前更适合先确认关键变量，再小步推进；若盘面有冲克或失衡信号，应先修正节奏。',
-    九宫总览: boardSummary,
-    值符值使: boardFacts.length ? boardFacts.slice(0, 5).join('；') : rubricText,
-    门星神格局: '门主行动入口，星主状态倾向，神主外部助力与变数，三者需要合看。',
-    方位时机: '先取盘面中稳定、可执行、阻力较低的方向和时间窗口，避免一次性重押。',
-    本卦变卦: boardSummary,
-    世应用神: boardFacts.length ? boardFacts.slice(0, 6).join('；') : rubricText,
-    动爻变化: '动爻代表当前问题的变化点，应优先观察它牵动的六亲、世应和变卦方向。',
-    本互变卦: boardSummary,
-    体用生克: boardFacts.length ? boardFacts.slice(0, 6).join('；') : rubricText,
-    动爻外应: '把时间、数字、外应和用户问题合看，重点看体用之间是相生、相克还是互耗。',
-    关键矛盾: focus,
-    趋势判断: `${rubricText} 当前宜先收束信息、确认关键变量，再推进下一步。`,
-    行动建议: '把问题拆成一个可验证动作；先做低成本试探；记录反馈；24 到 72 小时后复盘是否加码。',
-    行动策略: '先选低风险路径推进，保留回撤余地；若外部反馈不清晰，先等一个明确回信或可验证信号。',
-    风险提醒: '若涉及金钱、合同、健康、婚姻承诺，请以现实证据和专业意见为准，问卦结果只用于整理思路。',
-  }
-  return resultSchema.map((title) => `【${title}】${fallbackBodies[title] || fallbackBodies.趋势判断}`).join('\n')
+  const fallbackText = buildSchemaFallbackText({
+    skill,
+    schema: resultSchema,
+    contextLines,
+    boardSummary,
+    boardFacts,
+    rubric,
+    message,
+  })
+  return normalizeReadingOutput(skill, fallbackText)
+
 }
 
 async function generateToolInsight(context) {
@@ -318,25 +291,32 @@ function extractReadingChartFacts(readingChart) {
 }
 
 function normalizeReadingOutput(skill, text) {
-  const clean = String(text || '').replace(/\r/g, '').trim()
-  if (!clean) return ''
-  const schema = resultSchemas[skill] || resultSchemas.default
-  const marked = [...clean.matchAll(/【([^】]{1,16})】([\s\S]*?)(?=【[^】]{1,16}】|$)/g)]
-    .map((match) => ({ title: match[1].trim(), body: match[2].trim() }))
-    .filter((item) => item.title && item.body)
-  const hasRequiredShape = marked.length >= Math.min(4, schema.length)
-    && marked.some((item) => /建议|策略|调整|当行/.test(item.title))
-    && marked.some((item) => /风险|提醒|边界/.test(item.title))
-  if (hasRequiredShape) return marked.map((item) => `【${item.title}】${item.body}`).join('\n')
+  return normalizeReadingText(skill, text)
+}
 
-  const paragraphs = clean
-    .replace(/^data:\s*/gm, '')
-    .split(/\n{2,}|\\n\\n/)
-    .map((item) => item.replace(/\\n/g, '').replace(/\s+/g, ' ').trim())
-    .filter(Boolean)
-  const usable = paragraphs.length ? paragraphs : [clean.replace(/\s+/g, ' ')]
+function buildSchemaFallbackText({ schema, contextLines = [], boardSummary = '', boardFacts = [], rubric = {}, message = '' }) {
+  const context = contextLines.join('；') || message || '本次以当前填写的信息和盘面为依据。'
+  const factText = boardFacts.length ? boardFacts.slice(0, 6).join('；') : (boardSummary || rubric.fallback || context)
+  const dimensionText = Array.isArray(rubric.dimensions) && rubric.dimensions.length
+    ? `重点维度：${rubric.dimensions.join('、')}。`
+    : ''
+  const bodyByIntent = {
+    summary: `${context} ${boardSummary || factText} ${dimensionText}`.trim(),
+    structure: `${factText} 请先看盘面里的主要结构，再结合现实条件确认哪一项最可执行。`,
+    timing: `当前更适合先收束信息、确认关键变量，再选择低风险路径推进；不要一次性重押。`,
+    action: `把问题拆成一个可验证的小动作，先做低成本试探，记录反馈，24 到 72 小时后再决定是否加码。`,
+    risk: `涉及金钱、合同、健康、婚姻承诺等现实事项时，以证据和专业意见为准，本解读只用于整理思路。`,
+  }
   return schema.map((title, index) => {
-    const body = usable[index] || usable[usable.length - 1] || '请结合盘面继续观察。'
+    const body = /风险|提醒|边界|忌避/.test(title)
+      ? bodyByIntent.risk
+      : /建议|策略|调整|当行/.test(title)
+        ? bodyByIntent.action
+        : /时机|应期|节奏|趋势|走势|推进/.test(title)
+          ? bodyByIntent.timing
+          : index === 0
+            ? bodyByIntent.summary
+            : bodyByIntent.structure
     return `【${title}】${body}`
   }).join('\n')
 }

@@ -379,3 +379,29 @@ Progress:
 - Completed GitHub push: `23bf447 fix: remove remote font dependency for wechat`.
 - Deployed Cloudflare Pages preview: `https://78f495e0.yulesuangua.pages.dev`.
 - Final production WeChat UA verification passed on `https://suangua.weiyiai.top`: Zhouyi ritual and Qiming generation work, no console errors, no horizontal overflow, no `qk_` localStorage keys, and the served HTML no longer references Google Fonts.
+
+## 2026-07-07 AI fixed-column output contract
+
+Task: start item 3 by unifying AI answer output quality so every divination result follows one fixed schema contract.
+
+Success criteria:
+- Frontend and backend use one shared section schema source for all `/divine/*` skills.
+- AI output is parsed from `【栏目】正文`, colon-form text, or plain paragraphs.
+- Missing columns are filled in schema order instead of leaving blank or showing random headings.
+- Backend model output is normalized before streaming; frontend rendering also normalizes as a final safety net.
+- No local records, no `qk_` keys, no automatic consultation persistence, and no recent-record UI.
+- Build, Function syntax check, schema unit validation, browser E2E, GitHub push, Cloudflare deployment, and production verification pass.
+
+Architecture:
+- Add `frontend/src/domain/readingSchemas.js` as the shared contract module.
+- `Divine.vue` imports shared schemas for UI schema strip and answer normalization.
+- Cloudflare Pages Function imports the same schemas and normalizes generated/fallback AI text before returning it.
+
+Progress:
+- Added shared fixed-column schemas, aliases, parser, normalizer, and text serializer.
+- Replaced duplicated frontend section schema and answer normalization with the shared module.
+- Replaced backend `resultSchemas` with the shared schema module and normalized model output server-side.
+- Rebuilt backend no-model fallback so it generates content by the active schema instead of old hardcoded headings.
+- Validation passed so far: `npm run build`, Function syntax check, shared schema syntax check, `git diff --check`, and direct schema unit checks for qimen, bazi, and tarot.
+- Local Pages dev browser E2E passed on `http://127.0.0.1:4300` for `/divine/qimen`, `/divine/bazi`, and `/divine/tarot`: schema strip and rendered answer sections exactly matched the shared fixed-column contract, with no horizontal overflow, no console errors, and no `qk_` localStorage keys.
+- Privacy scan after the change found no new local record storage or automatic persistence calls.
