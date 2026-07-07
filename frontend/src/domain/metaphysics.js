@@ -278,6 +278,10 @@ export function normalizeFengshuiBoard(data = {}) {
     score: 0,
     level: cell[0] === '中宫' ? '宅心' : '平衡',
     features: [],
+    featureDetails: [],
+    risks: [],
+    opportunities: [],
+    priority: cell[0] === '中宫' ? '保持清爽' : '保持平衡',
     advice: '保持整洁、通风和动线顺畅。',
   } : {
     direction: cell.direction || cell.name || '方位',
@@ -288,6 +292,10 @@ export function normalizeFengshuiBoard(data = {}) {
     score: Number.isFinite(cell.score) ? cell.score : 0,
     level: cell.level || '平衡',
     features: Array.isArray(cell.features) ? cell.features : [],
+    featureDetails: Array.isArray(cell.featureDetails) ? cell.featureDetails : [],
+    risks: Array.isArray(cell.risks) ? cell.risks : [],
+    opportunities: Array.isArray(cell.opportunities) ? cell.opportunities : [],
+    priority: cell.priority || (cell.level === '需调' ? '优先调整' : cell.level === '宜用' ? '可重点使用' : '保持清爽'),
     advice: cell.advice || '保持整洁、通风和动线顺畅。',
   })
   return {
@@ -295,7 +303,7 @@ export function normalizeFengshuiBoard(data = {}) {
     direction: data.direction || '不确定',
     layout: data.layout || '',
     cells,
-    summary: data.summary || { auspicious: [], caution: [], detected: [] },
+    summary: data.summary || { auspicious: [], caution: [], detected: [], risks: [], opportunities: [] },
     adjustments: Array.isArray(data.adjustments) && data.adjustments.length ? data.adjustments : ['保持入口、中宫和主要动线清爽。'],
   }
 }

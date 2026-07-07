@@ -215,3 +215,26 @@ Progress:
   - `daliuren` returns 12 heavenly plate cells, 4 lessons, 3 transmissions, and meta.
   - `xiaoliuren` returns 6 palace cards, 3 stages, and meta timing/direction/fortune.
 - Verified production mobile browser flow on `https://suangua.weiyiai.top/divine/daliuren` and `/divine/xiaoliuren`: result plates render, no horizontal overflow, no console errors, and no `qk_` localStorage keys.
+## 2026-07-07 priority 7: enrich Fengshui plate
+
+Task: upgrade `/divine/fengshui` into a richer house/office fengshui plate instead of a basic rule grid.
+
+Success criteria:
+- Fengshui displays a nine-palace layout with direction, palace name, element, theme, detected objects, score/level, and adjustment advice.
+- Input layout text can affect detected object placement such as door, window, bed, desk, stove, water/bathroom, clutter, and beam.
+- The result includes summary, detected features, priority adjustments, and structured facts for AI interpretation.
+- No local records, no `qk_` keys, no automatic D1 persistence, and no recent-record UI.
+- Build, Function syntax check, privacy scan, browser validation, GitHub push, and Cloudflare deployment pass.
+
+Architecture:
+- Keep existing `/api/metaphysics/calculate` endpoint.
+- Extend current `calculateFengshuiBoard`, `normalizeFengshuiBoard`, and Fengshui rendering path.
+- Preserve fallback compatibility for existing array-based cells.
+
+Progress:
+- Extended fengshui feature detection for door, window, bed, desk, stove, water/bathroom, clutter, beam, bright hall, backing, direct clash, no backing, and mirror clash.
+- Fixed direction parsing so intercardinal directions like southwest/northwest are matched before broad south/west matches.
+- Added per-palace priority, feature details, risks, opportunities, and richer summary.
+- Upgraded `FengshuiBoard` UI with overview metrics, feature chips, palace priority, and richer nine-palace cards.
+- Updated frontend/backend facts so palace risks, opportunities, summary, and adjustments feed AI interpretation.
+- Validation passed locally: build, Function syntax, `git diff --check`, privacy scan, direct Function calls, and mobile browser E2E on local Pages dev for `/divine/fengshui`.

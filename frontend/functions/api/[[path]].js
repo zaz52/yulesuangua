@@ -1012,6 +1012,7 @@ function calculateFengshuiBoard(payload) {
   const cells = palaceBase.map(([directionName, palace, theme, element, meaning]) => {
     const hits = found.filter((feature) => feature.direction === directionName || (feature.direction === '全局' && ['杂物', '梁'].includes(feature.label)))
     const score = scoreFengshuiCell(directionName, hits, layout, direction)
+    const level = score >= 2 ? '宜用' : score <= -2 ? '需调' : '平衡'
     return {
       direction: directionName,
       palace,
@@ -1019,8 +1020,12 @@ function calculateFengshuiBoard(payload) {
       element,
       meaning,
       score,
-      level: score >= 2 ? '宜用' : score <= -2 ? '需调' : '平衡',
+      level,
+      priority: level === '需调' ? '优先调整' : level === '宜用' ? '可重点使用' : '保持清爽',
       features: hits.map((item) => item.label),
+      featureDetails: hits,
+      risks: hits.filter((item) => item.tone === 'risk').map((item) => item.label),
+      opportunities: hits.filter((item) => item.tone === 'good').map((item) => item.label),
       advice: fengshuiAdvice(directionName, score, hits),
     }
   })
@@ -1032,7 +1037,9 @@ function calculateFengshuiBoard(payload) {
     summary: {
       auspicious: cells.filter((cell) => cell.score >= 2).map((cell) => cell.direction),
       caution: cells.filter((cell) => cell.score <= -2).map((cell) => cell.direction),
-      detected: found.map((item) => item.label),
+      detected: [...new Set(found.map((item) => item.label))],
+      risks: [...new Set(found.filter((item) => item.tone === 'risk').map((item) => item.label))],
+      opportunities: [...new Set(found.filter((item) => item.tone === 'good').map((item) => item.label))],
     },
     adjustments: buildFengshuiAdjustments(cells, found, kind),
   }
@@ -1082,22 +1089,26 @@ function inferDaliurenLessonType(useIndex, dayIndex, hourIndex) {
 
 function detectFengshuiFeatures(layout) {
   const directionMap = [
-    ['东南', /东南|巽/], ['正南', /正南|南|离/], ['西南', /西南|坤/],
-    ['正东', /正东|东|震/], ['中宫', /中宫|中央|中心/], ['正西', /正西|西|兑/],
-    ['东北', /东北|艮/], ['正北', /正北|北|坎/], ['西北', /西北|乾/],
+    ['东南', /东南|巽/], ['西南', /西南|坤/], ['东北', /东北|艮/], ['西北', /西北|乾/],
+    ['中宫', /中宫|中央|中心/],
+    ['正南', /正南|朝南|在南|南侧|南边|离/], ['正东', /正东|朝东|在东|东侧|东边|震/],
+    ['正西', /正西|朝西|在西|西侧|西边|兑/], ['正北', /正北|朝北|在北|北侧|北边|坎/],
   ]
   const objectMap = [
-    ['门', /门|入口|大门/], ['窗', /窗|阳台/], ['床', /床|卧室/], ['桌', /桌|书桌|办公桌|工位/],
-    ['灶', /灶|厨房|炉/], ['水', /水|卫生间|厕所|鱼缸/], ['杂物', /杂物|堆|乱|堵/], ['梁', /梁|压顶/],
+    ['门', /门|入口|大门/, 'good'], ['窗', /窗|阳台|采光/, 'good'], ['床', /床|卧室/, 'neutral'], ['桌', /桌|书桌|办公桌|工位/, 'good'],
+    ['灶', /灶|厨房|炉/, 'neutral'], ['水', /水|卫生间|厕所|鱼缸|洗手间/, 'risk'], ['杂物', /杂物|堆|乱|堵/, 'risk'], ['梁', /梁|压顶/, 'risk'],
+    ['明堂', /明堂|开阔|空地|客厅宽|前方宽/, 'good'], ['靠山', /靠山|靠墙|背后有墙|有靠/, 'good'],
+    ['门冲', /门冲|对门|门对门|门对床|门对桌/, 'risk'], ['无靠', /背后是走道|背后无靠|背后空|背后是门|背后是窗/, 'risk'],
+    ['镜照', /镜子对床|镜照床|镜子对门|镜子对桌/, 'risk'],
   ]
   const found = []
   const segments = String(layout || '').split(/[，,。；;\n]/).map((item) => item.trim()).filter(Boolean)
-  for (const [label, objectRegex] of objectMap) {
+  for (const [label, objectRegex, tone] of objectMap) {
     const matchedSegments = segments.filter((segment) => objectRegex.test(segment))
     if (!matchedSegments.length && objectRegex.test(layout)) matchedSegments.push(layout)
     for (const segment of matchedSegments) {
       const direction = directionMap.find(([, regex]) => regex.test(segment))?.[0] || '全局'
-      found.push({ label, direction })
+      found.push({ label, direction, tone, text: segment.slice(0, 80) })
     }
   }
   return found
@@ -1108,17 +1119,20 @@ function scoreFengshuiCell(directionName, hits, layout, houseDirection) {
   if (houseDirection.includes(directionName.replace('正', ''))) score += 1
   for (const hit of hits) {
     if (hit.direction === '全局' && !['杂物', '梁'].includes(hit.label)) continue
-    if (['门', '窗', '桌'].includes(hit.label)) score += 1
+    if (['门', '窗', '桌', '明堂', '靠山'].includes(hit.label)) score += 1
     if (['床'].includes(hit.label) && ['正北', '西北', '西南'].includes(directionName)) score += 1
     if (['水'].includes(hit.label) && ['正南', '中宫'].includes(directionName)) score -= 2
     if (['灶'].includes(hit.label) && ['正北', '西北'].includes(directionName)) score -= 1
-    if (['杂物', '梁'].includes(hit.label)) score -= 2
+    if (['杂物', '梁', '门冲', '无靠', '镜照'].includes(hit.label)) score -= 2
   }
   if (/背后是走道|背后无靠|门冲|对门|镜子对床/.test(layout) && ['中宫', '正东', '正北'].includes(directionName)) score -= 1
   return Math.max(-3, Math.min(3, score))
 }
 
 function fengshuiAdvice(directionName, score, hits) {
+  if (hits.some((item) => ['门冲', '镜照'].includes(item.label))) return `${directionName}先化冲：调整床桌避开正冲，镜面可遮挡或移位，重要位置保留缓冲距离。`
+  if (hits.some((item) => item.label === '无靠')) return `${directionName}重点补靠：座位或床位背后宜有稳定墙面、柜体或高背椅，减少背后走动干扰。`
+  if (hits.some((item) => item.label === '梁')) return `${directionName}先避横梁：床、桌、沙发不要长期压在梁下，不能移动时用吊顶或视觉弱化处理。`
   if (score <= -2) return `${directionName}先做减法：清理遮挡、减少冲射，必要时调整床桌朝向或增加稳定靠背。`
   if (score >= 2) return `${directionName}可作为近期可用位：保持明亮整洁，适合放置常用工作或学习物。`
   if (hits.length) return `${directionName}保持平衡即可，重点是通风、动线顺畅和物品不过度堆叠。`
@@ -1132,6 +1146,7 @@ function buildFengshuiAdjustments(cells, found, kind) {
     caution.length ? `优先处理：${caution.map((cell) => cell.direction).join('、')}，先清杂物、避冲射、补靠背。` : '当前没有明显重压宫位，先保持入口和中宫清爽。',
     good.length ? `可用方位：${good.map((cell) => cell.direction).join('、')}，适合作为${kind}的工作、学习或会客重点。` : '暂未形成明显优势方位，建议先补光、通风和收纳。',
     found.some((item) => item.label === '床') ? '床位重点看靠背、避门冲和避镜照，先稳睡眠再谈旺运。' : '若要进一步细排，请补充床、门、窗、桌、灶、卫生间所在方位。',
+    found.some((item) => item.label === '桌') ? '桌位重点看背后有靠、前方开阔、侧面采光；不要让主要动线从背后穿过。' : '办公或学习场景可继续补充桌位、门窗和背后环境。',
   ]
 }
 
@@ -1569,7 +1584,17 @@ function extractBoardFacts(board) {
   }
   if (Array.isArray(data.cells)) {
     for (const cell of data.cells.slice(0, 9)) {
-      facts.push(Array.isArray(cell) ? cell.map(valueText).join('/') : valueText(cell))
+      facts.push(Array.isArray(cell) ? cell.map(valueText).join('/') : [
+        cell.direction,
+        cell.palace,
+        cell.element,
+        cell.theme,
+        cell.level,
+        Array.isArray(cell.features) ? `特征:${cell.features.join(' ')}` : '',
+        Array.isArray(cell.risks) ? `风险:${cell.risks.join(' ')}` : '',
+        Array.isArray(cell.opportunities) ? `机会:${cell.opportunities.join(' ')}` : '',
+        cell.advice,
+      ].filter(Boolean).map(valueText).join('/'))
     }
   }
   if (Array.isArray(data.fourLessons)) {
@@ -1612,6 +1637,10 @@ function extractBoardFacts(board) {
     for (const card of data.cards.slice(0, 6)) {
       facts.push(Array.isArray(card) ? card.map(valueText).join('/') : valueText(card))
     }
+  }
+  collectNamedFacts(facts, data.summary, 'summary')
+  if (Array.isArray(data.adjustments)) {
+    data.adjustments.slice(0, 4).forEach((item, index) => facts.push(`调整建议${index + 1}：${valueText(item)}`))
   }
 
   return [...new Set(facts.filter(Boolean).map((item) => String(item).slice(0, 180)))].slice(0, 16)

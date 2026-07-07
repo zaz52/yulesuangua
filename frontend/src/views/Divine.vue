@@ -580,7 +580,20 @@ function extractClientBoardFacts(data = {}) {
   if (Array.isArray(data.cells)) {
     data.cells.slice(0, 9).forEach((cell, index) => {
       if (Array.isArray(cell)) pushPair(cell[0] || `宫位${index + 1}`, cell.slice(1).join(' / '))
-      else pushPair(cell.palace || cell.direction || `宫位${index + 1}`, [cell.god, cell.star, cell.gate, cell.note].filter(Boolean).join(' / '))
+      else pushPair(cell.palace || cell.direction || `宫位${index + 1}`, [
+        cell.direction,
+        cell.element,
+        cell.theme,
+        cell.level,
+        Array.isArray(cell.features) ? cell.features.join(' ') : '',
+        Array.isArray(cell.risks) ? `风险:${cell.risks.join(' ')}` : '',
+        Array.isArray(cell.opportunities) ? `机会:${cell.opportunities.join(' ')}` : '',
+        cell.god,
+        cell.star,
+        cell.gate,
+        cell.note,
+        cell.advice,
+      ].filter(Boolean).join(' / '))
     })
   }
   if (Array.isArray(data.lines)) {
@@ -613,6 +626,12 @@ function extractClientBoardFacts(data = {}) {
   }
   if (data.meta && typeof data.meta === 'object') {
     Object.entries(data.meta).slice(0, 8).forEach(([key, value]) => pushPair(key, Array.isArray(value) ? value.join(' / ') : value))
+  }
+  if (data.summary && typeof data.summary === 'object') {
+    Object.entries(data.summary).slice(0, 8).forEach(([key, value]) => pushPair(`summary.${key}`, Array.isArray(value) ? value.join(' / ') : value))
+  }
+  if (Array.isArray(data.adjustments)) {
+    data.adjustments.slice(0, 4).forEach((item, index) => pushPair(`调整建议${index + 1}`, item))
   }
   return facts.filter((item) => item.label && item.value).slice(0, 18)
 }
