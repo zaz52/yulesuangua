@@ -123,3 +123,6 @@
 - 已补强六爻后端 `calculateLiuyaoBoard`，每爻返回六亲、六神、纳甲、五行、世应、动爻、空亡、日破/月破、暗动、六合/六害、入墓等 flags。
 - 已补强 `normalizeLiuyaoBoard` 和 `LiuyaoBoard.vue`，旧数组数据也会补齐纳甲五行兜底。
 - 已完成本地验证：`npm run build` 通过，Function 语法检查通过；移动端浏览器提交 `/divine/qimen` 和 `/divine/liuyao` 均生成结果盘，无横向溢出、无控制台错误、无 `qk_` 本地记录。
+- 已提交并推送代码：`2d94dac feat: enrich qimen and liuyao boards`，以及小修复 `8519107 fix: format qimen horse star`。
+- 已部署 Cloudflare Pages，预览地址：`https://91a66f5d.yulesuangua.pages.dev`。
+- 已完成生产验收：线上 `qimen` API 返回宫位、方位、五行、八神、九星、八门、天盘干、地盘干、马星等字段；线上 `liuyao` API 返回爻位、阴阳、六亲、六神、纳甲、五行、变爻、用神建议；移动端浏览器提交 `/divine/qimen` 和 `/divine/liuyao` 均生成新结果盘，无横向溢出、无控制台错误、无 `qk_` 本地记录。
