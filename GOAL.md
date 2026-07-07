@@ -265,3 +265,7 @@ Progress:
 - Updated frontend and backend facts extraction so AI fixed-column interpretation can consume tarot card position, orientation, element, keywords, and advice.
 - Validation so far: `npm run build`, `node --check frontend/src/domain/metaphysics.js`, `node --check frontend/functions/api/[[path]].js`, `git diff --check`, privacy scan, and direct Function tarot calculation all pass. Direct Function test returned `decision` spread with 6 structured cards from `mingyu-core@0.1.8`.
 - Local browser E2E passed on `http://127.0.0.1:4295/divine/tarot` at 390px mobile viewport: selecting decision spread generated 6 `.tarot-card` nodes and `.tarot-summary`, had no horizontal overflow, no console errors, and no `qk_` localStorage keys.
+- Completed GitHub push: `d72d777 feat: enrich tarot spread board`.
+- Deployed Cloudflare Pages preview: `https://cb751f39.yulesuangua.pages.dev`.
+- Verified production custom domain API: `POST https://suangua.weiyiai.top/api/metaphysics/calculate` with tarot decision spread returns `200`, `mingyu-core@0.1.8`, 6 structured cards, and summary.
+- Verified production mobile browser flow on `https://suangua.weiyiai.top/divine/tarot`: decision spread renders 6 tarot cards and summary, no horizontal overflow, no console errors, and no `qk_` localStorage keys.
