@@ -62,3 +62,6 @@
 - 已完成审查：桌面端和 390px 移动端覆盖首页、黄历、起名、灵签、梦境、周易、八字、奇门、紫微、梅花；全部无横向溢出、无控制台错误、无 `qk_` 本地记录。
 - 已发现同类问题：`/tools/huangli` 的 `AlmanacBoard` 同样是内联子组件，`.almanac-hero-card`、`.almanac-meta`、`.almanac-grid` 实际 display 为 `block`，黄历盘样式未穿透。
 - 已完成修复：为 `AlmanacBoard`、`PanelHead`、`ResultBlock` 增加 `:deep()` 样式穿透；复测黄历桌面端和移动端均显示 grid 布局，起名排盘无回归。
+- 已提交并推送代码：`52b357d fix: apply tool child component styles`。
+- 已部署 Cloudflare Pages，预览地址：`https://ad959d06.yulesuangua.pages.dev`。
+- 已完成生产验收：`https://suangua.weiyiai.top/tools/huangli` 与 `/tools/qiming` 返回 200；黄历结果区在桌面端和 390px 移动端均为 grid 盘面；宝宝起名提交后调用 `/api/metaphysics/calculate` 返回 200，排盘来源 `mingyu-core@0.1.8`，生成 6 张候选名盘卡；无横向溢出、无控制台错误、无 `qk_` 本地记录。
