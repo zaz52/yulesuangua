@@ -350,3 +350,29 @@ Progress:
 - Completed GitHub push: `bb98bf7 feat: add tool insight timeout fallback`.
 - Deployed Cloudflare Pages preview: `https://3c16f1c6.yulesuangua.pages.dev`.
 - Production verification on `https://suangua.weiyiai.top` passed for `/tools/lingqian`, `/tools/jiemeng`, and `/tools/xianghuo` with simulated delayed `/api/tools/insight`: each page rendered 5 fallback fixed-column sections, showed a retry button, had no horizontal overflow, no console errors, and no `qk_` localStorage keys.
+
+## 2026-07-07 full user-flow regression and WeChat browser check
+
+Task: run production-grade validation for real user flows and specifically investigate whether the site opens correctly inside WeChat's embedded browser.
+
+Success criteria:
+- Production domain `https://suangua.weiyiai.top` returns 200 and serves the latest deployed app.
+- Home page, Zhouyi ritual, all core `/divine/*` pages, and all `/tools/*` pages can be opened from direct URLs.
+- Submit/generate flows produce visible result boards or ritual surfaces where applicable.
+- Mobile 390px viewport has no horizontal overflow, no JavaScript console errors, and no `qk_` localStorage keys.
+- WeChat UA smoke test can load the home page and representative routes without blank screen, blocked resources, mixed-content issues, redirect loops, or console errors.
+- Any discovered production issue is fixed in code, verified locally, pushed to GitHub, deployed to Cloudflare, and re-verified on production.
+
+Architecture:
+- Keep the current Cloudflare Pages + Vue 3 SPA deployment.
+- Use browser-level validation against the production domain first, then local validation only if a fix is needed.
+- Simulate WeChat with a mobile iPhone viewport plus MicroMessenger UA and inspect page load, resource responses, errors, and storage side effects.
+
+Progress:
+- Started full production regression and WeChat browser compatibility pass.
+- Production route smoke passed for `/`, `/zhouyi`, 13 `/divine/*` routes, and 5 `/tools/*` routes on 390px mobile viewport: all returned 200, rendered `main`, had no blank screen, no horizontal overflow, no console errors, and no `qk_` localStorage keys.
+- Production WeChat UA smoke passed for `/`, `/zhouyi`, `/tools/huangli`, `/tools/qiming`, `/divine/qimen`, and `/divine/bazi`.
+- Production user-flow checks passed for all `/divine/*` pages and `/tools/*` pages after correcting the automation script for Zhouyi's ritual timing and Qiming's required birth date field. Zhouyi and Qiming also passed under WeChat UA.
+- Network-layer WeChat check passed: HTTPS returns 200, HTTP redirects to HTTPS, and WeChat UA direct request returns the SPA HTML.
+- Found and fixed a WeChat reliability risk: the global stylesheet imported Google Fonts, which can be slow or blocked in WeChat/domestic mobile networks. Removed the remote font import and switched to system Chinese serif/display font stacks.
+- Local build after the font fix passed, and local Pages dev verification on `http://127.0.0.1:4299` passed for Zhouyi and Qiming in both normal mobile and WeChat UA modes.
