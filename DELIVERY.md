@@ -7,7 +7,7 @@
 - 正式站点：https://suangua.weiyiai.top
 - Cloudflare Pages 项目：`yulesuangua`
 - GitHub 仓库：https://github.com/zaz52/yulesuangua.git
-- 当前主分支最新提交：`f28356f`
+- 当前主分支：`main`，以 GitHub 最新提交为准
 
 ## 当前交付范围
 

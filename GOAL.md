@@ -438,3 +438,19 @@ Progress:
 - Completed GitHub push: `8bb16f0 feat: harden runtime error fallbacks`.
 - Deployed Cloudflare Pages preview: `https://ac1a35e0.yulesuangua.pages.dev`.
 - Production verification on `https://suangua.weiyiai.top` passed for `/divine/qimen`, `/divine/bazi`, and `/divine/tarot` with backend-unavailable health simulation: each route showed one result board, fixed-column fallback sections, retry/clear actions, no horizontal overflow at 390px, no console errors, and no `qk_` localStorage keys.
+
+## 2026-07-07 final delivery closeout
+
+Task: close the project for MVP delivery without adding new features or repeating completed work.
+
+Success criteria:
+- Final delivery documents exist and clearly state production URL, scope, validation status, privacy policy, known boundaries, and demo path.
+- Repository is clean after commit and push.
+- Final build, syntax checks, production domain check, and privacy scan pass.
+- No Obsidian sync is performed unless explicitly requested.
+
+Progress:
+- Verified clean workspace before closeout.
+- Final validation passed: `npm run build`, Cloudflare Function syntax check, frontend module syntax checks, production domain 200 check, and privacy scan.
+- Added `DELIVERY.md` for handoff and `FINAL_ACCEPTANCE.md` for final acceptance.
+- No Obsidian sync performed.
