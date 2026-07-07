@@ -126,3 +126,24 @@
 - 已提交并推送代码：`2d94dac feat: enrich qimen and liuyao boards`，以及小修复 `8519107 fix: format qimen horse star`。
 - 已部署 Cloudflare Pages，预览地址：`https://91a66f5d.yulesuangua.pages.dev`。
 - 已完成生产验收：线上 `qimen` API 返回宫位、方位、五行、八神、九星、八门、天盘干、地盘干、马星等字段；线上 `liuyao` API 返回爻位、阴阳、六亲、六神、纳甲、五行、变爻、用神建议；移动端浏览器提交 `/divine/qimen` 和 `/divine/liuyao` 均生成新结果盘，无横向溢出、无控制台错误、无 `qk_` 本地记录。
+
+## 2026-07-07 紫微与工具页 AI 接入
+
+### 任务
+
+继续做优先级 3 和 4：补强紫微斗数十二宫字段；把灵签、梦境、祈福工具页接入 AI 固定栏目解读。
+
+### 成功标准
+
+- 紫微十二宫展示宫位、天干地支、主星、辅星、四化/长生、大限/年龄段、命宫/身宫标记。
+- 紫微字段进入 `readingChart.facts`，AI 解读能基于十二宫结构。
+- 工具页灵签、梦境、祈福在结构盘后展示 AI 固定栏目解读，具备加载、错误、空状态。
+- 工具页 AI 不写入本地记录，不创建 D1 记录，不恢复最近记录。
+
+### 进度
+
+- 已补强后端 `calculateZiweiBoard`，从 `mingyu-core/ziwei/iztro` 映射十二宫主星、辅星、四化、长生、大限、年龄段、命宫/身宫标记。
+- 已补强 `normalizeZiweiBoard` 和 `ZiweiBoard.vue`，移动端十二宫盘显示新字段。
+- 已新增 `/api/tools/insight` 普通 JSON 解读接口；工具页不再用 SSE，避免浏览器把流式关闭记为 `ERR_CONNECTION_CLOSED`。
+- 已为灵签、梦境、祈福构建 `tool-chart-v1` 的 `readingChart`，并展示 AI 固定栏目。
+- 已完成构建和语法验证：`npm run build` 通过，Function 语法检查通过；隐私扫描未发现新增本地记录或自动持久化。

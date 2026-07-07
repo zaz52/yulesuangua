@@ -555,7 +555,14 @@ function extractClientBoardFacts(data = {}) {
     })
   }
   if (Array.isArray(data.palaces)) {
-    data.palaces.slice(0, 12).forEach((palace) => pushPair(palace.name || palace.label, [palace.star, palace.note, palace.age].filter(Boolean).join(' / ')))
+    data.palaces.slice(0, 12).forEach((palace) => pushPair(palace.name || palace.label, [
+      palace.branch,
+      palace.star,
+      palace.minor,
+      Array.isArray(palace.transforms) ? palace.transforms.join(' ') : '',
+      palace.decadal,
+      palace.note,
+    ].filter(Boolean).join(' / ')))
   }
   if (Array.isArray(data.cards)) {
     data.cards.slice(0, 6).forEach((card) => pushPair(Array.isArray(card) ? card[0] : card.position, Array.isArray(card) ? card.slice(1).join(' / ') : [card.name, card.orientation].filter(Boolean).join(' / ')))

@@ -6,20 +6,22 @@
       v-for="(palace, index) in board.palaces"
       :key="`${palace.name}-${index}`"
       class="ziwei-palace"
-      :class="{ 'is-ming': palace.note.includes('命宫'), 'is-body': palace.note.includes('身宫') }"
+      :class="{ 'is-ming': palace.isOriginalPalace || palace.note.includes('命宫'), 'is-body': palace.isBodyPalace || palace.note.includes('身宫') }"
       :style="{ '--a': `${index * 30}deg` }"
     >
-      <span>{{ palace.branch }}</span>
+      <span>{{ palace.heavenlyStem }}{{ palace.branch }}</span>
       <strong>{{ palace.name }}</strong>
       <b>{{ palace.star }}</b>
       <em>{{ palace.minor }}</em>
-      <small>{{ palace.age }}</small>
+      <small>{{ palace.transforms.length ? palace.transforms.join(' / ') : palace.changsheng12 || palace.note }}</small>
+      <i>{{ palace.decadal || palace.ages || '大限待定' }}</i>
     </article>
     <article class="ziwei-center">
       <b>紫微斗数</b>
       <strong>{{ board.meta.soul }}</strong>
       <span>{{ board.meta.body }}</span>
-      <small>{{ board.meta.fiveElementsClass }} · {{ board.center }}</small>
+      <small>{{ board.meta.fiveElementsClass }} · {{ board.meta.zodiac || '生肖待定' }}</small>
+      <em>{{ board.center }}</em>
     </article>
   </section>
 </template>
@@ -63,7 +65,7 @@ const board = computed(() => normalizeZiweiBoard(props.data))
 .ziwei-palace {
   display: grid;
   width: 112px;
-  min-height: 92px;
+  min-height: 116px;
   align-content: center;
   gap: 3px;
   padding: 8px;
@@ -82,8 +84,10 @@ const board = computed(() => normalizeZiweiBoard(props.data))
 
 .ziwei-palace span,
 .ziwei-palace small,
+.ziwei-palace i,
 .ziwei-center span,
-.ziwei-center small {
+.ziwei-center small,
+.ziwei-center em {
   color: var(--paper-dim);
   font-size: 11px;
 }
@@ -109,6 +113,18 @@ const board = computed(() => normalizeZiweiBoard(props.data))
   white-space: nowrap;
 }
 
+.ziwei-palace small,
+.ziwei-palace i {
+  overflow: hidden;
+  font-style: normal;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ziwei-palace i {
+  color: rgba(245, 234, 212, 0.48);
+}
+
 .ziwei-center {
   display: grid;
   width: 176px;
@@ -132,14 +148,15 @@ const board = computed(() => normalizeZiweiBoard(props.data))
   }
 
   .ziwei-palace {
-    width: 72px;
-    min-height: 66px;
+    width: 78px;
+    min-height: 76px;
     padding: 5px;
     transform: rotate(var(--a)) translateY(-128px) rotate(calc(-1 * var(--a)));
   }
 
   .ziwei-palace em,
-  .ziwei-palace small {
+  .ziwei-palace small,
+  .ziwei-palace i {
     display: none;
   }
 

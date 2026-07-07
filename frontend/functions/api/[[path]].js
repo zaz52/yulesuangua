@@ -138,6 +138,10 @@ export async function onRequest(context) {
     return calculateMetaphysics(context)
   }
 
+  if (context.request.method === 'POST' && path === 'tools/insight') {
+    return generateToolInsight(context)
+  }
+
   if (context.request.method === 'POST' && path === 'consultations') {
     return createConsultation(context)
   }
@@ -290,6 +294,12 @@ async function generateReading(skill, payload, env) {
     风险提醒: '若涉及金钱、合同、健康、婚姻承诺，请以现实证据和专业意见为准，问卦结果只用于整理思路。',
   }
   return resultSchema.map((title) => `【${title}】${fallbackBodies[title] || fallbackBodies.趋势判断}`).join('\n')
+}
+
+async function generateToolInsight(context) {
+  const payload = await context.request.json().catch(() => ({}))
+  const text = await generateReading('fojiao', payload, context.env || {})
+  return json({ ok: true, text, source: 'tool-insight' })
 }
 
 function extractReadingChartFacts(readingChart) {
@@ -493,7 +503,20 @@ async function calculateZiweiBoard(payload) {
   })
   const palaces = (astrolabe.palaces || []).map((palace) => ({
     name: palace.name || '宫位',
-    star: [...(palace.majorStars || []), ...(palace.minorStars || [])].map((star) => star.name).slice(0, 3).join(' / ') || '无主星',
+    branch: palace.earthlyBranch || '',
+    heavenlyStem: palace.heavenlyStem || '',
+    star: (palace.majorStars || []).map(formatZiweiStar).join(' / ') || '无主星',
+    minor: (palace.minorStars || []).map(formatZiweiStar).slice(0, 4).join(' / ') || '辅星待定',
+    adjective: (palace.adjectiveStars || []).map((star) => star.name).slice(0, 4).join(' / '),
+    transforms: [...(palace.majorStars || []), ...(palace.minorStars || [])].filter((star) => star.mutagen).map((star) => `${star.name}${star.mutagen}`),
+    decadal: palace.decadal ? `${palace.decadal.range?.[0] || ''}-${palace.decadal.range?.[1] || ''}` : '',
+    ages: Array.isArray(palace.ages) ? palace.ages.slice(0, 4).join(' / ') : '',
+    changsheng12: palace.changsheng12 || '',
+    boshi12: palace.boshi12 || '',
+    jiangqian12: palace.jiangqian12 || '',
+    suiqian12: palace.suiqian12 || '',
+    isBodyPalace: Boolean(palace.isBodyPalace),
+    isOriginalPalace: Boolean(palace.isOriginalPalace),
     note: [
       palace.isBodyPalace ? '身宫' : '',
       palace.isOriginalPalace ? '命宫' : '',
@@ -686,6 +709,10 @@ function calculateLiuyaoBoard(payload) {
     },
     raw: compactRaw(result),
   }
+}
+
+function formatZiweiStar(star = {}) {
+  return [star.name, star.brightness ? `(${star.brightness})` : '', star.mutagen || ''].filter(Boolean).join('')
 }
 
 function formatHorseStar(value) {

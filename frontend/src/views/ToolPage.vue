@@ -64,7 +64,7 @@
               <span>今日可抽取 3 次</span>
             </div>
           </div>
-          <LotBoard :lot="lot" :count="lotIndex" />
+          <LotBoard :lot="lot" :count="lotIndex" :insight="toolInsights.lingqian" :loading="toolInsightLoading.lingqian" :error="toolInsightErrors.lingqian" />
         </article>
 
         <article v-else-if="toolId === 'jiemeng'" class="work-card oracle-card dream-ritual">
@@ -75,7 +75,7 @@
             <button v-for="prompt in dreamPrompts" :key="prompt" type="button" @click="appendDreamPrompt(prompt)">{{ prompt }}</button>
           </div>
           <button class="ds-button primary dream-action" type="button" @click="analyzeDream">开始解析</button>
-          <DreamBoard :board="dreamBoard" />
+          <DreamBoard :board="dreamBoard" :insight="toolInsights.jiemeng" :loading="toolInsightLoading.jiemeng" :error="toolInsightErrors.jiemeng" />
         </article>
 
         <article v-else-if="toolId === 'qiming'" class="work-card oracle-card qiming-ritual">
@@ -108,7 +108,7 @@
             <label class="ds-field wide"><span>心愿</span><textarea v-model.trim="wishForm.text" placeholder="写下今天想安放的一句话"></textarea></label>
           </div>
           <button class="ds-button primary" type="button" @click="offerIncense">敬上三炷香</button>
-          <WishBoard :board="wishBoard" />
+          <WishBoard :board="wishBoard" :insight="toolInsights.xianghuo" :loading="toolInsightLoading.xianghuo" :error="toolInsightErrors.xianghuo" />
         </article>
       </section>
 
@@ -136,7 +136,7 @@
 <script setup>
 import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { calculateChart } from '../api/divine'
+import { calculateChart, generateToolInsight } from '../api/divine'
 
 const ResultBlock = defineComponent({
   props: { title: String, copy: String },
@@ -149,6 +149,25 @@ const PanelHead = defineComponent({
   props: { kicker: String, title: String, badge: String },
   setup(props) {
     return () => h('div', { class: 'panel-head' }, [h('div', [h('span', { class: 'section-kicker' }, props.kicker), h('h2', props.title)]), h('span', { class: 'ds-badge gold' }, props.badge)])
+  },
+})
+
+const ToolInsight = defineComponent({
+  props: { text: String, loading: Boolean, error: String },
+  setup(props) {
+    return () => h('section', { class: 'tool-insight', 'aria-label': 'AI 固定栏目解读' }, [
+      h('div', { class: 'tool-insight-head' }, [
+        h('strong', 'AI 解读'),
+        h('span', props.loading ? '生成中' : props.error ? '需重试' : props.text ? '固定栏目' : '待生成'),
+      ]),
+      props.loading ? h('p', { role: 'status', 'aria-live': 'polite' }, '正在根据当前盘面生成固定栏目解读...') : null,
+      props.error ? h('p', { class: 'error', role: 'alert' }, props.error) : null,
+      !props.loading && !props.error && props.text ? h('div', { class: 'tool-insight-sections' }, parseToolSections(props.text).map((item) => h('article', [
+        h('span', item.title),
+        h('p', item.body),
+      ]))) : null,
+      !props.loading && !props.error && !props.text ? h('p', '完成一次操作后生成 AI 固定栏目解读。') : null,
+    ])
   },
 })
 
@@ -185,7 +204,7 @@ const AlmanacBoard = defineComponent({
 })
 
 const LotBoard = defineComponent({
-  props: { lot: Object, count: Number },
+  props: { lot: Object, count: Number, insight: String, loading: Boolean, error: String },
   setup(props) {
     return () => {
       const lot = props.lot || {}
@@ -210,13 +229,14 @@ const LotBoard = defineComponent({
           h('span', item.label),
           h('strong', item.value),
         ]))),
+        h(ToolInsight, { text: props.insight, loading: props.loading, error: props.error }),
       ])
     }
   },
 })
 
 const DreamBoard = defineComponent({
-  props: { board: Object },
+  props: { board: Object, insight: String, loading: Boolean, error: String },
   setup(props) {
     return () => {
       const board = props.board || buildDreamBoard({})
@@ -235,6 +255,7 @@ const DreamBoard = defineComponent({
           h('strong', board.guidanceTitle),
           h('p', board.guidance),
         ]),
+        h(ToolInsight, { text: props.insight, loading: props.loading, error: props.error }),
       ])
     }
   },
@@ -341,7 +362,7 @@ const NameBoard = defineComponent({
 })
 
 const WishBoard = defineComponent({
-  props: { board: Object },
+  props: { board: Object, insight: String, loading: Boolean, error: String },
   setup(props) {
     return () => {
       const board = props.board || buildWishBoard({})
@@ -357,6 +378,7 @@ const WishBoard = defineComponent({
           h('strong', item.value),
         ]))),
         h('p', board.message),
+        h(ToolInsight, { text: props.insight, loading: props.loading, error: props.error }),
       ])
     }
   },
@@ -421,6 +443,9 @@ const wishForm = ref({ target: '自己', text: '' })
 const wishResult = ref('写下心愿后，点击上香会在当前页面显示，不会保存到本地浏览器。')
 const incenseCount = ref(108)
 const wishBoard = ref(buildWishBoard(wishForm.value, incenseCount.value, wishResult.value))
+const toolInsights = ref({ lingqian: '', jiemeng: '', xianghuo: '' })
+const toolInsightLoading = ref({ lingqian: false, jiemeng: false, xianghuo: false })
+const toolInsightErrors = ref({ lingqian: '', jiemeng: '', xianghuo: '' })
 
 onMounted(() => {
   if (toolId.value === 'liuyao') router.replace('/zhouyi')
@@ -434,6 +459,7 @@ watch(toolId, (next) => {
 
 function drawLot() {
   lotIndex.value += 1
+  streamToolInsight('lingqian', buildLotInsightPayload(lot.value, lotIndex.value))
 }
 
 function analyzeDream() {
@@ -441,6 +467,7 @@ function analyzeDream() {
   const context = dreamForm.value.context || '未填写现实背景'
   dreamResult.value = `梦境可先看三层：一是画面象意，二是醒来时的${mood}情绪，三是它和现实背景“${context}”的关系。建议把梦中最强烈的画面写成一句问题，再进入佛学开示继续深问。`
   dreamBoard.value = buildDreamBoard(dreamForm.value, dreamResult.value)
+  streamToolInsight('jiemeng', buildDreamInsightPayload(dreamBoard.value, dreamForm.value))
 }
 
 function appendDreamPrompt(prompt) {
@@ -744,6 +771,92 @@ function offerIncense() {
   incenseCount.value += 3
   wishResult.value = `已为${wishForm.value.target}敬上三炷香。心愿仅在当前页面显示，不会保存到本地浏览器：${wishForm.value.text || '愿心安定，所行有度。'}`
   wishBoard.value = buildWishBoard(wishForm.value, incenseCount.value, wishResult.value)
+  streamToolInsight('xianghuo', buildWishInsightPayload(wishBoard.value))
+}
+
+async function streamToolInsight(key, payload) {
+  if (toolInsightLoading.value[key]) return
+  toolInsightLoading.value = { ...toolInsightLoading.value, [key]: true }
+  toolInsightErrors.value = { ...toolInsightErrors.value, [key]: '' }
+  toolInsights.value = { ...toolInsights.value, [key]: '' }
+  try {
+    const result = await generateToolInsight({
+      message: payload.message,
+      requestedTool: key,
+      readingChart: payload.readingChart,
+      board: payload.readingChart.board,
+      chart: payload.readingChart.chart,
+    })
+    toolInsights.value = { ...toolInsights.value, [key]: normalizeToolInsight(result.text, key) }
+    toolInsightLoading.value = { ...toolInsightLoading.value, [key]: false }
+  } catch (error) {
+    toolInsightLoading.value = { ...toolInsightLoading.value, [key]: false }
+    toolInsightErrors.value = { ...toolInsightErrors.value, [key]: `AI 解读暂时不可用：${error.message || '网络异常'}` }
+  }
+}
+
+function buildLotInsightPayload(lotData, count) {
+  const chart = buildLotChart(lotData, count)
+  const message = `灵签占问：${lotData.title}；签等：${lotData.level}；签文：${lotData.text}`
+  return buildToolInsightPayload('lingqian', '灵签签盘', message, chart, ['签象总览', '事业财运', '感情健康', '行动建议', '风险提醒'])
+}
+
+function buildDreamInsightPayload(board, form) {
+  const message = `梦境解析：${form.dream || '未填写'}；情绪：${form.mood}；现实背景：${form.context || '未填写'}`
+  return buildToolInsightPayload('jiemeng', '梦象解析盘', message, board, ['梦象总览', '情绪线索', '现实对应', '行动建议', '风险提醒'])
+}
+
+function buildWishInsightPayload(board) {
+  const message = `祈福上香：对象 ${board.target}；心愿：${board.items?.[1]?.value || '未填写'}`
+  return buildToolInsightPayload('xianghuo', '香火祈愿盘', message, board, ['愿心总览', '当下功课', '关系边界', '行动建议', '风险提醒'])
+}
+
+function buildToolInsightPayload(key, title, message, chart, sections) {
+  return {
+    message,
+    readingChart: {
+      version: 'tool-chart-v1',
+      meta: { skill: 'fojiao', skillName: title, boardType: key, boardTitle: title, source: 'tool-page', state: 'result', question: message },
+      input: { tool: key, message },
+      board: { type: key, title, badge: '工具盘', data: chart, state: 'result', source: 'tool-page' },
+      chart,
+      facts: extractToolFacts(chart),
+      sections,
+    },
+  }
+}
+
+function extractToolFacts(chart) {
+  if (!chart || typeof chart !== 'object') return []
+  const facts = []
+  const push = (label, value) => value && facts.push({ label, value: String(value).slice(0, 120) })
+  for (const item of chart.axis || chart.layers || chart.items || []) push(item.label, item.value || item.note)
+  for (const item of chart.advice || []) push(item.label, item.value)
+  push('提示', chart.guidance || chart.message)
+  return facts.slice(0, 12)
+}
+
+function normalizeToolInsight(text, key) {
+  const source = String(text || '').trim()
+  if (!source) return ''
+  const sections = parseToolSections(source)
+  const expected = {
+    lingqian: ['签象总览', '事业财运', '感情健康', '行动建议', '风险提醒'],
+    jiemeng: ['梦象总览', '情绪线索', '现实对应', '行动建议', '风险提醒'],
+    xianghuo: ['愿心总览', '当下功课', '关系边界', '行动建议', '风险提醒'],
+  }[key] || []
+  if (!expected.length || expected.every((title) => sections.some((item) => item.title === title))) return source
+  const first = sections[0]?.body || source
+  return expected.map((title, index) => `【${title}】${sections[index]?.body || first}`).join('\n')
+}
+
+function parseToolSections(text = '') {
+  const source = String(text || '').replace(/\r/g, '').trim()
+  const marked = [...source.matchAll(/【([^】]{1,16})】([\s\S]*?)(?=【[^】]{1,16}】|$)/g)]
+    .map((match) => ({ title: match[1].trim(), body: match[2].trim().replace(/\n+/g, ' ') }))
+    .filter((item) => item.title && item.body)
+  if (marked.length) return marked
+  return source.split(/\n+/).map((line, index) => ({ title: index ? '补充说明' : '解读要点', body: line.trim() })).filter((item) => item.body)
 }
 
 function buildLotChart(lot, count = 0) {
@@ -1289,6 +1402,76 @@ function buildWishBoard(form = {}, count = 108, message = '') {
   border: 1px solid rgba(215, 179, 95, 0.14);
   border-radius: var(--radius-xs);
   background: rgba(0, 0, 0, 0.12);
+}
+
+:deep(.tool-insight) {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: var(--radius-xs);
+  background:
+    linear-gradient(135deg, rgba(215, 179, 95, 0.08), transparent),
+    rgba(0, 0, 0, 0.14);
+}
+
+:deep(.tool-insight-head) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+:deep(.tool-insight-head strong) {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 400;
+}
+
+:deep(.tool-insight-head span) {
+  color: rgba(245, 234, 212, 0.56);
+  font-size: 12px;
+}
+
+:deep(.tool-insight > p) {
+  margin: 0;
+  color: var(--paper-dim);
+  line-height: 1.7;
+}
+
+:deep(.tool-insight > p.error) {
+  color: #f1b2a8;
+}
+
+:deep(.tool-insight-sections) {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+:deep(.tool-insight-sections article) {
+  display: grid;
+  gap: 6px;
+  min-height: 112px;
+  padding: 10px;
+  border: 1px solid rgba(215, 179, 95, 0.12);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.04);
+}
+
+:deep(.tool-insight-sections span) {
+  color: var(--gold-bright);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+:deep(.tool-insight-sections p) {
+  margin: 0;
+  color: var(--paper);
+  font-size: 13px;
+  line-height: 1.65;
 }
 
 @keyframes incenseGlow {
@@ -2203,7 +2386,8 @@ function buildWishBoard(form = {}, count = 108, message = '') {
   :deep(.dream-board),
   :deep(.dream-map),
   :deep(.wish-board),
-  :deep(.wish-grid) {
+  :deep(.wish-grid),
+  :deep(.tool-insight-sections) {
     grid-template-columns: 1fr;
   }
 

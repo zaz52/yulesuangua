@@ -32,6 +32,12 @@ export async function calculateChart(skill, payload = {}) {
   return data
 }
 
+export async function generateToolInsight(payload = {}) {
+  const data = await postJson('/tools/insight', payload)
+  if (data.ok === false) throw new Error(data.error || '解读失败')
+  return data
+}
+
 export async function createConsultationRecord(payload = {}) {
   return postJson(
     '/consultations',
