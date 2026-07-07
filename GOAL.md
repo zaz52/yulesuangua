@@ -147,3 +147,14 @@
 - 已新增 `/api/tools/insight` 普通 JSON 解读接口；工具页不再用 SSE，避免浏览器把流式关闭记为 `ERR_CONNECTION_CLOSED`。
 - 已为灵签、梦境、祈福构建 `tool-chart-v1` 的 `readingChart`，并展示 AI 固定栏目。
 - 已完成构建和语法验证：`npm run build` 通过，Function 语法检查通过；隐私扫描未发现新增本地记录或自动持久化。
+## 2026-07-07 production verification for priority 3 and 4
+
+- Completed GitHub push: `050bf7f feat: enrich ziwei and tool insights`.
+- Deployed Cloudflare Pages preview: `https://5a906489.yulesuangua.pages.dev`.
+- Verified production custom domain API: `POST https://suangua.weiyiai.top/api/tools/insight` returns `200` with fixed-column AI text.
+- Verified mobile browser production flow on `https://suangua.weiyiai.top`:
+  - `/divine/ziwei` renders 12 palace cards and extended palace fields.
+  - `/tools/lingqian`, `/tools/jiemeng`, and `/tools/xianghuo` each render 5 AI insight sections after user action.
+  - No horizontal overflow on 390px viewport.
+  - No console errors.
+  - No `qk_` localStorage keys created.
