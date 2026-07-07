@@ -17,6 +17,7 @@
         <strong>{{ board.relation.text }}</strong>
         <em>{{ board.relation.body }} / {{ board.relation.use }}</em>
         <small>{{ board.relation.movingLine }}</small>
+        <small v-if="board.relation.season">{{ board.relation.season }} · 体{{ board.relation.tiSeasonState || '待定' }} / 用{{ board.relation.yongSeasonState || '待定' }}</small>
       </article>
 
       <article
@@ -27,6 +28,7 @@
       >
         <span>{{ item.data.label }}</span>
         <strong>{{ item.data.name }}</strong>
+        <small v-if="item.data.symbol" class="hex-symbol">{{ item.data.symbol }}</small>
         <div class="trigrams">
           <b>{{ item.data.upper.symbol }}</b>
           <i>{{ item.data.upper.name }}{{ item.data.upper.nature }}</i>
@@ -34,7 +36,21 @@
           <i>{{ item.data.lower.name }}{{ item.data.lower.nature }}</i>
         </div>
         <em>{{ item.data.note }}</em>
+        <small v-if="item.data.movingYaoCi" class="moving-ci">{{ item.data.movingYaoCi }}</small>
       </article>
+    </div>
+
+    <div class="meihua-yaos" aria-label="六爻体用">
+      <div
+        v-for="line in board.yaos"
+        :key="line.position"
+        class="meihua-yao"
+        :class="{ 'is-moving': line.isChanging }"
+      >
+        <span>{{ line.position }}爻</span>
+        <strong>{{ line.yaoType }}</strong>
+        <em>{{ line.tiYong }}</em>
+      </div>
     </div>
 
     <footer class="meihua-clues">
@@ -75,7 +91,8 @@ const hexagrams = computed(() => [
 }
 
 .meihua-meta,
-.meihua-clues {
+.meihua-clues,
+.meihua-yaos {
   display: grid;
   gap: 8px;
   border: 1px solid rgba(215, 179, 95, 0.12);
@@ -92,7 +109,9 @@ const hexagrams = computed(() => [
 .meihua-clues span,
 .meihua-hex span,
 .meihua-core span,
-.meihua-core small {
+.meihua-core small,
+.meihua-yao span,
+.meihua-yao em {
   color: rgba(245, 234, 212, 0.62);
   font-size: 12px;
 }
@@ -214,6 +233,22 @@ const hexagrams = computed(() => [
   line-height: 1.45;
 }
 
+.hex-symbol {
+  color: var(--gold-bright);
+  font-size: 20px;
+  letter-spacing: 0;
+}
+
+.moving-ci {
+  display: -webkit-box;
+  overflow: hidden;
+  color: rgba(245, 234, 212, 0.58);
+  font-size: 11px;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
 .trigrams {
   display: grid;
   grid-template-columns: 36px minmax(0, 1fr);
@@ -236,8 +271,36 @@ const hexagrams = computed(() => [
 }
 
 .meihua-clues {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   padding: 10px;
+}
+
+.meihua-yaos {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  padding: 8px;
+}
+
+.meihua-yao {
+  display: grid;
+  gap: 4px;
+  justify-items: center;
+  padding: 8px;
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.035);
+}
+
+.meihua-yao strong {
+  color: var(--paper);
+  font-size: 14px;
+}
+
+.meihua-yao.is-moving {
+  border: 1px solid rgba(184, 58, 47, 0.58);
+  box-shadow: 0 0 16px rgba(184, 58, 47, 0.18);
+}
+
+.meihua-yao.is-moving strong {
+  color: var(--gold-bright);
 }
 
 .meihua-clues div {
@@ -268,7 +331,8 @@ const hexagrams = computed(() => [
   }
 
   .meihua-meta,
-  .meihua-clues {
+  .meihua-clues,
+  .meihua-yaos {
     grid-template-columns: 1fr;
   }
 
@@ -305,6 +369,7 @@ const hexagrams = computed(() => [
   }
 
   .meihua-hex em,
+  .moving-ci,
   .trigrams i {
     display: none;
   }

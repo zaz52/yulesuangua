@@ -3,18 +3,52 @@ const DEFAULT_ZIWEI_PALACES = ['命宫', '兄弟', '夫妻', '子女', '财帛',
 const BRANCHES = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
 
 export function normalizeBaziBoard(data = {}) {
+  const rows = Array.isArray(data.rows) && data.rows.length ? data.rows : [
+    ['天干', '年干', '月干', '日主', '时干'],
+    ['地支', '年支', '月支', '日支', '时支'],
+    ['藏干', '主气', '司令', '根气', '余气'],
+    ['十神', '早年', '环境', '本人', '后续'],
+    ['五行', '木火土金水', '旺衰', '日主', '补偏'],
+    ['合冲刑害', '年支', '月日', '日时', '全局'],
+  ]
+  const columns = Array.isArray(data.columns) && data.columns.length ? data.columns : DEFAULT_BAZI_COLUMNS
+  const fallbackPillars = columns.map((label, index) => ({
+    key: ['year', 'month', 'day', 'hour'][index] || `pillar-${index}`,
+    label,
+    gan: rows.find((row) => row[0] === '天干')?.[index + 1] || '',
+    zhi: rows.find((row) => row[0] === '地支')?.[index + 1] || '',
+    ganZhi: rows.find((row) => row[0] === '干支')?.[index + 1] || '',
+    tenGod: rows.find((row) => row[0] === '十神')?.[index + 1] || '',
+    hiddenStems: splitValue(rows.find((row) => row[0] === '藏干')?.[index + 1]),
+    hiddenTenGods: splitValue(rows.find((row) => row[0] === '藏干十神')?.[index + 1]),
+    nayin: rows.find((row) => row[0] === '纳音')?.[index + 1] || '',
+    lifeStage: rows.find((row) => row[0] === '长生')?.[index + 1] || '',
+    shensha: splitValue(rows.find((row) => row[0] === '神煞')?.[index + 1]),
+  }))
   return {
-    columns: Array.isArray(data.columns) && data.columns.length ? data.columns : DEFAULT_BAZI_COLUMNS,
-    rows: Array.isArray(data.rows) && data.rows.length ? data.rows : [
-      ['天干', '年干', '月干', '日主', '时干'],
-      ['地支', '年支', '月支', '日支', '时支'],
-      ['藏干', '主气', '司令', '根气', '余气'],
-      ['十神', '早年', '环境', '本人', '后续'],
-      ['五行', '木火土金水', '旺衰', '日主', '补偏'],
-      ['合冲刑害', '年支', '月日', '日时', '全局'],
-    ],
+    columns,
+    rows,
+    pillars: Array.isArray(data.pillars) && data.pillars.length ? data.pillars : fallbackPillars,
+    meta: {
+      lunar: data.meta?.lunar || '',
+      zodiac: data.meta?.zodiac || '',
+      dayMaster: data.meta?.dayMaster || '',
+      strength: data.meta?.strength || '',
+      pattern: data.meta?.pattern || '',
+      useful: data.meta?.useful || '',
+      avoid: data.meta?.avoid || '',
+      kongWang: data.meta?.kongWang || '',
+      monthCommander: data.meta?.monthCommander || '',
+    },
+    elements: Array.isArray(data.elements) && data.elements.length ? data.elements : ['木', '火', '土', '金', '水'].map((name) => ({ name, value: 0, ratio: 20, state: '待定' })),
+    advice: Array.isArray(data.advice) ? data.advice : [],
     highlights: Array.isArray(data.highlights) && data.highlights.length ? data.highlights : ['日主旺衰', '月令格局', '合冲刑害'],
   }
+}
+
+function splitValue(value) {
+  if (Array.isArray(value)) return value
+  return String(value || '').split(/[/、,，\s]+/).filter(Boolean)
 }
 
 export function normalizeZiweiBoard(data = {}) {

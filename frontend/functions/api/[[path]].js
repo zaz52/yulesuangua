@@ -560,9 +560,44 @@ function calculateBaziBoard(payload) {
   const lifeStages = result.pillarLifeStages || result.lifeStages || {}
   const shensha = result.shensha || {}
   const order = ['year', 'month', 'day', 'hour']
+  const pillarLabels = { year: '年柱', month: '月柱', day: '日柱', hour: '时柱' }
+  const elementStats = buildBaziElementStats(result)
+  const usefulGod = normalizeUsefulGod(result.analysis?.usefulGod)
+  const strength = result.analysis?.dayMasterStrength || {}
+  const pillars = order.map((key) => ({
+    key,
+    label: pillarLabels[key],
+    gan: p[key]?.gan || '',
+    zhi: p[key]?.zhi || '',
+    ganZhi: p[key]?.ganZhi || '',
+    tenGod: key === 'day' ? '日主' : valueText(tenGods[key]),
+    hiddenStems: Array.isArray(hidden[key]) ? hidden[key] : [],
+    hiddenTenGods: Array.isArray(hiddenTenGods[key]) ? hiddenTenGods[key] : [],
+    nayin: valueText(nayin[key], ''),
+    lifeStage: valueText(lifeStages[key], ''),
+    shensha: Array.isArray(shensha[key]) ? shensha[key] : [],
+  }))
 
   return {
     columns: ['年柱', '月柱', '日柱', '时柱'],
+    pillars,
+    meta: {
+      lunar: formatLunarDate(result.lunarDate, profile.birthDate),
+      zodiac: result.zodiac || '',
+      dayMaster: [result.dayMaster?.gan, result.dayMaster?.element, result.dayMaster?.yinYang].filter(Boolean).join(' / '),
+      strength: [strength.status, Number.isFinite(strength.score) ? `score ${strength.score}` : ''].filter(Boolean).join(' / '),
+      pattern: valueText(result.analysis?.mingGe?.pattern || result.analysis?.mingGe?.name || result.analysis?.mingGe, '待分析'),
+      useful: usefulGod.useful,
+      avoid: usefulGod.avoid,
+      kongWang: joinValue(result.kongWang, ''),
+      monthCommander: valueText(result.monthCommander, ''),
+    },
+    elements: elementStats,
+    advice: [
+      usefulGod.favorableWuxing.length ? `喜用五行：${usefulGod.favorableWuxing.join(' / ')}` : '',
+      usefulGod.unfavorableWuxing.length ? `忌用五行：${usefulGod.unfavorableWuxing.join(' / ')}` : '',
+      Array.isArray(usefulGod.strategyTrace) ? usefulGod.strategyTrace.slice(0, 2).join('；') : '',
+    ].filter(Boolean),
     rows: [
       ['天干', ...order.map((key) => p[key]?.gan || '待定')],
       ['地支', ...order.map((key) => p[key]?.zhi || '待定')],
@@ -711,6 +746,37 @@ function calculateLiuyaoBoard(payload) {
   }
 }
 
+function buildBaziElementStats(result = {}) {
+  const raw = result.wuxingStrength || result.analysis?.wuxingStrength || {}
+  const elements = ['木', '火', '土', '金', '水']
+  const values = elements.map((name) => {
+    const source = raw.scores?.[name] ?? raw[name] ?? raw[name.toLowerCase()]
+    const ratioSource = raw.percentages?.[name]
+    const value = typeof source === 'number' ? source : Number(source?.score ?? source?.value ?? source?.strength ?? 0)
+    const ratio = typeof ratioSource === 'number' ? ratioSource : null
+    return { name, value: Number.isFinite(value) ? value : 0, ratio }
+  })
+  const total = values.reduce((sum, item) => sum + Math.max(item.value, 0), 0) || 1
+  return values.map((item) => ({
+    ...item,
+    ratio: Math.max(4, Math.round(item.ratio ?? ((Math.max(item.value, 0) / total) * 100))),
+    state: (item.ratio ?? ((Math.max(item.value, 0) / total) * 100)) >= 28 ? '旺' : (item.ratio ?? 0) >= 12 ? '平' : '弱',
+  }))
+}
+
+function normalizeUsefulGod(value = {}) {
+  if (!value || typeof value !== 'object') {
+    return { useful: valueText(value, '待分析'), avoid: '待分析', favorableWuxing: [], unfavorableWuxing: [], strategyTrace: [] }
+  }
+  return {
+    useful: value.useful || value.primaryUseful || joinValue(value.primaryFavorable, '待分析'),
+    avoid: value.avoid || value.primaryAvoid || joinValue(value.primaryUnfavorable, '待分析'),
+    favorableWuxing: Array.isArray(value.favorableWuxing) ? value.favorableWuxing : [],
+    unfavorableWuxing: Array.isArray(value.unfavorableWuxing) ? value.unfavorableWuxing : [],
+    strategyTrace: Array.isArray(value.strategyTrace) ? value.strategyTrace : [],
+  }
+}
+
 function formatZiweiStar(star = {}) {
   return [star.name, star.brightness ? `(${star.brightness})` : '', star.mutagen || ''].filter(Boolean).join('')
 }
@@ -743,44 +809,61 @@ function calculateMeihuaBoard(payload) {
   const body = result.tiGua || result.bodyGua || '体卦'
   const use = result.yongGua || result.useGua || '用卦'
   const analysisText = formatAnalysis(result.analysis, '体用生克')
+  const moving = result.movingYao || {}
+  const analysis = result.analysis || {}
   return {
     meta: {
       solar: payload.datetime ? String(payload.datetime).replace('T', ' ') : '当前起卦',
       lunar: result.lunar || '由算法按起课时间换算',
       topic: payload.topic || '所问之事',
       place: payload.place || '方位未定',
-      method: '数字 / 时间 / 外应起卦',
-      movingYao: result.movingYao,
+      method: result.calculation?.method || '数字 / 时间 / 外应起卦',
+      movingYao: moving.description || moving.yaoName || result.movingYao,
       calculation: result.calculation,
+      ganzhi: result.ganzhi ? [result.ganzhi.year, result.ganzhi.month, result.ganzhi.day, result.ganzhi.hour].filter(Boolean).join(' / ') : '',
     },
-    original: {
-      label: '本卦',
-      name: originalName,
-      note: result.mainHexagram?.description || '初始态势',
-    },
-    mutual: {
-      label: '互卦',
-      name: mutualName,
-      note: result.interHexagram?.description || '过程暗线',
-    },
-    changed: {
-      label: '变卦',
-      name: changedName,
-      note: result.changedHexagram?.description || '变化结果',
-    },
+    original: formatMeihuaHexagram('本卦', result.mainHexagram, originalName, '初始态势'),
+    mutual: formatMeihuaHexagram('互卦', result.interHexagram, mutualName, '过程暗线'),
+    changed: formatMeihuaHexagram('变卦', result.changedHexagram, changedName, '变化结果'),
     relation: {
       body,
       use,
+      bodyElement: body?.element || '',
+      useElement: use?.element || '',
       text: analysisText,
-      movingLine: result.movingYao ? `${result.movingYao}爻动` : '动爻待定',
+      movingLine: moving.description || moving.yaoName || '动爻待定',
+      season: analysis.season || '',
+      tiSeasonState: analysis.tiSeasonState || '',
+      yongSeasonState: analysis.yongSeasonState || '',
+      changedRelation: analysis.changedRelation || analysis.changedTiYongRelation || '',
     },
+    yaos: Array.isArray(result.yaosDetail) ? result.yaosDetail.map((line) => ({
+      position: line.position,
+      yaoType: line.yaoType,
+      tiYong: line.tiYong,
+      isChanging: Boolean(line.isChanging),
+    })) : [],
     clues: [
       { label: '起课线索', value: payload.question || payload.context || `数字 ${number}` },
       { label: '事件类型', value: payload.topic || '未选择' },
       { label: '地点方位', value: payload.place || '未填写' },
-      { label: '计算依据', value: result.calculation || `取数 ${number}` },
+      { label: '动爻外应', value: moving.description || `取数 ${number}` },
+      { label: '应期提示', value: Array.isArray(analysis.yingQi) ? analysis.yingQi.join(' / ') : valueText(analysis.yingQi, '待观察') },
+      { label: '变卦关系', value: analysis.changedRelation || analysis.changedTiYongRelation || '待观察' },
     ],
     raw: compactRaw(result),
+  }
+}
+
+function formatMeihuaHexagram(label, hexagram = {}, fallbackName = '卦象待定', fallbackNote = '待观察') {
+  return {
+    label,
+    name: hexagram?.name || fallbackName,
+    symbol: hexagram?.symbol || '',
+    upper: hexagram?.upper || '',
+    lower: hexagram?.lower || '',
+    note: hexagram?.description || fallbackNote,
+    movingYaoCi: hexagram?.movingYaoCi || '',
   }
 }
 
@@ -1392,6 +1475,14 @@ function extractBoardFacts(board) {
       if (Array.isArray(row)) facts.push(row.map(valueText).join('：'))
     }
   }
+  if (Array.isArray(data.pillars)) {
+    for (const pillar of data.pillars.slice(0, 4)) {
+      facts.push([pillar.label, pillar.ganZhi || `${pillar.gan || ''}${pillar.zhi || ''}`, pillar.tenGod, pillar.nayin, pillar.lifeStage].filter(Boolean).map(valueText).join('：'))
+    }
+  }
+  if (Array.isArray(data.elements)) {
+    facts.push(`五行强弱：${data.elements.map((item) => `${item.name}${item.state || ''}${item.ratio ? `(${item.ratio}%)` : ''}`).join(' / ')}`)
+  }
   if (Array.isArray(data.cells)) {
     for (const cell of data.cells.slice(0, 9)) {
       facts.push(Array.isArray(cell) ? cell.map(valueText).join('/') : valueText(cell))
@@ -1411,6 +1502,9 @@ function extractBoardFacts(board) {
   }
   for (const key of ['original', 'mutual', 'changed', 'relation']) {
     if (data[key]) facts.push(`${key}：${valueText(data[key])}`)
+  }
+  if (Array.isArray(data.yaos)) {
+    facts.push(`六爻体用：${data.yaos.map((line) => `${line.position}爻${line.yaoType || ''}${line.tiYong || ''}${line.isChanging ? '动' : ''}`).join(' / ')}`)
   }
   if (Array.isArray(data.cards)) {
     for (const card of data.cards.slice(0, 6)) {

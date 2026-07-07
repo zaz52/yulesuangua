@@ -158,3 +158,26 @@
   - No horizontal overflow on 390px viewport.
   - No console errors.
   - No `qk_` localStorage keys created.
+## 2026-07-07 priority 5: enrich Meihua and Bazi plates
+
+Task: continue the production MVP by upgrading `/divine/meihua` and `/divine/bazi` from basic result boards to richer, method-specific plates.
+
+Success criteria:
+- Bazi returns and displays four pillars with heavenly stems, earthly branches, hidden stems, ten gods, five elements, nayin, twelve growth phases, strength/useful-god notes, and structured highlights.
+- Meihua returns and displays original/mutual/changed hexagrams, upper/lower trigrams, moving line, body/use relation, five-element relation, external omen, trend, and structured clues.
+- Both pages feed richer facts into `readingChart` for fixed-column AI interpretation.
+- No local records, no `qk_` keys, no automatic D1 persistence, and no "recent records" UI.
+- Build, Function syntax check, privacy scan, mobile browser validation, GitHub push, and Cloudflare deployment must pass.
+
+Architecture:
+- Keep Vue 3 + Vite + Cloudflare Pages Functions.
+- Extend existing `/api/metaphysics/calculate` result shapes rather than adding persistence or new storage.
+- Keep normalizers backward-compatible with existing array/fallback data.
+- Improve existing board components instead of adding parallel duplicate components.
+
+Progress:
+- Extended `calculateBaziBoard` with structured pillars, meta, element strength, useful/avoid notes, and advice while keeping legacy rows/highlights.
+- Extended `calculateMeihuaBoard` with original/mutual/changed hexagram details, symbols, moving line, body/use season state, six yao details, and richer clues.
+- Updated normalizers and board components to render richer Bazi and Meihua plates.
+- Updated `readingChart.facts` extraction for pillars, elements, hexagrams, relation, and yaos.
+- Validation passed locally: `npm run build`, Function syntax check, `git diff --check`, privacy scan, direct Function calls, and mobile browser E2E on local Pages dev for `/divine/bazi` and `/divine/meihua`.

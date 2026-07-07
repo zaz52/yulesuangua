@@ -536,6 +536,18 @@ function extractClientBoardFacts(data = {}) {
   if (Array.isArray(data.rows)) {
     data.rows.slice(0, 8).forEach((row) => pushPair(row[0], row.slice(1).join(' / ')))
   }
+  if (Array.isArray(data.pillars)) {
+    data.pillars.slice(0, 4).forEach((pillar) => pushPair(pillar.label, [
+      pillar.ganZhi || `${pillar.gan || ''}${pillar.zhi || ''}`,
+      pillar.tenGod,
+      pillar.nayin,
+      pillar.lifeStage,
+      Array.isArray(pillar.hiddenStems) ? `藏干${pillar.hiddenStems.join('')}` : '',
+    ].filter(Boolean).join(' / ')))
+  }
+  if (Array.isArray(data.elements)) {
+    pushPair('五行强弱', data.elements.map((item) => `${item.name}${item.state || ''}${item.ratio ? `(${item.ratio}%)` : ''}`).join(' / '))
+  }
   if (Array.isArray(data.items)) {
     data.items.slice(0, 8).forEach((item) => pushPair(item[0], item[1]))
   }
@@ -566,6 +578,22 @@ function extractClientBoardFacts(data = {}) {
   }
   if (Array.isArray(data.cards)) {
     data.cards.slice(0, 6).forEach((card) => pushPair(Array.isArray(card) ? card[0] : card.position, Array.isArray(card) ? card.slice(1).join(' / ') : [card.name, card.orientation].filter(Boolean).join(' / ')))
+  }
+  ;['original', 'mutual', 'changed'].forEach((key) => {
+    const item = data[key]
+    if (item && typeof item === 'object') pushPair(item.label || key, [item.name, item.symbol, item.note, item.movingYaoCi].filter(Boolean).join(' / '))
+  })
+  if (data.relation && typeof data.relation === 'object') {
+    pushPair('体用关系', [
+      data.relation.body,
+      data.relation.use,
+      data.relation.text,
+      data.relation.movingLine,
+      data.relation.changedRelation,
+    ].filter(Boolean).join(' / '))
+  }
+  if (Array.isArray(data.yaos)) {
+    pushPair('六爻体用', data.yaos.map((line) => `${line.position}爻${line.yaoType}${line.tiYong}${line.isChanging ? '动' : ''}`).join(' / '))
   }
   if (data.meta && typeof data.meta === 'object') {
     Object.entries(data.meta).slice(0, 8).forEach(([key, value]) => pushPair(key, Array.isArray(value) ? value.join(' / ') : value))

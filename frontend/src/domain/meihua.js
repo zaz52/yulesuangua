@@ -77,6 +77,7 @@ export function normalizeMeihuaBoard(input = {}) {
     mutual: normalizeHexagram(input.mutual, fallback.mutual),
     changed: normalizeHexagram(input.changed, fallback.changed),
     relation: normalizeRelation(input.relation, fallback.relation),
+    yaos: Array.isArray(input.yaos) && input.yaos.length ? input.yaos : fallback.yaos,
     clues: Array.isArray(input.clues) && input.clues.length ? input.clues : fallback.clues,
   }
 }
@@ -102,7 +103,19 @@ function buildStaticFallback() {
       useElement: '木',
       text: '体克用',
       movingLine: '五爻动',
+      season: '',
+      tiSeasonState: '',
+      yongSeasonState: '',
+      changedRelation: '',
     },
+    yaos: [
+      { position: 6, yaoType: '阳', tiYong: '体', isChanging: false },
+      { position: 5, yaoType: '阳', tiYong: '体', isChanging: true },
+      { position: 4, yaoType: '阳', tiYong: '体', isChanging: false },
+      { position: 3, yaoType: '阳', tiYong: '用', isChanging: false },
+      { position: 2, yaoType: '阳', tiYong: '用', isChanging: false },
+      { position: 1, yaoType: '阳', tiYong: '用', isChanging: false },
+    ],
     clues: [
       { label: '起课线索', value: '等待输入外应、数字或问题' },
       { label: '事件类型', value: '未选择' },
@@ -130,9 +143,11 @@ function normalizeHexagram(value, fallback) {
   return {
     label: value?.label || fallback.label,
     name: value?.name || value?.hexagram || hexagramName(upper, lower),
+    symbol: value?.symbol || fallback.symbol || '',
     upper,
     lower,
     note: value?.note || value?.meaning || fallback.note,
+    movingYaoCi: value?.movingYaoCi || fallback.movingYaoCi || '',
   }
 }
 
@@ -161,9 +176,11 @@ function makeHexagram(upper, lower, override = {}) {
   return {
     label: override.label || '本卦',
     name: override.name || hexagramName(upper, lower),
+    symbol: override.symbol || `${upper.symbol}${lower.symbol}`,
     upper,
     lower,
     note: override.note || `${upper.nature}上${lower.nature}下，${upper.image}而${lower.image}`,
+    movingYaoCi: override.movingYaoCi || '',
   }
 }
 
