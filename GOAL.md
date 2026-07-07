@@ -269,3 +269,27 @@ Progress:
 - Deployed Cloudflare Pages preview: `https://cb751f39.yulesuangua.pages.dev`.
 - Verified production custom domain API: `POST https://suangua.weiyiai.top/api/metaphysics/calculate` with tarot decision spread returns `200`, `mingyu-core@0.1.8`, 6 structured cards, and summary.
 - Verified production mobile browser flow on `https://suangua.weiyiai.top/divine/tarot`: decision spread renders 6 tarot cards and summary, no horizontal overflow, no console errors, and no `qk_` localStorage keys.
+
+## 2026-07-07 priority 9: full divination regression and AI schema acceptance
+
+Task: run a full regression across the core divination pages and verify the fixed-column AI answer contract.
+
+Success criteria:
+- `/divine/bazi`, `/divine/ziwei`, `/divine/qimen`, `/divine/liuyao`, `/divine/meihua`, `/divine/daliuren`, `/divine/xiaoliuren`, `/divine/fengshui`, and `/divine/tarot` can each submit from the UI and render a result board.
+- Each result has the method-specific visual board and an AI answer area with the configured fixed columns for that skill.
+- The mobile 390px viewport has no horizontal overflow, no console errors, and no `qk_` localStorage keys.
+- Privacy constraints remain unchanged: no local record storage, no recent-record UI, no automatic consultation persistence.
+- Run build, syntax checks, privacy scan, browser E2E, and document any failures with root cause and fix.
+
+Architecture:
+- Keep the existing Vue 3 + Vite + Cloudflare Pages Functions architecture.
+- Use the existing `resultSectionSchemas` in `Divine.vue` as the AI contract source of truth.
+- Prefer fixing schema/facts/rendering issues in the current components over adding duplicate pages or storage.
+
+Progress:
+- Started regression pass. Worktree was clean before this task.
+- Local build and syntax/privacy checks passed: `npm run build` passed, Function and domain JS syntax checks passed, and the privacy scan only matched documentation plus the unused `createConsultationRecord` helper.
+- Local mobile E2E on `http://127.0.0.1:4296` covered all 9 core divination pages. Bazi, Ziwei, Liuyao, Meihua, Daliuren, Xiaoliuren, Fengshui, and Tarot passed in the first run. Qimen initially timed out only at Playwright `networkidle` navigation, then passed with `domcontentloaded`.
+- Local acceptance result: all 9 pages render a method-specific result board, expected fixed-column AI schema strip, filled AI sections matching the schema count, no horizontal overflow, no console errors, and no `qk_` localStorage keys at 390px mobile viewport.
+- Production mobile E2E on `https://suangua.weiyiai.top` covered all 9 core divination pages. All pages rendered result boards and fixed-column AI sections. Some production pages needed a longer wait because real AI/SSE output stayed on the loading placeholder for more than 3 seconds; after waiting for schema fill, Bazi, Ziwei, Qimen, Liuyao, Meihua, Daliuren, Xiaoliuren, Fengshui, and Tarot all passed.
+- Production acceptance result: no horizontal overflow, no console errors, no `qk_` localStorage keys, and schema counts matched the expected fixed columns for every core skill.
