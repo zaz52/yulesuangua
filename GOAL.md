@@ -485,3 +485,6 @@ Progress:
 - Browser checks passed locally on 320px, 360px, 390px, 412px, and 430px for `/`, `/zhouyi`, `/divine/qimen`, `/tools/qiming`, and `/tools/huangli`: no horizontal overflow and no `qk_` localStorage keys.
 - Mobile result-flow checks passed locally at 390px for `/divine/qimen`, `/tools/qiming`, and `/tools/huangli`: result boards render, primary actions are finger-sized, no page-level overflow, and no `qk_` keys.
 - Validation passed: `npm run build`, Function syntax checks, frontend module syntax checks, `git diff --check`, and privacy scan. Privacy scan only found documentation references and the unused exported consultation helper.
+- Completed GitHub push: `40efbd7 feat: add mobile app responsive layout`.
+- Deployed Cloudflare Pages preview: `https://dca14a05.yulesuangua.pages.dev`.
+- Production verification on `https://suangua.weiyiai.top` passed at 320px, 390px, 430px, and 1280px for `/`, `/zhouyi`, `/divine/qimen`, `/tools/qiming`, and `/tools/huangli`: no horizontal overflow, no console errors, no `qk_` keys, and the home mobile quick ask correctly carries the question into the Zhouyi question step.
