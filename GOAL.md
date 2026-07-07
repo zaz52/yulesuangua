@@ -31,4 +31,7 @@
 - 已完成初步验证：`npm run build` 通过，`node --check frontend/functions/api/[[path]].js` 通过；隐私扫描未发现工具页本地记录或自动保存调用。
 - 已确认生产 API `https://suangua.weiyiai.top/api/metaphysics/calculate` 能返回八字结构，包含农历、四柱、日主和用神。
 - 已完成浏览器端验证：`/tools/qiming` 桌面端和 390px 移动端均能触发真实八字 API，显示 `mingyu-core@0.1.8` 来源、日主、用神、农历和 6 张候选名卡；无横向溢出、无控制台错误、无 `qk_` 本地记录。
-- 下一步：提交、推送并部署 Cloudflare Pages。
+- 已提交并推送代码：`fae9f01 feat: connect naming tool to bazi analysis`。
+- 已部署 Cloudflare Pages，预览地址：`https://c9224745.yulesuangua.pages.dev`。
+- 已完成生产验收：`https://suangua.weiyiai.top/tools/qiming` 返回 200，移动端浏览器提交起名表单可触发真实八字 API，显示 `mingyu-core@0.1.8`、日主、用神、农历和 6 张候选名卡；无横向溢出、无控制台错误、无 `qk_` 本地记录。
+- 下一步：继续把黄历/每日运势接入真实黄历与节气数据，或把周易 64 卦经典文本补全。
