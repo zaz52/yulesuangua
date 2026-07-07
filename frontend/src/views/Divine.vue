@@ -319,7 +319,7 @@ const relation = ref({ name: '', birthday: '', partner: '', status: '', focus: '
 const mind = ref({ topic: '', mood: '', context: '' })
 const eventForm = ref({ datetime: '', place: '', topic: '合作/项目' })
 const space = ref({ kind: '住宅', direction: '不确定', layout: '' })
-const tarot = ref({ spread: '三牌', topic: '选择', context: '' })
+const tarot = ref({ spread: '过去-现在-未来', topic: '选择', context: '' })
 
 const canSend = computed(() => {
   if (['bazi', 'ziwei'].includes(skillId.value)) return Boolean(profile.value.name && profile.value.birthDate && profile.value.shichen)
@@ -606,7 +606,14 @@ function extractClientBoardFacts(data = {}) {
     })
   }
   if (Array.isArray(data.cards)) {
-    data.cards.slice(0, 6).forEach((card) => pushPair(Array.isArray(card) ? card[0] : card.position, Array.isArray(card) ? card.slice(1).join(' / ') : [card.name, card.orientation].filter(Boolean).join(' / ')))
+    data.cards.slice(0, 6).forEach((card) => pushPair(Array.isArray(card) ? card[0] : card.position, Array.isArray(card) ? card.slice(1).join(' / ') : [
+      card.name,
+      card.orientation,
+      card.suit || card.type,
+      card.element,
+      Array.isArray(card.keywords) ? card.keywords.join(' ') : '',
+      card.advice,
+    ].filter(Boolean).join(' / ')))
   }
   ;['original', 'mutual', 'changed'].forEach((key) => {
     const item = data[key]

@@ -309,16 +309,116 @@ export function normalizeFengshuiBoard(data = {}) {
 }
 
 export function normalizeTarotBoard(data = {}) {
+  const fallbackCards = [
+    { position: '??', name: '???', orientation: '??', type: '????', suit: '??', element: '?', keywords: ['??', '??', '??'], meaning: '????????????????', advice: '??????????????' },
+    { position: '??', name: '??', orientation: '??', type: '????', suit: '', element: '?', keywords: ['??', '??', '??'], meaning: '???????????????', advice: '???????????????' },
+    { position: '??', name: '???', orientation: '??', type: '????', suit: '??', element: '?', keywords: ['??', '??', '??'], meaning: '????????????', advice: '????????????' },
+  ]
+  const cards = normalizeRows(data.cards, fallbackCards).map((card, index) => normalizeTarotCard(card, index))
   return {
-    spread: data.spread || '三牌阵',
-    cards: normalizeRows(data.cards, [
-      ['过去', '权杖二', '选择已经出现'],
-      ['现在', '节制', '需要重新配比资源'],
-      ['建议', '星币八', '把注意力放回可执行步骤'],
-    ]),
+    spread: data.spread || '???',
+    spreadType: data.spreadType || inferTarotSpreadType(cards),
+    topic: data.topic || '',
+    context: data.context || '',
+    cards,
+    layout: data.layout || { kind: inferTarotSpreadType(cards), columns: Math.min(Math.max(cards.length, 1), 3), positions: cards.map((card) => ({ id: card.id, position: card.position })) },
+    summary: data.summary || buildTarotSummary(cards),
   }
 }
 
 function normalizeRows(value, fallback) {
   return Array.isArray(value) && value.length ? value : fallback
+}
+
+function normalizeTarotCard(card, index) {
+  if (Array.isArray(card)) {
+    const nameText = String(card[1] || '未知牌')
+    const isReversed = /逆位/.test(nameText)
+    const name = nameText.replace(/\s*(正位|逆位)\s*/g, '').trim() || '未知牌'
+    const suit = inferTarotSuit(name)
+    return {
+      id: `${index + 1}-${card[0] || '牌位'}-${name}`,
+      index: index + 1,
+      position: card[0] || `牌位${index + 1}`,
+      name,
+      orientation: isReversed ? '逆位' : '正位',
+      isReversed,
+      type: card[2] || (suit ? '小阿卡纳' : '大阿卡纳'),
+      suit,
+      element: inferTarotElement(suit, name),
+      keywords: tarotKeywords(name, suit, isReversed),
+      meaning: card[3] || card[2] || `${name}落在${card[0] || '该牌位'}，提示需要结合现实背景观察。`,
+      advice: card[4] || '把牌面提示转化为一个可验证的小动作。',
+    }
+  }
+  const suit = card.suit || inferTarotSuit(card.name)
+  const isReversed = Boolean(card.isReversed || card.orientation === '逆位')
+  return {
+    id: card.id || `${index + 1}-${card.position || '牌位'}-${card.name || '未知牌'}`,
+    index: card.index || index + 1,
+    position: card.position || `牌位${index + 1}`,
+    name: card.name || '未知牌',
+    orientation: card.orientation || (isReversed ? '逆位' : '正位'),
+    isReversed,
+    type: card.type || (suit ? '小阿卡纳' : '大阿卡纳'),
+    suit,
+    number: card.number ?? '',
+    element: card.element || inferTarotElement(suit, card.name),
+    keywords: Array.isArray(card.keywords) && card.keywords.length ? card.keywords : tarotKeywords(card.name, suit, isReversed),
+    meaning: card.meaning || `${card.name || '该牌'}落在${card.position || '该牌位'}，提示需要结合现实背景观察。`,
+    advice: card.advice || '把牌面提示转化为一个可验证的小动作。',
+  }
+}
+
+function inferTarotSpreadType(cards) {
+  const positions = cards.map((card) => card.position).join(' ')
+  if (/选择A|选择B/.test(positions)) return 'decision'
+  if (/对方|关系/.test(positions)) return 'love'
+  if (cards.length === 1) return 'single'
+  return 'three'
+}
+
+function buildTarotSummary(cards) {
+  const reversedCount = cards.filter((card) => card.isReversed).length
+  const suitCounts = cards.reduce((acc, card) => {
+    const key = card.suit || card.type || '??'
+    acc[key] = (acc[key] || 0) + 1
+    return acc
+  }, {})
+  return {
+    dominantSuit: Object.entries(suitCounts).sort((a, b) => b[1] - a[1])[0]?.[0] || '综合',
+    reversedCount,
+    cardCount: cards.length,
+    tendency: reversedCount >= Math.ceil(cards.length / 2) ? '先复盘再行动' : '可小步推进',
+    focus: '按牌位顺序观察当前问题的节奏、阻力和可行动作。',
+  }
+}
+
+function inferTarotSuit(name = '') {
+  if (name.includes('权杖')) return '权杖'
+  if (name.includes('圣杯')) return '圣杯'
+  if (name.includes('宝剑')) return '宝剑'
+  if (name.includes('钱币') || name.includes('星币')) return '星币'
+  return ''
+}
+
+function inferTarotElement(suit, name = '') {
+  const map = { 权杖: '火', 圣杯: '水', 宝剑: '风', 钱币: '土', 星币: '土' }
+  if (map[suit]) return map[suit]
+  if (/太阳|力量|皇帝|魔术师/.test(name)) return '火'
+  if (/女祭司|月亮|星星|节制/.test(name)) return '水'
+  if (/正义|审判|命运之轮|愚者/.test(name)) return '风'
+  if (/女皇|教皇|隐士|世界/.test(name)) return '土'
+  return '灵性'
+}
+
+function tarotKeywords(name = '', suit = '', isReversed = false) {
+  const base = {
+    权杖: ['行动', '热情', '推进'],
+    圣杯: ['情绪', '关系', '感受'],
+    宝剑: ['判断', '沟通', '边界'],
+    钱币: ['资源', '现实', '稳定'],
+    星币: ['资源', '现实', '稳定'],
+  }[suit] || ['转折', '觉察', '选择']
+  return [...base, isReversed ? '复盘' : '顺势'].slice(0, 4)
 }
