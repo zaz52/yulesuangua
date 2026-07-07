@@ -83,17 +83,30 @@
       <article v-else class="result-scroll">
         <section class="scroll-left">
           <span class="section-kicker">本卦</span>
-          <h2>乾为天</h2>
+          <h2>{{ zhouyiResult.original.name }}</h2>
           <HexagramLines :lines="lines" />
-          <p>所问：{{ question || '未书写，心中默念' }}</p>
-          <strong>变卦：天风姤</strong>
+          <p>所问：{{ zhouyiResult.question }}</p>
+          <strong>变卦：{{ zhouyiResult.changed.name }}</strong>
+          <div class="hexagram-meta">
+            <span>{{ zhouyiResult.original.image }}</span>
+            <span v-if="zhouyiResult.movingLines.length">动爻：{{ zhouyiResult.movingLines.join('、') }} 爻</span>
+            <span v-else>无动爻</span>
+          </div>
         </section>
         <section class="scroll-right">
-          <div class="tag-row"><span v-for="tag in tags" :key="tag">{{ tag }}</span></div>
-          <h2>元亨，利贞。</h2>
-          <div class="reading-block"><strong>爻辞</strong><p>初九，潜龙勿用。</p></div>
-          <div class="reading-block"><strong>白话解析</strong><p>此卦象征刚健、主动、向上，但当前仍需审时度势，不宜急进。</p></div>
-          <div class="reading-block"><strong>行动建议</strong><p>宜稳中求进，先蓄势，再行动。若有变爻发光，代表当前局面正在转动，需要保留余地。</p></div>
+          <div class="tag-row"><span v-for="tag in zhouyiResult.tags" :key="tag">{{ tag }}</span></div>
+          <h2>{{ zhouyiResult.original.guaci }}</h2>
+          <div class="reading-block"><strong>象辞</strong><p>{{ zhouyiResult.original.xiang }}</p></div>
+          <div class="reading-block"><strong>爻辞</strong><p>{{ activeYaoci }}</p></div>
+          <div class="reading-block"><strong>变卦</strong><p>{{ zhouyiResult.changed.name }}：{{ zhouyiResult.changed.guaci }}</p></div>
+          <div class="reading-block"><strong>白话解析</strong><p>{{ zhouyiResult.plainText }}</p></div>
+          <div class="reading-block"><strong>行动建议</strong><p>{{ zhouyiResult.action }}</p></div>
+          <details class="yaoci-list">
+            <summary>查看六爻爻辞</summary>
+            <ol>
+              <li v-for="(item, index) in zhouyiResult.original.yaoci" :key="item" :class="{ active: zhouyiResult.movingLines.includes(index + 1) }">{{ item }}</li>
+            </ol>
+          </details>
           <p class="ritual-privacy-note">隐私保护：本次起卦问题和结果只保留在当前页面，不会自动保存到本地或远端。</p>
           <div class="action-row">
             <button class="ds-button primary" type="button" @click="resetRitual">重新起卦</button>
@@ -127,6 +140,7 @@
 <script setup>
 import { computed, defineComponent, h, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { buildZhouyiReading } from '../domain/zhouyi'
 
 const router = useRouter()
 const step = ref('intro')
@@ -137,7 +151,6 @@ const lines = ref([])
 const coinRound = ref(0)
 const breathWords = ['静心', '凝神', '起意']
 const castingWords = ['初爻已定', '二爻已成', '三爻既显', '四爻渐明', '五爻将成', '上爻既就，卦象已成']
-const tags = ['吉', '中平', '谨慎', '宜守', '宜进']
 const ritualSteps = [
   { id: 'intro', icon: '静', name: '静心引导' },
   { id: 'question', icon: '问', name: '默念所问' },
@@ -158,6 +171,11 @@ const stepTitle = computed(() => ({
 }[step.value]))
 
 const castingLabel = computed(() => castingWords[Math.max(0, lines.value.length - 1)] || '心念既定，铜钱将起')
+const zhouyiResult = computed(() => buildZhouyiReading(lines.value, question.value))
+const activeYaoci = computed(() => {
+  const index = zhouyiResult.value.activeLine ? zhouyiResult.value.activeLine - 1 : 0
+  return zhouyiResult.value.original.yaoci[index] || zhouyiResult.value.original.yaoci[0]
+})
 
 let breathTimer
 onMounted(() => {
@@ -666,6 +684,23 @@ const HexagramLines = defineComponent({
   gap: 10px;
 }
 
+.hexagram-meta {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.hexagram-meta span {
+  display: inline-flex;
+  width: fit-content;
+  padding: 6px 10px;
+  border: 1px solid rgba(143, 106, 44, 0.2);
+  border-radius: 999px;
+  color: #6f4a1f;
+  background: rgba(143, 106, 44, 0.08);
+  font-size: 13px;
+}
+
 .ritual-privacy-note {
   margin: 0;
   color: rgba(245, 234, 212, 0.62);
@@ -688,6 +723,37 @@ const HexagramLines = defineComponent({
 .reading-block strong,
 .scroll-left strong {
   color: #8f6a2c;
+}
+
+.yaoci-list {
+  margin-top: 16px;
+  border: 1px solid rgba(143, 106, 44, 0.18);
+  border-radius: 10px;
+  background: rgba(143, 106, 44, 0.06);
+}
+
+.yaoci-list summary {
+  cursor: pointer;
+  padding: 10px 12px;
+  color: #8f6a2c;
+  font-weight: 700;
+}
+
+.yaoci-list ol {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0 14px 14px 34px;
+}
+
+.yaoci-list li {
+  color: #4a2f1a;
+  line-height: 1.7;
+}
+
+.yaoci-list li.active {
+  color: var(--seal);
+  font-weight: 700;
 }
 
 .action-row {
