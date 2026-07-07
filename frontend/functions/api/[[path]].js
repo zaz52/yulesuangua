@@ -442,6 +442,8 @@ async function calculateMetaphysics(context) {
       meihua: { fn: calculateMeihuaBoard, source: 'mingyu-core@0.1.8' },
       daliuren: { fn: calculateDaliurenBoard, source: 'rules-mvp@2026-07' },
       xiaoliuren: { fn: calculateXiaoliurenBoard, source: 'mingyu-core@0.1.8' },
+      yinyuan: { fn: calculateYinyuanBoard, source: 'rules-mvp@2026-07' },
+      hehun: { fn: calculateHehunBoard, source: 'rules-mvp@2026-07' },
       fengshui: { fn: calculateFengshuiBoard, source: 'rules-mvp@2026-07' },
       tarot: { fn: calculateTarotBoard, source: 'mingyu-core@0.1.8' },
     }
@@ -873,6 +875,119 @@ function buildFengshuiAdjustments(cells, found, kind) {
     good.length ? `可用方位：${good.map((cell) => cell.direction).join('、')}，适合作为${kind}的工作、学习或会客重点。` : '暂未形成明显优势方位，建议先补光、通风和收纳。',
     found.some((item) => item.label === '床') ? '床位重点看靠背、避门冲和避镜照，先稳睡眠再谈旺运。' : '若要进一步细排，请补充床、门、窗、桌、灶、卫生间所在方位。',
   ]
+}
+
+function calculateYinyuanBoard(payload) {
+  const relation = payload.relation || {}
+  const status = relation.status || payload.status || '关系状态待定'
+  const focus = relation.focus || payload.focus || '关注点待定'
+  const name = relation.name || '你'
+  const partner = relation.partner || '对方信息待补充'
+  const birthday = relation.birthday || ''
+  const seed = stableTextSeed([name, partner, birthday, status, focus, payload.question].join('|'))
+  const dimensions = [
+    buildRelationDimension('缘分牵引', seed + 11, '彼此吸引与主动靠近程度'),
+    buildRelationDimension('沟通流动', seed + 23, '表达、回应和误会修复效率'),
+    buildRelationDimension('稳定承诺', seed + 37, '长期投入、现实责任与节奏稳定性'),
+    buildRelationDimension('时机成熟', seed + 41, '当前阶段是否适合推进或确认关系'),
+    buildRelationDimension('边界清晰', seed + 53, '需求、距离和底线是否清楚'),
+  ]
+  const score = Math.round(dimensions.reduce((sum, item) => sum + item.score, 0) / dimensions.length)
+  const phase = score >= 78 ? '可进' : score >= 62 ? '观望推进' : score >= 46 ? '先稳沟通' : '宜缓'
+  return {
+    mode: 'yinyuan',
+    title: '姻缘关系盘',
+    score,
+    phase,
+    people: [
+      { label: '自己', value: name, note: birthday || '生日未填' },
+      { label: '对方', value: partner, note: status },
+    ],
+    dimensions,
+    timeline: [
+      { label: '当下', value: status, tone: 'current' },
+      { label: '关注', value: focus, tone: 'focus' },
+      { label: '建议', value: relationAdvice(score, focus), tone: 'advice' },
+    ],
+    frictions: relationFrictions(dimensions),
+    items: [
+      ['关系阶段', status],
+      ['关注点', focus],
+      ['对方线索', partner],
+      ['建议方向', relationAdvice(score, focus)],
+    ],
+  }
+}
+
+function calculateHehunBoard(payload) {
+  const relation = payload.relation || {}
+  const mine = relation.name || '甲方'
+  const myBirthday = relation.birthday || '生日未填'
+  const partner = relation.partner || '乙方信息待补充'
+  const status = relation.status || '关系状态待定'
+  const focus = relation.focus || '长期相处'
+  const seed = stableTextSeed([mine, myBirthday, partner, status, focus, payload.question].join('|'))
+  const dimensions = [
+    buildRelationDimension('五行互补', seed + 7, '双方气质和资源是否互补'),
+    buildRelationDimension('生肖节奏', seed + 13, '生日生肖线索带来的相处节奏'),
+    buildRelationDimension('沟通模式', seed + 29, '争执、表达和修复方式'),
+    buildRelationDimension('现实协作', seed + 43, '金钱、家庭、规划与责任分配'),
+    buildRelationDimension('长期稳定', seed + 61, '承诺、耐心和共同成长空间'),
+  ]
+  const score = Math.round(dimensions.reduce((sum, item) => sum + item.score, 0) / dimensions.length)
+  const phase = score >= 80 ? '合盘较顺' : score >= 65 ? '可磨合' : score >= 50 ? '需沟通' : '宜谨慎'
+  return {
+    mode: 'hehun',
+    title: '合婚配对盘',
+    score,
+    phase,
+    people: [
+      { label: '甲方', value: mine, note: myBirthday },
+      { label: '乙方', value: partner, note: status },
+    ],
+    dimensions,
+    timeline: [
+      { label: '合盘重点', value: focus, tone: 'focus' },
+      { label: '磨合核心', value: relationFrictions(dimensions)[0] || '先看沟通节奏', tone: 'current' },
+      { label: '长期建议', value: relationAdvice(score, focus), tone: 'advice' },
+    ],
+    frictions: relationFrictions(dimensions),
+    items: [
+      ['你的信息', `${mine} / ${myBirthday}`],
+      ['对方信息', partner],
+      ['合盘重点', `${score}分 · ${phase}`],
+      ['长期磨合', relationAdvice(score, focus)],
+    ],
+  }
+}
+
+function stableTextSeed(text) {
+  return [...String(text || '')].reduce((sum, char, index) => sum + char.charCodeAt(0) * (index + 3), 0)
+}
+
+function buildRelationDimension(label, seed, note) {
+  const score = 42 + (seed % 49)
+  return {
+    label,
+    score,
+    level: score >= 78 ? '强' : score >= 62 ? '中上' : score >= 48 ? '中' : '弱',
+    note,
+  }
+}
+
+function relationAdvice(score, focus) {
+  if (score >= 78) return `围绕“${focus}”可以主动推进，但仍要把承诺、时间和边界说清楚。`
+  if (score >= 62) return `围绕“${focus}”适合小步确认，多看对方持续行动，不急着一次定论。`
+  if (score >= 46) return `围绕“${focus}”先修复沟通节奏，减少试探和情绪化表达。`
+  return `围绕“${focus}”宜放慢，先看现实反馈和基本尊重是否稳定。`
+}
+
+function relationFrictions(dimensions) {
+  return dimensions
+    .filter((item) => item.score < 62)
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 3)
+    .map((item) => `${item.label}偏弱：${item.note}`)
 }
 
 function calculateXiaoliurenBoard(payload) {

@@ -665,3 +665,18 @@
   - 已部署 Cloudflare Pages，预览地址 `https://405799c0.yulesuangua.pages.dev`。
   - 生产 API 验证通过：`daliuren` 返回 `rules-mvp@2026-07`、四课/三传结构；`fengshui` 返回 `rules-mvp@2026-07`、识别门/窗/桌/水/杂物，并生成可用方位、需调方位和调整建议。
   - 生产前端移动端验证通过：`/divine/daliuren` 渲染大六壬盘、四课、三传；`/divine/fengshui` 渲染风水九宫、评分和建议；无横向溢出、无控制台错误、无 `qk_` 本地记录。
+### 2026-07-07 补齐姻缘与合婚关系合盘
+
+- 当前任务：继续补齐非传统排盘类功能，把姻缘测算与合婚配对从简单文字卡升级为结构化关系合盘。
+- 成功标准：
+  - `/api/metaphysics/calculate` 支持 `yinyuan` 和 `hehun`，提交后不再退回前端占位卡。
+  - 姻缘结果包含关系阶段、关注点、缘分评分、沟通/稳定/时机/边界等维度和推进建议。
+  - 合婚结果包含双方信息、生肖/生日线索、合盘评分、五行/节奏/沟通/长期维度、磨合点和建议。
+  - 移动端无横向溢出，不写本地记录。
+- 已完成：
+  - 新增 `calculateYinyuanBoard()` 和 `calculateHehunBoard()`，source 标记为 `rules-mvp@2026-07`。
+  - 姻缘/合婚返回统一关系合盘结构：双方信息、总分、阶段判断、5 个关系维度、时间线和磨合点。
+  - 前端 `renderYinyuanBoard()`、`renderHehunBoard()` 改为统一 `renderRelationshipBoard()`，显示分数中心、双方信息、维度条、关系时间线和风险/磨合提示。
+  - 验证通过：`npm run build`、Functions 语法检查、本地 API 调用、移动端浏览器检查。
+  - 已部署 Cloudflare Pages，预览地址 `https://be9ed42c.yulesuangua.pages.dev`。
+  - 生产 API 验证通过：`yinyuan`、`hehun` 均返回 `rules-mvp@2026-07`、score、phase 和 5 个维度。

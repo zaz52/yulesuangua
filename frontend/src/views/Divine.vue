@@ -771,26 +771,48 @@ function renderXiaoliurenBoard(data) {
 }
 
 function renderYinyuanBoard(data) {
-  const items = data.items || []
-  return h('div', { class: 'relation-board yinyuan-board' }, [
-    h('div', { class: 'relation-orbit' }, [
-      h('span', '缘'),
-      h('strong', items[0]?.[1] || '关系阶段待定'),
-    ]),
-    h('div', { class: 'relation-panels' }, items.slice(1).map((item) => h('div', [
-      h('span', item[0]),
-      h('strong', item[1]),
-    ]))),
-  ])
+  return renderRelationshipBoard(data, '缘')
 }
 
 function renderHehunBoard(data) {
+  return renderRelationshipBoard(data, '合')
+}
+
+function renderRelationshipBoard(data = {}, mark = '缘') {
   const items = data.items || []
-  return h('div', { class: 'hehun-board' }, [
-    h('div', { class: 'hehun-person left' }, [h('span', '甲方'), h('strong', items[0]?.[1] || '你的信息待填')]),
-    h('div', { class: 'hehun-score' }, [h('b', '合'), h('span', items[2]?.[1] || '合盘重点待定')]),
-    h('div', { class: 'hehun-person right' }, [h('span', '乙方'), h('strong', items[1]?.[1] || '对方信息待填')]),
-    h('div', { class: 'hehun-note' }, items.slice(2).map((item) => h('p', [h('strong', `${item[0]}：`), item[1]]))),
+  const people = Array.isArray(data.people) && data.people.length ? data.people : [
+    { label: '自己', value: items[0]?.[1] || '你的信息待填', note: '' },
+    { label: '对方', value: items[1]?.[1] || '对方信息待填', note: '' },
+  ]
+  const dimensions = Array.isArray(data.dimensions) && data.dimensions.length ? data.dimensions : [
+    { label: '沟通流动', score: 60, level: '中', note: '表达和回应节奏' },
+    { label: '稳定承诺', score: 58, level: '中', note: '长期投入和现实责任' },
+    { label: '时机成熟', score: 62, level: '中上', note: '推进关系的时间窗口' },
+  ]
+  const timeline = Array.isArray(data.timeline) ? data.timeline : []
+  const frictions = Array.isArray(data.frictions) ? data.frictions : []
+  const score = Number.isFinite(data.score) ? data.score : Math.round(dimensions.reduce((sum, item) => sum + item.score, 0) / dimensions.length)
+  return h('div', { class: ['relationship-board', data.mode === 'hehun' ? 'is-hehun' : 'is-yinyuan'] }, [
+    h('div', { class: 'relationship-people' }, people.slice(0, 2).map((person) => h('article', [
+      h('span', person.label),
+      h('strong', person.value),
+      person.note ? h('em', person.note) : null,
+    ]))),
+    h('div', { class: 'relationship-score' }, [
+      h('b', mark),
+      h('strong', `${score}`),
+      h('span', data.phase || '关系合盘'),
+    ]),
+    h('div', { class: 'relationship-dimensions' }, dimensions.map((item) => h('section', [
+      h('div', [h('span', item.label), h('em', `${item.score} · ${item.level}`)]),
+      h('i', [h('b', { style: { width: `${Math.max(8, Math.min(100, item.score))}%` } })]),
+      h('p', item.note),
+    ]))),
+    timeline.length ? h('div', { class: 'relationship-timeline' }, timeline.map((item) => h('article', [
+      h('span', item.label),
+      h('strong', item.value),
+    ]))) : null,
+    frictions.length ? h('div', { class: 'relationship-frictions' }, frictions.map((item) => h('p', item))) : null,
   ])
 }
 
@@ -1245,8 +1267,7 @@ function renderGenericBoard(data) {
 .meihua-flow,
 .daliuren-board,
 .xiaoliuren-wheel,
-.relation-board,
-.hehun-board,
+.relationship-board,
 .fojiao-scroll,
 .fengshui-compass,
 .fengshui-nine-grid,
@@ -2005,8 +2026,7 @@ function renderGenericBoard(data) {
 }
 
 .xiaoliuren-center strong,
-.relation-orbit strong,
-.hehun-score b,
+.relationship-score b,
 .daily-sun strong {
   color: var(--gold-bright);
   font-family: var(--font-display);
@@ -2016,8 +2036,7 @@ function renderGenericBoard(data) {
 
 .xiaoliuren-center span,
 .xiaoliuren-gate em,
-.relation-orbit span,
-.hehun-score span,
+.relationship-score span,
 .daily-sun span {
   color: var(--paper-dim);
 }
@@ -2038,87 +2057,162 @@ function renderGenericBoard(data) {
   font-size: 24px;
 }
 
-.relation-board {
+.relationship-board {
   display: grid;
-  grid-template-columns: 260px minmax(0, 1fr);
-  gap: 14px;
-  padding: 14px;
-}
-
-.relation-orbit {
-  display: grid;
-  min-height: 260px;
-  place-items: center;
-  align-content: center;
-  gap: 10px;
-  border: 1px solid rgba(215, 179, 95, 0.24);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(184, 58, 47, 0.16), rgba(215, 179, 95, 0.08), transparent 70%);
-  text-align: center;
-}
-
-.relation-orbit span {
-  font-family: var(--font-display);
-  font-size: 56px;
-}
-
-.relation-panels {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.relation-panels div {
-  display: grid;
-  align-content: center;
-  gap: 7px;
-  min-height: 120px;
-  padding: 14px;
-  border: 1px solid rgba(215, 179, 95, 0.14);
-  border-radius: var(--radius-xs);
-  background: rgba(255, 247, 231, 0.04);
-}
-
-.hehun-board {
-  display: grid;
-  grid-template-columns: 1fr 150px 1fr;
+  grid-template-columns: minmax(0, 1fr) 160px minmax(0, 1fr);
   gap: 12px;
   padding: 14px;
 }
 
-.hehun-person,
-.hehun-score {
-  display: grid;
-  min-height: 180px;
-  place-items: center;
-  align-content: center;
-  gap: 9px;
-  padding: 14px;
+.relationship-people {
+  display: contents;
+}
+
+.relationship-people article,
+.relationship-score,
+.relationship-timeline article,
+.relationship-frictions,
+.relationship-dimensions section {
   border: 1px solid rgba(215, 179, 95, 0.16);
   border-radius: var(--radius-xs);
   background: rgba(255, 247, 231, 0.04);
+}
+
+.relationship-people article {
+  display: grid;
+  min-height: 150px;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  padding: 14px;
   text-align: center;
 }
 
-.hehun-score {
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(184, 58, 47, 0.2), rgba(215, 179, 95, 0.08));
+.relationship-people article:first-child {
+  grid-column: 1;
 }
 
-.hehun-note {
+.relationship-people article:nth-child(2) {
+  grid-column: 3;
+}
+
+.relationship-score {
+  display: grid;
+  grid-column: 2;
+  grid-row: 1;
+  width: 150px;
+  min-height: 150px;
+  place-items: center;
+  align-content: center;
+  justify-self: center;
+  gap: 5px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(184, 58, 47, 0.2), rgba(215, 179, 95, 0.08), transparent 72%);
+  text-align: center;
+}
+
+.relationship-score b {
+  color: var(--seal);
+  font-family: var(--font-display);
+  font-size: 34px;
+  font-weight: 400;
+}
+
+.relationship-score strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.relationship-people span,
+.relationship-score span,
+.relationship-timeline span,
+.relationship-dimensions span,
+.relationship-people em,
+.relationship-dimensions p {
+  color: var(--paper-dim);
+}
+
+.relationship-people strong,
+.relationship-timeline strong {
+  color: var(--gold-bright);
+}
+
+.relationship-people em {
+  font-style: normal;
+}
+
+.relationship-dimensions,
+.relationship-timeline,
+.relationship-frictions {
   display: grid;
   grid-column: 1 / -1;
   gap: 8px;
-  padding: 14px;
-  border: 1px solid rgba(215, 179, 95, 0.12);
-  border-radius: var(--radius-xs);
+}
+
+.relationship-dimensions {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.relationship-dimensions section {
+  display: grid;
+  gap: 7px;
+  padding: 11px;
+}
+
+.relationship-dimensions section div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.relationship-dimensions em {
+  color: var(--gold-bright);
+  font-style: normal;
+  white-space: nowrap;
+}
+
+.relationship-dimensions i {
+  display: block;
+  height: 5px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(245, 234, 212, 0.12);
+}
+
+.relationship-dimensions i b {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(184, 58, 47, 0.72), rgba(215, 179, 95, 0.82));
+}
+
+.relationship-dimensions p,
+.relationship-frictions p,
+.fojiao-lines p {
+  margin: 0;
+}
+
+.relationship-timeline {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.relationship-timeline article {
+  display: grid;
+  gap: 5px;
+  padding: 11px;
+}
+
+.relationship-frictions {
+  padding: 12px;
   background: rgba(0, 0, 0, 0.12);
 }
 
-.hehun-note p,
-.fojiao-lines p {
-  margin: 0;
-  color: var(--paper-dim);
+.relationship-frictions p {
+  color: var(--paper);
+  line-height: 1.6;
 }
 
 .fojiao-scroll {
@@ -2358,8 +2452,8 @@ function renderGenericBoard(data) {
 
   .form-grid,
   .daliuren-board,
-  .relation-board,
-  .hehun-board,
+  .relationship-dimensions,
+  .relationship-timeline,
   .daily-board,
   .meihua-pro-grid,
   .meihua-flow,
@@ -2373,8 +2467,17 @@ function renderGenericBoard(data) {
     min-height: 190px;
   }
 
-  .hehun-score {
-    border-radius: var(--radius-xs);
+  .relationship-board {
+    grid-template-columns: minmax(0, 1fr) 140px minmax(0, 1fr);
+  }
+
+  .relationship-score {
+    width: 136px;
+    min-height: 136px;
+  }
+
+  .relationship-dimensions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .ziwei-palace-grid {
@@ -2405,16 +2508,38 @@ function renderGenericBoard(data) {
   }
 
   .daliuren-board,
-  .relation-board,
-  .hehun-board,
+  .relationship-board,
+  .relationship-dimensions,
+  .relationship-timeline,
   .daily-board,
   .meihua-flow,
   .daliuren-pass,
   .daliuren-grid,
-  .relation-panels,
   .daily-rhythm,
   .fojiao-scroll {
     grid-template-columns: 1fr;
+  }
+
+  .relationship-people {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .relationship-people article:first-child,
+  .relationship-people article:nth-child(2),
+  .relationship-score,
+  .relationship-dimensions,
+  .relationship-timeline,
+  .relationship-frictions {
+    grid-column: 1;
+  }
+
+  .relationship-score {
+    grid-row: auto;
+    width: 100%;
+    min-height: 112px;
+    border-radius: var(--radius-xs);
   }
 
   .wide {
