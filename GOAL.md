@@ -405,3 +405,6 @@ Progress:
 - Validation passed so far: `npm run build`, Function syntax check, shared schema syntax check, `git diff --check`, and direct schema unit checks for qimen, bazi, and tarot.
 - Local Pages dev browser E2E passed on `http://127.0.0.1:4300` for `/divine/qimen`, `/divine/bazi`, and `/divine/tarot`: schema strip and rendered answer sections exactly matched the shared fixed-column contract, with no horizontal overflow, no console errors, and no `qk_` localStorage keys.
 - Privacy scan after the change found no new local record storage or automatic persistence calls.
+- Completed GitHub push: `078e38d feat: unify ai reading section schema`.
+- Deployed Cloudflare Pages preview: `https://53e00879.yulesuangua.pages.dev`.
+- Production E2E on `https://suangua.weiyiai.top` passed for `/divine/qimen`, `/divine/bazi`, and `/divine/tarot`: schema strip and rendered sections exactly matched the shared fixed-column contract, with no horizontal overflow, no console errors, and no `qk_` localStorage keys.
