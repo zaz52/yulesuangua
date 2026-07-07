@@ -26,13 +26,14 @@
   --font-serif: "Source Han Serif SC", "Songti SC", "SimSun", "STSong", serif;
   --font-display: "Songti SC", "STKaiti", "KaiTi", "Source Han Serif SC", serif;
   --max: 1180px;
-  --mobile-bg: #f7f1e8;
-  --mobile-card: rgba(255, 255, 255, 0.88);
-  --mobile-text: #2b2118;
-  --mobile-muted: #7a6a58;
-  --mobile-primary: #8b5e34;
-  --mobile-primary-dark: #5f3b1f;
-  --mobile-border: rgba(92, 64, 38, 0.16);
+  --mobile-bg: #120c09;
+  --mobile-card: rgba(38, 24, 16, 0.94);
+  --mobile-card-soft: rgba(255, 247, 231, 0.07);
+  --mobile-text: #fff4dc;
+  --mobile-muted: rgba(255, 244, 220, 0.74);
+  --mobile-primary: #d0a85d;
+  --mobile-primary-dark: #8f4b2e;
+  --mobile-border: rgba(240, 217, 132, 0.22);
 }
 
 *,
@@ -949,7 +950,7 @@ a {
 
 @media (max-width: 768px) {
   :root {
-    color-scheme: light;
+    color-scheme: dark;
   }
 
   html,
@@ -966,15 +967,16 @@ a {
     font-size: 15px;
     line-height: 1.6;
     background:
-      radial-gradient(circle at 20% 0%, rgba(215, 179, 95, 0.22), transparent 34%),
-      linear-gradient(180deg, #fbf6ed 0%, var(--mobile-bg) 52%, #efe1cc 100%);
+      radial-gradient(circle at 18% 0%, rgba(215, 179, 95, 0.18), transparent 34%),
+      radial-gradient(circle at 88% 14%, rgba(184, 58, 47, 0.14), transparent 28%),
+      linear-gradient(180deg, #1b100b 0%, var(--mobile-bg) 58%, #090604 100%);
   }
 
   body::before {
     opacity: 0.28;
     background:
-      linear-gradient(rgba(139, 94, 52, 0.07) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(139, 94, 52, 0.06) 1px, transparent 1px);
+      linear-gradient(rgba(240, 217, 132, 0.07) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240, 217, 132, 0.06) 1px, transparent 1px);
     background-size: 28px 28px;
   }
 
@@ -1007,9 +1009,10 @@ a {
     border-radius: 20px;
     color: var(--mobile-text);
     background:
-      radial-gradient(circle at 92% 12%, rgba(215, 179, 95, 0.18), transparent 36%),
+      radial-gradient(circle at 92% 12%, rgba(215, 179, 95, 0.16), transparent 36%),
+      linear-gradient(180deg, rgba(255, 247, 231, 0.08), rgba(0, 0, 0, 0.1)),
       var(--mobile-card);
-    box-shadow: 0 14px 30px rgba(95, 59, 31, 0.12);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
     backdrop-filter: blur(18px);
   }
 
@@ -1092,8 +1095,9 @@ a {
     color: var(--mobile-text);
     background:
       radial-gradient(circle at 92% 0%, rgba(215, 179, 95, 0.16), transparent 36%),
+      linear-gradient(180deg, rgba(255, 247, 231, 0.075), rgba(0, 0, 0, 0.12)),
       var(--mobile-card);
-    box-shadow: 0 12px 28px rgba(95, 59, 31, 0.1);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
   }
 
   .hero-workspace {
@@ -1121,7 +1125,7 @@ a {
   .section-kicker,
   .ds-badge,
   .method-tags span {
-    color: var(--mobile-primary-dark);
+    color: var(--mobile-primary);
   }
 
   .method-tags {
@@ -1206,8 +1210,24 @@ a {
     width: 100%;
     min-width: 0;
     min-height: 44px;
+    border-color: rgba(240, 217, 132, 0.24);
     border-radius: 12px;
+    color: var(--mobile-text);
+    background: rgba(10, 6, 4, 0.48);
     font-size: 16px;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: rgba(255, 244, 220, 0.42);
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: rgba(240, 217, 132, 0.62);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(215, 179, 95, 0.16);
   }
 
   textarea {
@@ -1249,9 +1269,9 @@ a {
   .primary-button,
   .btn-primary {
     border: 0;
-    color: #fff;
-    background: linear-gradient(135deg, var(--mobile-primary), var(--mobile-primary-dark));
-    box-shadow: 0 10px 24px rgba(95, 59, 31, 0.22);
+    color: #241409;
+    background: linear-gradient(135deg, #f0d984, #c88b38 58%, #8f4b2e);
+    box-shadow: 0 10px 24px rgba(143, 75, 46, 0.28);
   }
 
   .ds-button:active,
@@ -1261,8 +1281,9 @@ a {
   }
 
   .ds-button.ghost {
-    color: var(--mobile-primary-dark);
-    background: rgba(255, 255, 255, 0.56);
+    border-color: rgba(240, 217, 132, 0.24);
+    color: var(--mobile-text);
+    background: rgba(255, 247, 231, 0.08);
   }
 
   .result-list {
@@ -1283,7 +1304,7 @@ a {
   .answer-section {
     border-radius: 16px;
     padding: 14px;
-    background: rgba(255, 255, 255, 0.52);
+    background: var(--mobile-card-soft);
   }
 
   .answer-section p {

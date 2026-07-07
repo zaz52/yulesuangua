@@ -858,8 +858,9 @@ const HexagramLines = defineComponent({
     padding: max(10px, env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom));
     color: var(--mobile-text);
     background:
-      radial-gradient(circle at 20% 0%, rgba(215, 179, 95, 0.2), transparent 34%),
-      linear-gradient(180deg, #fbf6ed 0%, var(--mobile-bg) 56%, #efe1cc 100%);
+      radial-gradient(circle at 18% 0%, rgba(215, 179, 95, 0.18), transparent 34%),
+      radial-gradient(circle at 88% 14%, rgba(184, 58, 47, 0.14), transparent 28%),
+      linear-gradient(180deg, #1b100b 0%, var(--mobile-bg) 56%, #090604 100%);
   }
 
   .ritual-nav {
@@ -874,8 +875,11 @@ const HexagramLines = defineComponent({
     border: 1px solid var(--mobile-border);
     border-radius: 20px;
     color: var(--mobile-text);
-    background: var(--mobile-card);
-    box-shadow: 0 14px 30px rgba(95, 59, 31, 0.12);
+    background:
+      radial-gradient(circle at 92% 12%, rgba(215, 179, 95, 0.16), transparent 36%),
+      linear-gradient(180deg, rgba(255, 247, 231, 0.08), rgba(0, 0, 0, 0.1)),
+      var(--mobile-card);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28);
   }
 
   .ritual-nav h1 {
@@ -916,8 +920,11 @@ const HexagramLines = defineComponent({
     border: 1px solid var(--mobile-border);
     border-radius: 20px;
     color: var(--mobile-text);
-    background: var(--mobile-card);
-    box-shadow: 0 12px 28px rgba(95, 59, 31, 0.1);
+    background:
+      radial-gradient(circle at 92% 0%, rgba(215, 179, 95, 0.16), transparent 36%),
+      linear-gradient(180deg, rgba(255, 247, 231, 0.075), rgba(0, 0, 0, 0.12)),
+      var(--mobile-card);
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.24);
   }
 
   .stage-card h2,

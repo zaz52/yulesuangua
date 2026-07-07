@@ -938,7 +938,7 @@ function startMobileAsk() {
     padding: 14px;
     border: 1px solid var(--mobile-border);
     border-radius: 18px;
-    background: rgba(255, 255, 255, 0.58);
+    background: rgba(255, 247, 231, 0.07);
   }
 
   .mobile-quick-ask label {
@@ -947,7 +947,7 @@ function startMobileAsk() {
   }
 
   .mobile-quick-ask span {
-    color: var(--mobile-primary-dark);
+    color: var(--mobile-primary);
     font-size: 14px;
     font-weight: 700;
   }
@@ -971,9 +971,7 @@ function startMobileAsk() {
 
   .home-hero .hero-visual,
   .hero-plate {
-    min-height: 220px;
-    margin-top: 8px;
-    border-radius: 18px;
+    display: none;
   }
 
   .bagua-orbit {

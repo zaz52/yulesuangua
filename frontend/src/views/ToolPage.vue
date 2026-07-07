@@ -2512,7 +2512,7 @@ function buildWishBoard(form = {}, count = 108, message = '') {
     border: 1px solid var(--mobile-border);
     border-radius: 16px;
     color: var(--mobile-muted);
-    background: rgba(255, 255, 255, 0.6);
+    background: rgba(255, 247, 231, 0.07);
   }
 
   .work-card {
