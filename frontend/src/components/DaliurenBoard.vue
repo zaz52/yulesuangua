@@ -7,12 +7,24 @@
       <span v-for="(item, index) in board.gods" :key="item" :style="{ '--a': `${index * 60 + 15}deg` }">{{ item }}</span>
     </div>
     <article class="daliuren-center">
-      <strong>{{ board.center.time }}</strong>
-      <span>日辰：{{ board.center.day }}</span>
-      <span>占时：{{ board.center.hour }}</span>
-      <span>月将：{{ board.center.monthGeneral }}</span>
-      <em>{{ board.center.lessonType }}</em>
+      <strong>{{ board.meta.lessonType }}</strong>
+      <span>日辰：{{ board.meta.day }}</span>
+      <span>占时：{{ board.meta.hour }}</span>
+      <span>月将：{{ board.meta.monthGeneral }}</span>
+      <em>{{ board.meta.useBranch }} {{ board.meta.useGod }}</em>
     </article>
+    <div class="daliuren-sky-grid" aria-label="天盘十二位">
+      <div
+        v-for="item in board.heavenlyPlate"
+        :key="`${item.branch}-${item.sky}`"
+        :class="{ 'is-use': item.isUse, 'is-hour': item.isHour, 'is-day': item.isDay }"
+      >
+        <span>{{ item.branch }}</span>
+        <strong>{{ item.sky }}</strong>
+        <em>{{ item.god }}</em>
+        <small>{{ item.note || item.relation }}</small>
+      </div>
+    </div>
     <div class="daliuren-pass">
       <div v-for="item in board.threePasses" :key="item.label">
         <span>{{ item.label }}</span>
@@ -28,8 +40,9 @@
       </article>
     </div>
     <footer class="daliuren-foot">
-      <span>课体：{{ board.center.lessonType }}</span>
-      <span>主题：{{ board.center.topic || board.items[3]?.[1] }}</span>
+      <span>课体：{{ board.meta.lessonType }}</span>
+      <span>主题：{{ board.meta.topic }}</span>
+      <span>旬首：{{ board.center.xun }}</span>
     </footer>
   </section>
 </template>
@@ -61,6 +74,7 @@ const board = computed(() => normalizeDaliurenBoard(props.data))
 .daliuren-center,
 .daliuren-pass,
 .daliuren-lessons,
+.daliuren-sky-grid,
 .daliuren-foot {
   position: absolute;
 }
@@ -109,7 +123,10 @@ const board = computed(() => normalizeDaliurenBoard(props.data))
 .daliuren-foot span,
 .daliuren-pass span,
 .daliuren-lessons span,
-.daliuren-lessons em {
+.daliuren-lessons em,
+.daliuren-sky-grid span,
+.daliuren-sky-grid em,
+.daliuren-sky-grid small {
   color: var(--paper-dim);
 }
 
@@ -173,6 +190,46 @@ const board = computed(() => normalizeDaliurenBoard(props.data))
   font-size: 11px;
 }
 
+.daliuren-sky-grid {
+  top: 122px;
+  right: 36px;
+  left: 36px;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.daliuren-sky-grid div {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+  padding: 5px;
+  border: 1px solid rgba(215, 179, 95, 0.1);
+  border-radius: var(--radius-xs);
+  background: rgba(0, 0, 0, 0.16);
+  text-align: center;
+}
+
+.daliuren-sky-grid strong {
+  color: var(--gold-bright);
+  font-size: 14px;
+}
+
+.daliuren-sky-grid small {
+  min-height: 14px;
+  font-size: 10px;
+}
+
+.daliuren-sky-grid .is-use {
+  border-color: rgba(184, 58, 47, 0.62);
+  box-shadow: 0 0 14px rgba(184, 58, 47, 0.16);
+}
+
+.daliuren-sky-grid .is-hour,
+.daliuren-sky-grid .is-day {
+  border-color: rgba(240, 217, 132, 0.34);
+}
+
 .daliuren-foot {
   bottom: 14px;
 }
@@ -198,6 +255,23 @@ const board = computed(() => normalizeDaliurenBoard(props.data))
     left: 8px;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 4px;
+  }
+
+  .daliuren-sky-grid {
+    top: 112px;
+    right: 10px;
+    left: 10px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 3px;
+  }
+
+  .daliuren-sky-grid div {
+    padding: 3px;
+  }
+
+  .daliuren-sky-grid em,
+  .daliuren-sky-grid small {
+    display: none;
   }
 
   .daliuren-lessons article {

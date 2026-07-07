@@ -1,18 +1,38 @@
 <template>
-  <section class="xiaoliuren-board" aria-label="小六壬六宫盘">
-    <article class="xiaoliuren-center">
-      <strong>小六壬</strong>
-      <span>六宫速断</span>
-    </article>
-    <article
-      v-for="(item, index) in board.items"
-      :key="item[0]"
-      class="xiaoliuren-gate"
-      :style="{ '--a': `${index * 60}deg` }"
-    >
-      <span>{{ item[0] }}</span>
-      <em>{{ item[1] }}</em>
-    </article>
+  <section class="xiaoliuren-board-shell" aria-label="小六壬六宫盘">
+    <div class="xiaoliuren-board">
+      <article class="xiaoliuren-center">
+        <span>{{ board.meta.method }}</span>
+        <strong>{{ board.meta.primary }}</strong>
+        <em>{{ board.meta.fortune || board.meta.tendency }}</em>
+      </article>
+      <article
+        v-for="(item, index) in board.palaces"
+        :key="item.name"
+        class="xiaoliuren-gate"
+        :class="{ 'is-primary': item.isPrimary, 'is-sequence': item.isInSequence }"
+        :style="{ '--a': `${index * 60}deg` }"
+      >
+        <span>{{ item.name }}</span>
+        <b>{{ item.element }} · {{ item.fortune }}</b>
+        <em>{{ item.tendency }}</em>
+      </article>
+    </div>
+
+    <div class="xiaoliuren-stages" aria-label="起因过程结果">
+      <article v-for="stage in board.stages" :key="stage.key || stage.label">
+        <span>{{ stage.label }}</span>
+        <strong>{{ stage.name }}</strong>
+        <em>{{ stage.state || stage.tendency || '待观察' }}</em>
+      </article>
+    </div>
+
+    <footer class="xiaoliuren-meta">
+      <span>方位：{{ board.meta.direction || '待定' }}</span>
+      <span>应期：{{ board.meta.timing || '待定' }}</span>
+      <span>神煞：{{ board.meta.shenSha || '待定' }}</span>
+      <p>{{ board.meta.questionHint || board.meta.relation || '以当前六宫落点作快速参考。' }}</p>
+    </footer>
   </section>
 </template>
 
@@ -25,6 +45,12 @@ const board = computed(() => normalizeXiaoliurenBoard(props.data))
 </script>
 
 <style scoped>
+.xiaoliuren-board-shell {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+}
+
 .xiaoliuren-board {
   position: relative;
   display: grid;
@@ -46,6 +72,8 @@ const board = computed(() => normalizeXiaoliurenBoard(props.data))
 }
 
 .xiaoliuren-center {
+  align-content: center;
+  gap: 5px;
   width: 140px;
   height: 140px;
   border: 1px solid rgba(240, 217, 132, 0.4);
@@ -65,7 +93,12 @@ const board = computed(() => normalizeXiaoliurenBoard(props.data))
 }
 
 .xiaoliuren-center span,
-.xiaoliuren-gate em {
+.xiaoliuren-center em,
+.xiaoliuren-gate em,
+.xiaoliuren-gate b,
+.xiaoliuren-stages span,
+.xiaoliuren-stages em,
+.xiaoliuren-meta {
   color: var(--paper-dim);
   font-style: normal;
 }
@@ -84,6 +117,67 @@ const board = computed(() => normalizeXiaoliurenBoard(props.data))
   font-size: 24px;
 }
 
+.xiaoliuren-gate b {
+  font-size: 11px;
+}
+
+.xiaoliuren-gate.is-primary {
+  border-color: rgba(184, 58, 47, 0.68);
+  box-shadow: 0 0 18px rgba(184, 58, 47, 0.18);
+}
+
+.xiaoliuren-gate.is-sequence:not(.is-primary) {
+  border-color: rgba(240, 217, 132, 0.34);
+}
+
+.xiaoliuren-stages,
+.xiaoliuren-meta {
+  display: grid;
+  width: min(620px, 100%);
+  border: 1px solid rgba(215, 179, 95, 0.14);
+  border-radius: var(--radius-xs);
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.xiaoliuren-stages {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+}
+
+.xiaoliuren-stages article {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid rgba(215, 179, 95, 0.1);
+  border-radius: var(--radius-xs);
+  text-align: center;
+}
+
+.xiaoliuren-stages strong {
+  color: var(--gold-bright);
+}
+
+.xiaoliuren-meta {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 10px;
+}
+
+.xiaoliuren-meta span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.xiaoliuren-meta p {
+  grid-column: 1 / -1;
+  margin: 0;
+  color: var(--paper);
+  line-height: 1.55;
+}
+
 @media (max-width: 680px) {
   .xiaoliuren-board {
     width: min(330px, 94vw);
@@ -100,9 +194,18 @@ const board = computed(() => normalizeXiaoliurenBoard(props.data))
     display: none;
   }
 
+  .xiaoliuren-gate b {
+    display: none;
+  }
+
   .xiaoliuren-center {
     width: 112px;
     height: 112px;
+  }
+
+  .xiaoliuren-stages,
+  .xiaoliuren-meta {
+    grid-template-columns: 1fr;
   }
 }
 </style>

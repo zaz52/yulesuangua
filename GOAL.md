@@ -187,3 +187,25 @@ Progress:
   - `bazi` returns 4 pillars, 5 element stats, day master, strength, pattern, useful and avoid fields.
   - `meihua` returns original hexagram, 6 yaos, 6 clues, moving line, and changed relation.
 - Verified production mobile browser flow on `https://suangua.weiyiai.top/divine/bazi` and `/divine/meihua`: result plates render, no horizontal overflow, no console errors, and no `qk_` localStorage keys.
+## 2026-07-07 priority 6: enrich Daliuren and Xiaoliuren plates
+
+Task: continue the production MVP by upgrading `/divine/daliuren` and `/divine/xiaoliuren` into richer method-specific plates.
+
+Success criteria:
+- Daliuren displays structured four lessons, three transmissions, heavenly plate, month general, day/hour branches, lesson type, key marks, and event context.
+- Xiaoliuren displays six palace cycle, active palace, start/process/result, direction, timing, tendency, and action guidance.
+- Both result shapes feed structured facts into `readingChart` and backend AI extraction.
+- No local records, no `qk_` keys, no automatic D1 persistence, and no recent-record UI.
+- Build, Function syntax check, privacy scan, browser validation, GitHub push, and Cloudflare deployment pass.
+
+Architecture:
+- Keep existing `/api/metaphysics/calculate` endpoint.
+- Extend current Daliuren/Xiaoliuren result objects and board components.
+- Preserve fallback compatibility for existing array-based data.
+
+Progress:
+- Extended `calculateDaliurenBoard` with `meta`, 12 heavenly plate cells, use/hour/day marks, relation tags, four lessons, and three transmissions.
+- Extended `calculateXiaoliurenBoard` with `meta`, six palace cards, active primary palace, start/process/result stages, timing, direction, fortune, shenSha, and relation guidance.
+- Updated normalizers and board components for Daliuren/Xiaoliuren richer plates.
+- Updated frontend and backend fact extraction for four lessons, three transmissions, heavenly plate, six palaces, and stages.
+- Validation passed locally: `npm run build`, Function syntax check, `git diff --check`, privacy scan, direct Function calls, and mobile browser E2E on local Pages dev for `/divine/daliuren` and `/divine/xiaoliuren`.

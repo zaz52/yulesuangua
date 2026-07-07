@@ -899,6 +899,10 @@ function calculateDaliurenBoard(payload) {
     god: gods[index],
     sky: branches[(index + branches.indexOf(monthGeneral) + 12) % 12],
     note: index === useIndex ? '发用' : index === hourIndex ? '占时' : index === dayIndex ? '日支' : '',
+    isUse: index === useIndex,
+    isHour: index === hourIndex,
+    isDay: index === dayIndex,
+    relation: relationByOffset((index - dayIndex + 12) % 12),
   }))
   const fourLessons = [
     { label: '一课', stem: dayStem, branch: branches[(dayIndex + 1) % 12], god: gods[(dayIndex + 1) % 12], role: '日干上神' },
@@ -918,6 +922,19 @@ function calculateDaliurenBoard(payload) {
     branches,
     gods,
     heavenlyPlate,
+    meta: {
+      time: payload.datetime ? String(payload.datetime).replace('T', ' ') : date.toISOString().slice(0, 16).replace('T', ' '),
+      topic,
+      day: ganZhi.day,
+      hour: ganZhi.hour,
+      monthGeneral,
+      dayStem,
+      dayBranch,
+      hourBranch,
+      lessonType,
+      useBranch: branches[useIndex],
+      useGod: gods[useIndex],
+    },
     fourLessons,
     threePasses,
     passes: threePasses.map((item) => `${item.branch}${item.god}`),
@@ -1355,7 +1372,39 @@ function calculateXiaoliurenBoard(payload) {
     customDate: payload.datetime ? new Date(payload.datetime) : new Date(),
   })
   const seq = result.sequence || {}
+  const palaces = buildXiaoliurenPalaces(result)
+  const stages = [
+    { label: '起因', key: 'start', palace: seq.start || null, state: result.seasonStates?.start || '' },
+    { label: '过程', key: 'process', palace: seq.process || null, state: result.seasonStates?.process || '' },
+    { label: '结果', key: 'result', palace: seq.result || result.primary || null, state: result.seasonStates?.result || '' },
+  ].map((stage) => ({
+    ...stage,
+    name: stage.palace?.name || '待定',
+    element: stage.palace?.element || '',
+    fortune: stage.palace?.fortune || '',
+    tendency: stage.palace?.tendency || '',
+    advice: stage.palace?.advice || '',
+    direction: stage.palace?.direction || '',
+    shenSha: stage.palace?.shenSha || '',
+  }))
   return {
+    meta: {
+      method: result.methodLabel || '时间起课',
+      time: payload.datetime ? String(payload.datetime).replace('T', ' ') : new Date(result.timestamp || Date.now()).toISOString().slice(0, 16).replace('T', ' '),
+      lunar: `农历${result.lunarMonth || ''}月${result.lunarDay || ''}日`,
+      hour: result.hourLabel || '',
+      primary: result.primary?.name || seq.result?.name || '待定',
+      tendency: result.tendency || '待定',
+      fortune: result.fortune || '',
+      direction: result.direction || '',
+      timing: result.yingQi || result.timing || '',
+      shenSha: result.shenSha || '',
+      bodyPart: result.bodyPart || '',
+      relation: result.wuxingRelations?.description || '',
+      questionHint: result.questionHint || '',
+    },
+    palaces,
+    stages,
     items: [
       ['起因', seq.start?.name || '待定'],
       ['过程', seq.process?.name || '待定'],
@@ -1366,6 +1415,41 @@ function calculateXiaoliurenBoard(payload) {
     ],
     raw: compactRaw(result),
   }
+}
+
+function buildXiaoliurenPalaces(result = {}) {
+  const names = ['大安', '留连', '速喜', '赤口', '小吉', '空亡']
+  const defaults = [
+    { element: '木', fortune: '吉', tendency: '稳定可守', advice: '宜守正推进，先稳住基本盘。', direction: '东', shenSha: '青龙' },
+    { element: '土', fortune: '平', tendency: '拖延反复', advice: '宜复核细节，不急着定论。', direction: '中', shenSha: '勾陈' },
+    { element: '火', fortune: '吉', tendency: '消息临近', advice: '可顺势跟进，但要保留判断。', direction: '南', shenSha: '朱雀' },
+    { element: '金', fortune: '凶', tendency: '口舌谨慎', advice: '少争辩，重要事项留书面证据。', direction: '西', shenSha: '白虎' },
+    { element: '水', fortune: '吉', tendency: '小成可进', advice: '小步推进，借助外部助力。', direction: '北', shenSha: '玄武' },
+    { element: '土', fortune: '凶', tendency: '暂缓复核', advice: '先停一停，等信息补齐再行动。', direction: '中', shenSha: '天空' },
+  ]
+  const sequenceNames = [
+    result.sequence?.start?.name,
+    result.sequence?.process?.name,
+    result.sequence?.result?.name,
+  ].filter(Boolean)
+  const primaryName = result.primary?.name || result.sequence?.result?.name
+  return names.map((name, index) => {
+    const source = [result.sequence?.start, result.sequence?.process, result.sequence?.result, result.primary].find((item) => item?.name === name)
+    return {
+      name,
+      index,
+      element: source?.element || defaults[index].element,
+      fortune: source?.fortune || defaults[index].fortune,
+      tendency: source?.tendency || defaults[index].tendency,
+      advice: source?.advice || defaults[index].advice,
+      direction: source?.direction || defaults[index].direction,
+      shenSha: source?.shenSha || defaults[index].shenSha,
+      timing: source?.timing || '',
+      keywords: Array.isArray(source?.keywords) ? source.keywords : [],
+      isPrimary: name === primaryName,
+      isInSequence: sequenceNames.includes(name),
+    }
+  })
 }
 
 function calculateTarotBoard(payload) {
@@ -1488,16 +1572,34 @@ function extractBoardFacts(board) {
       facts.push(Array.isArray(cell) ? cell.map(valueText).join('/') : valueText(cell))
     }
   }
+  if (Array.isArray(data.fourLessons)) {
+    for (const item of data.fourLessons.slice(0, 4)) {
+      facts.push([item.label, item.stem, item.branch, item.god, item.role].filter(Boolean).map(valueText).join('/'))
+    }
+  }
+  if (Array.isArray(data.threePasses)) {
+    for (const item of data.threePasses.slice(0, 3)) {
+      facts.push([item.label, item.branch, item.god, item.relation].filter(Boolean).map(valueText).join('/'))
+    }
+  }
+  if (Array.isArray(data.heavenlyPlate)) {
+    facts.push(`天盘十二位：${data.heavenlyPlate.slice(0, 12).map((item) => `${item.branch}${item.sky || ''}${item.god || ''}${item.note ? `(${item.note})` : ''}`).join(' / ')}`)
+  }
   if (Array.isArray(data.lines)) {
     for (const line of data.lines.slice(0, 6)) {
       facts.push(Array.isArray(line) ? line.map(valueText).join('/') : valueText(line))
     }
   }
   if (Array.isArray(data.palaces)) {
-    for (const palace of data.palaces.slice(0, 6)) {
+    for (const palace of data.palaces.slice(0, 12)) {
       facts.push(typeof palace === 'object'
-        ? [palace.name, palace.star, palace.note].filter(Boolean).map(valueText).join('/')
+        ? [palace.name, palace.branch, palace.star, palace.minor, palace.element, palace.fortune, palace.tendency, palace.direction, palace.note].filter(Boolean).map(valueText).join('/')
         : valueText(palace))
+    }
+  }
+  if (Array.isArray(data.stages)) {
+    for (const stage of data.stages.slice(0, 3)) {
+      facts.push([stage.label, stage.name, stage.state, stage.tendency, stage.direction, stage.advice].filter(Boolean).map(valueText).join('/'))
     }
   }
   for (const key of ['original', 'mutual', 'changed', 'relation']) {

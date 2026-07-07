@@ -178,7 +178,13 @@ export function normalizeDaliurenBoard(data = {}) {
   return {
     branches: data.branches || BRANCHES,
     gods: data.gods || ['贵人', '腾蛇', '朱雀', '六合', '勾陈', '青龙', '天空', '白虎', '太常', '玄武', '太阴', '天后'],
-    heavenlyPlate: Array.isArray(data.heavenlyPlate) && data.heavenlyPlate.length ? data.heavenlyPlate : [],
+    heavenlyPlate: Array.isArray(data.heavenlyPlate) && data.heavenlyPlate.length ? data.heavenlyPlate : (data.branches || BRANCHES).map((branch, index) => ({
+      branch,
+      sky: (data.branches || BRANCHES)[index],
+      god: (data.gods || ['贵人', '腾蛇', '朱雀', '六合', '勾陈', '青龙', '天空', '白虎', '太常', '玄武', '太阴', '天后'])[index],
+      note: '',
+      relation: '',
+    })),
     fourLessons: Array.isArray(data.fourLessons) && data.fourLessons.length ? data.fourLessons : [
       { label: '一课', stem: '日干', branch: '上神', god: '贵人', role: '日干上神' },
       { label: '二课', stem: '日干', branch: '阴神', god: '六合', role: '日干阴神' },
@@ -192,21 +198,68 @@ export function normalizeDaliurenBoard(data = {}) {
       relation: ['发端', '过程', '归结'][index] || '判断',
     })),
     passes: data.passes || String(items[1]?.[1] || '初传 -> 中传 -> 末传').split('->').map((item) => item.trim()),
-    center: data.center || { time: '占时', day: '日辰', hour: '占时', monthGeneral: '月将', xun: '甲戌', zhiFu: '贵人', zhiShi: '子', lessonType: '课体待定' },
+    meta: {
+      time: data.meta?.time || data.center?.time || '占时',
+      topic: data.meta?.topic || data.center?.topic || items[3]?.[1] || '复杂事件',
+      day: data.meta?.day || data.center?.day || '日辰',
+      hour: data.meta?.hour || data.center?.hour || '占时',
+      monthGeneral: data.meta?.monthGeneral || data.center?.monthGeneral || '月将',
+      dayStem: data.meta?.dayStem || '',
+      dayBranch: data.meta?.dayBranch || '',
+      hourBranch: data.meta?.hourBranch || '',
+      lessonType: data.meta?.lessonType || data.center?.lessonType || '课体待定',
+      useBranch: data.meta?.useBranch || '',
+      useGod: data.meta?.useGod || '',
+    },
+    center: data.center || { time: data.meta?.time || '占时', day: data.meta?.day || '日辰', hour: data.meta?.hour || '占时', monthGeneral: data.meta?.monthGeneral || '月将', xun: '甲戌', zhiFu: data.meta?.useGod || '贵人', zhiShi: data.meta?.hourBranch || '子', lessonType: data.meta?.lessonType || '课体待定', topic: data.meta?.topic || items[3]?.[1] },
     items,
   }
 }
 
 export function normalizeXiaoliurenBoard(data = {}) {
+  const fallbackItems = normalizeRows(data.items, [
+    ['大安', '稳定可守'],
+    ['留连', '拖延反复'],
+    ['速喜', '消息临近'],
+    ['赤口', '口舌谨慎'],
+    ['小吉', '小成可进'],
+    ['空亡', '暂缓复核'],
+  ]).slice(0, 6)
+  const fallbackPalaces = ['大安', '留连', '速喜', '赤口', '小吉', '空亡'].map((name, index) => ({
+    name,
+    index,
+    element: ['木', '土', '火', '金', '水', '土'][index],
+    fortune: ['吉', '平', '吉', '凶', '吉', '凶'][index],
+    tendency: fallbackItems[index]?.[1] || '待定',
+    advice: fallbackItems[index]?.[1] || '待定',
+    direction: ['东', '中', '南', '西', '北', '中'][index],
+    shenSha: ['青龙', '勾陈', '朱雀', '白虎', '玄武', '天空'][index],
+    isPrimary: index === 0,
+    isInSequence: index < 3,
+  }))
   return {
-    items: normalizeRows(data.items, [
-      ['大安', '稳定可守'],
-      ['留连', '拖延反复'],
-      ['速喜', '消息临近'],
-      ['赤口', '口舌谨慎'],
-      ['小吉', '小成可进'],
-      ['空亡', '暂缓复核'],
-    ]).slice(0, 6),
+    meta: {
+      method: data.meta?.method || '时间起课',
+      time: data.meta?.time || '',
+      lunar: data.meta?.lunar || '',
+      hour: data.meta?.hour || '',
+      primary: data.meta?.primary || fallbackPalaces.find((item) => item.isPrimary)?.name || '待定',
+      tendency: data.meta?.tendency || '',
+      fortune: data.meta?.fortune || '',
+      direction: data.meta?.direction || '',
+      timing: data.meta?.timing || '',
+      shenSha: data.meta?.shenSha || '',
+      bodyPart: data.meta?.bodyPart || '',
+      relation: data.meta?.relation || '',
+      questionHint: data.meta?.questionHint || '',
+    },
+    palaces: Array.isArray(data.palaces) && data.palaces.length ? data.palaces : fallbackPalaces,
+    stages: Array.isArray(data.stages) && data.stages.length ? data.stages : [
+      { label: '起因', name: fallbackItems[0]?.[1] || '待定', state: '', tendency: '' },
+      { label: '过程', name: fallbackItems[1]?.[1] || '待定', state: '', tendency: '' },
+      { label: '结果', name: fallbackItems[2]?.[1] || '待定', state: '', tendency: '' },
+    ],
+    items: fallbackItems,
   }
 }
 

@@ -551,6 +551,32 @@ function extractClientBoardFacts(data = {}) {
   if (Array.isArray(data.items)) {
     data.items.slice(0, 8).forEach((item) => pushPair(item[0], item[1]))
   }
+  if (Array.isArray(data.fourLessons)) {
+    data.fourLessons.forEach((item) => pushPair(item.label, [item.stem, item.branch, item.god, item.role].filter(Boolean).join(' / ')))
+  }
+  if (Array.isArray(data.threePasses)) {
+    data.threePasses.forEach((item) => pushPair(item.label, [item.branch, item.god, item.relation].filter(Boolean).join(' / ')))
+  }
+  if (Array.isArray(data.heavenlyPlate)) {
+    pushPair('天盘十二位', data.heavenlyPlate.map((item) => `${item.branch}${item.sky || ''}${item.god || ''}${item.note ? `(${item.note})` : ''}`).join(' / '))
+  }
+  if (Array.isArray(data.palaces)) {
+    data.palaces.slice(0, 12).forEach((palace) => pushPair(palace.name || palace.label, [
+      palace.branch,
+      palace.star,
+      palace.minor,
+      Array.isArray(palace.transforms) ? palace.transforms.join(' ') : '',
+      palace.element,
+      palace.fortune,
+      palace.tendency,
+      palace.direction,
+      palace.note,
+      palace.decadal,
+    ].filter(Boolean).join(' / ')))
+  }
+  if (Array.isArray(data.stages)) {
+    data.stages.forEach((stage) => pushPair(stage.label, [stage.name, stage.state, stage.tendency, stage.direction, stage.advice].filter(Boolean).join(' / ')))
+  }
   if (Array.isArray(data.cells)) {
     data.cells.slice(0, 9).forEach((cell, index) => {
       if (Array.isArray(cell)) pushPair(cell[0] || `宫位${index + 1}`, cell.slice(1).join(' / '))
@@ -565,16 +591,6 @@ function extractClientBoardFacts(data = {}) {
         pushPair(line.position || `爻位${index + 1}`, [line.yaoType, line.sixRelative, line.sixGod, line.najia, line.wuxing, line.role, line.change].filter(Boolean).join(' / '))
       }
     })
-  }
-  if (Array.isArray(data.palaces)) {
-    data.palaces.slice(0, 12).forEach((palace) => pushPair(palace.name || palace.label, [
-      palace.branch,
-      palace.star,
-      palace.minor,
-      Array.isArray(palace.transforms) ? palace.transforms.join(' ') : '',
-      palace.decadal,
-      palace.note,
-    ].filter(Boolean).join(' / ')))
   }
   if (Array.isArray(data.cards)) {
     data.cards.slice(0, 6).forEach((card) => pushPair(Array.isArray(card) ? card[0] : card.position, Array.isArray(card) ? card.slice(1).join(' / ') : [card.name, card.orientation].filter(Boolean).join(' / ')))
