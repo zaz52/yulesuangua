@@ -36,4 +36,7 @@
 - 已完成生产验收：`https://suangua.weiyiai.top/tools/qiming` 返回 200，移动端浏览器提交起名表单可触发真实八字 API，显示 `mingyu-core@0.1.8`、日主、用神、农历和 6 张候选名卡；无横向溢出、无控制台错误、无 `qk_` 本地记录。
 - 已继续实现黄历/每日运势动态化：后端 `/api/metaphysics/calculate` 新增 `daily-fortune`，返回农历、年月日时干支、节气、宜忌、吉时、方位、颜色和桌面建议；前端 `/tools/huangli` 改为异步加载黄历盘，支持日期切换、加载状态、错误兜底和移动端布局。
 - 已完成验证：`npm run build` 通过，`node --check frontend/functions/api/[[path]].js` 通过；后端直接调用 `daily-fortune` 返回 `rules-mvp+mingyu-core@2026-07`、农历、干支、节气、4 条宜、4 条忌；本地 Pages dev 浏览器验证桌面端和 390px 移动端均能渲染黄历数据、触发 API、无横向溢出、无控制台错误、无 `qk_` 本地记录。随后补了 Asia/Shanghai 默认日期修正，并复测构建、语法和后端直接调用通过。
-- 下一步：提交、推送并部署黄历动态化版本。
+- 已提交并推送代码：`5a40bab feat: add dynamic almanac data`。
+- 已部署 Cloudflare Pages，预览地址：`https://d3edc697.yulesuangua.pages.dev`。
+- 已完成生产验收：`https://suangua.weiyiai.top/tools/huangli` 返回 200，移动端浏览器自动调用 `daily-fortune`，显示 `rules-mvp+mingyu-core@2026-07`、农历、干支、节气、宜忌、吉时和方位；无横向溢出、无控制台错误、无 `qk_` 本地记录。
+- 下一步：补全周易 64 卦经典卦辞/爻辞，或做微信浏览器专项兼容。
