@@ -376,3 +376,6 @@ Progress:
 - Network-layer WeChat check passed: HTTPS returns 200, HTTP redirects to HTTPS, and WeChat UA direct request returns the SPA HTML.
 - Found and fixed a WeChat reliability risk: the global stylesheet imported Google Fonts, which can be slow or blocked in WeChat/domestic mobile networks. Removed the remote font import and switched to system Chinese serif/display font stacks.
 - Local build after the font fix passed, and local Pages dev verification on `http://127.0.0.1:4299` passed for Zhouyi and Qiming in both normal mobile and WeChat UA modes.
+- Completed GitHub push: `23bf447 fix: remove remote font dependency for wechat`.
+- Deployed Cloudflare Pages preview: `https://78f495e0.yulesuangua.pages.dev`.
+- Final production WeChat UA verification passed on `https://suangua.weiyiai.top`: Zhouyi ritual and Qiming generation work, no console errors, no horizontal overflow, no `qk_` localStorage keys, and the served HTML no longer references Google Fonts.
