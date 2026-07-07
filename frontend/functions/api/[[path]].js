@@ -569,6 +569,7 @@ function calculateQimenBoard(payload) {
   const order = [4, 9, 2, 3, 5, 7, 8, 1, 6]
   const names = { 1: '坎一', 2: '坤二', 3: '震三', 4: '巽四', 5: '中五', 6: '乾六', 7: '兑七', 8: '艮八', 9: '离九' }
   const directions = { 1: '正北', 2: '西南', 3: '正东', 4: '东南', 5: '中宫', 6: '西北', 7: '正西', 8: '东北', 9: '正南' }
+  const elements = { 1: '水', 2: '土', 3: '木', 4: '木', 5: '土', 6: '金', 7: '金', 8: '土', 9: '火' }
   return {
     center: {
       time: payload.datetime || result.timestamp || date.toISOString(),
@@ -577,18 +578,49 @@ function calculateQimenBoard(payload) {
     },
     cells: order.map((gong) => {
       const cell = byGong.get(gong)
+      const star = cell?.tianPan?.star || (gong === 5 ? '中宫寄坤' : '格局待定')
+      const gate = cell?.renPan?.door || (gong === 5 ? payload.topic || '所问核心' : '待排')
+      const god = cell?.shenPan?.god || '神盘待定'
+      const heavenStem = cell?.tianPan?.stem || '—'
+      const earthStem = cell?.diPan?.stem || '—'
+      const direction = cell?.direction || directions[gong]
+      const marks = [
+        result.zhiFu && String(result.zhiFu).includes(String(star).replace('星', '')) ? '值符' : '',
+        result.zhiShi && String(result.zhiShi).includes(String(gate).replace('门', '')) ? '值使' : '',
+        Array.isArray(result.voidPalaces) && result.voidPalaces.includes(gong) ? '空亡' : '',
+        result.horseStar && [cell?.name, direction, heavenStem, earthStem].some((item) => String(item || '').includes(result.horseStar)) ? '马星' : '',
+        ...(Array.isArray(result.patternTags) ? result.patternTags.filter((tag) => String(tag).includes(names[gong]) || String(tag).includes(direction)).slice(0, 1) : []),
+      ].filter(Boolean)
       if (!cell) {
-        return [names[gong], gong === 5 ? payload.topic || '所问核心' : '待排', '中宫寄坤', '值符', '戊', '戊', directions[gong]]
+        return {
+          palace: names[gong],
+          direction,
+          element: elements[gong],
+          gate,
+          star,
+          god,
+          heavenStem,
+          earthStem,
+          hidden: gong === 5 ? '中宫寄坤' : '待排',
+          marks,
+        }
       }
-      return [
-        cell.name || names[gong],
-        cell.renPan?.door || '待排',
-        cell.tianPan?.star || '格局待定',
-        cell.shenPan?.god || '神盘待定',
-        cell.tianPan?.stem || '—',
-        cell.diPan?.stem || '—',
-        cell.direction || directions[gong],
-      ]
+      return {
+        palace: cell.name || names[gong],
+        direction,
+        element: cell.element || elements[gong],
+        gate,
+        star,
+        god,
+        heavenStem,
+        earthStem,
+        hidden: cell.hidden || '',
+        void: marks.includes('空亡'),
+        horse: marks.includes('马星'),
+        zhiFu: marks.includes('值符'),
+        zhiShi: marks.includes('值使'),
+        marks,
+      }
     }),
     meta: {
       solar: payload.datetime || result.timestamp || date.toISOString(),
@@ -614,13 +646,34 @@ function calculateLiuyaoBoard(payload) {
   const result = generateLiuyao(payload.datetime ? new Date(payload.datetime) : new Date())
   const yaos = [...(result.yaosDetail || [])].sort((a, b) => b.position - a.position)
   return {
-    lines: yaos.map((line) => [
-      yaoPositionName(line.position),
-      `${line.yaoType || '阴'}爻`,
-      line.sixRelative || '六亲',
-      line.isWorld ? '世' : line.isResponse ? '应' : line.isChanging ? '动' : '',
-      `${line.sixGod || ''} ${line.najiaDizhi || ''}${line.wuxing || ''} ${line.changeType || ''}`.trim(),
-    ]),
+    lines: yaos.map((line) => {
+      const flags = [
+        line.isWorld ? '世' : '',
+        line.isResponse ? '应' : '',
+        line.isChanging ? '动' : '',
+        line.isVoid ? '空亡' : '',
+        line.isDayBreak ? '日破' : '',
+        line.isMonthBreak ? '月破' : '',
+        line.isHiddenMove ? '暗动' : '',
+        line.isLiuhe ? '六合' : '',
+        line.isLiuhai ? '六害' : '',
+        line.isRuMu ? '入墓' : '',
+      ].filter(Boolean)
+      return {
+        position: yaoPositionName(line.position),
+        rawPosition: line.position,
+        yaoType: `${line.yaoType || '阴'}爻`,
+        sixRelative: line.sixRelative || '六亲',
+        sixGod: line.sixGod || '六神',
+        najia: line.najiaDizhi || '纳甲',
+        wuxing: line.wuxing || '',
+        role: line.isWorld ? '世' : line.isResponse ? '应' : line.isChanging ? '动' : '',
+        change: line.changeType || '',
+        changedYao: line.changedYao || null,
+        note: [line.seasonState, line.shiErGong, line.changeRelation].filter(Boolean).join(' / ') || '静观',
+        flags,
+      }
+    }),
     meta: {
       originalName: result.originalName,
       changedName: result.changedName,
@@ -628,9 +681,22 @@ function calculateLiuyaoBoard(payload) {
       palace: result.palace?.name,
       specialPattern: result.specialPattern,
       voidBranches: result.voidBranches || [],
+      usefulGod: inferLiuyaoUsefulGod(payload.question || payload.message || payload.topic, yaos),
     },
     raw: compactRaw(result),
   }
+}
+
+function inferLiuyaoUsefulGod(question = '', yaos = []) {
+  const text = String(question || '')
+  const target = /财|钱|交易|生意|收入/.test(text) ? '妻财'
+    : /工作|事业|官|考试|压力|职位/.test(text) ? '官鬼'
+      : /感情|关系|合作|朋友|竞争/.test(text) ? '兄弟'
+        : /孩子|结果|作品|消息|健康/.test(text) ? '子孙'
+          : /合同|文书|房|证件|长辈/.test(text) ? '父母'
+            : ''
+  if (target && yaos.some((line) => line.sixRelative === target)) return `建议取${target}为用神`
+  return '用神按所问事项另定'
 }
 
 function calculateMeihuaBoard(payload) {

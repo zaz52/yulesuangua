@@ -101,3 +101,25 @@
 - 已提交并推送代码：`3977bab feat: upgrade tool and reading boards`。
 - 已部署 Cloudflare Pages，预览地址：`https://a41f7186.yulesuangua.pages.dev`。
 - 已完成生产验收：`https://suangua.weiyiai.top/tools/lingqian`、`/tools/jiemeng`、`/tools/xianghuo` 返回 200；线上移动端浏览器验证三页均显示新盘面；`/divine/qimen` 和 `/divine/fojiao` 提交后均生成 `visual-board board-* is-result`；新增 `fojiao` 排盘 API 返回 200；无横向溢出、无控制台错误、无 `qk_` 本地记录。
+
+## 2026-07-07 奇门与六爻字段补强
+
+### 任务
+
+按下一步顺序先补强奇门遁甲，再补强六爻，让盘面字段更接近真实排盘，而不是只显示几项摘要。
+
+### 成功标准
+
+- 奇门九宫每格必须展示宫位、方位、五行、八神、九星、八门、天盘干、地盘干，并标记值符、值使、空亡、马星等。
+- 六爻每爻必须展示爻位、阴阳、六亲、六神、纳甲、五行、世应、动爻、空亡、变爻/旺衰提示。
+- 旧数组数据和新对象数据都要兼容，避免线上旧返回或本地兜底盘崩掉。
+- 继续保持无本地记录、无横向溢出、无控制台错误。
+
+### 进度
+
+- 已重写 `frontend/src/domain/qimen.js`，清理旧数组字段限制，统一输出奇门对象字段，并保留旧数组兼容。
+- 已补强 `QimenBoard.vue`，九宫格每格显示八神、九星、八门、天盘干、地盘干，并显示值符/值使/空亡/马星等标签。
+- 已补强后端 `calculateQimenBoard`，直接从 `mingyu-core` 的 `tianPan/diPan/renPan/shenPan` 映射完整字段。
+- 已补强六爻后端 `calculateLiuyaoBoard`，每爻返回六亲、六神、纳甲、五行、世应、动爻、空亡、日破/月破、暗动、六合/六害、入墓等 flags。
+- 已补强 `normalizeLiuyaoBoard` 和 `LiuyaoBoard.vue`，旧数组数据也会补齐纳甲五行兜底。
+- 已完成本地验证：`npm run build` 通过，Function 语法检查通过；移动端浏览器提交 `/divine/qimen` 和 `/divine/liuyao` 均生成结果盘，无横向溢出、无控制台错误、无 `qk_` 本地记录。

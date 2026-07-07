@@ -6,17 +6,23 @@
       <em>{{ board.meta.palace }}</em>
     </header>
     <div class="liuyao-lines">
-      <article v-for="line in board.lines" :key="line[0]" class="liuyao-line-row" :class="{ marked: line[3] }">
-        <span>{{ line[0] }}</span>
-        <i class="yao-line" :class="line[1] === '阳爻' ? 'yang' : 'yin'" />
-        <strong>{{ line[2] }}</strong>
-        <b>{{ line[3] }}</b>
-        <em>{{ line[4] }}</em>
+      <article v-for="line in board.lines" :key="line.position" class="liuyao-line-row" :class="{ marked: line.flags.length }">
+        <span>{{ line.position }}</span>
+        <i class="yao-line" :class="line.yaoType.includes('阳') ? 'yang' : 'yin'" />
+        <strong>{{ line.sixRelative }}</strong>
+        <b>{{ line.sixGod }}</b>
+        <em>{{ line.najia }}{{ line.wuxing }}</em>
+        <small>{{ line.change || line.note }}</small>
+        <div class="liuyao-flags">
+          <mark v-for="flag in line.flags" :key="flag">{{ flag }}</mark>
+        </div>
       </article>
     </div>
     <footer class="liuyao-foot">
       <span>{{ board.meta.interName ? `互卦 ${board.meta.interName}` : '互卦待排' }}</span>
       <span>{{ board.meta.specialPattern }}</span>
+      <span v-if="board.meta.voidBranches">空亡 {{ board.meta.voidBranches }}</span>
+      <span>{{ board.meta.usefulGod }}</span>
     </footer>
   </section>
 </template>
@@ -72,10 +78,10 @@ const board = computed(() => normalizeLiuyaoBoard(props.data))
 
 .liuyao-line-row {
   display: grid;
-  grid-template-columns: 52px minmax(120px, 1fr) 64px 44px minmax(120px, 1fr);
+  grid-template-columns: 52px minmax(120px, 1fr) 64px 58px 76px minmax(100px, 1fr) minmax(90px, auto);
   align-items: center;
-  gap: 12px;
-  min-height: 58px;
+  gap: 10px;
+  min-height: 64px;
   padding: 9px 12px;
   border-top: 1px solid rgba(215, 179, 95, 0.12);
 }
@@ -96,6 +102,27 @@ const board = computed(() => normalizeLiuyaoBoard(props.data))
 .liuyao-line-row strong,
 .liuyao-line-row b {
   color: var(--gold-bright);
+}
+
+.liuyao-line-row small {
+  color: var(--paper-dim);
+  font-size: 12px;
+}
+
+.liuyao-flags {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+.liuyao-flags mark {
+  padding: 2px 6px;
+  border: 1px solid rgba(215, 179, 95, 0.22);
+  border-radius: 999px;
+  color: rgba(245, 234, 212, 0.72);
+  background: rgba(0, 0, 0, 0.14);
+  font-size: 11px;
 }
 
 .yao-line {
@@ -135,8 +162,14 @@ const board = computed(() => normalizeLiuyaoBoard(props.data))
   }
 
   .liuyao-line-row b,
-  .liuyao-line-row em {
+  .liuyao-line-row em,
+  .liuyao-line-row small,
+  .liuyao-flags {
     grid-column: 2 / -1;
+  }
+
+  .liuyao-flags {
+    justify-content: flex-start;
   }
 }
 </style>

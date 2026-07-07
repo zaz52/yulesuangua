@@ -22,12 +22,17 @@
         >
           <div class="qimen-cell-head">
             <strong>{{ cell.palace }}</strong>
-            <span>{{ cell.direction }}</span>
+            <span>{{ cell.direction }} · {{ cell.element || '五行' }}</span>
           </div>
           <div class="qimen-cell-body">
-            <p><b>{{ cell.god }}</b><em>{{ cell.star }}</em></p>
-            <p><b>{{ cell.gate }}</b><em>{{ cell.heavenStem }}</em></p>
-            <p><b>{{ cell.earthStem }}</b><em>{{ cell.hidden || '—' }}</em></p>
+            <p><span>八神</span><b>{{ cell.god }}</b></p>
+            <p><span>九星</span><b>{{ cell.star }}</b></p>
+            <p><span>八门</span><b>{{ cell.gate }}</b></p>
+            <p><span>天盘干</span><em>{{ cell.heavenStem }}</em></p>
+            <p><span>地盘干</span><em>{{ cell.earthStem }}</em></p>
+          </div>
+          <div v-if="cell.marks.length" class="qimen-cell-tags">
+            <small v-for="mark in cell.marks" :key="mark">{{ mark }}</small>
           </div>
         </article>
       </div>
@@ -136,8 +141,8 @@ const board = computed(() => normalizeQimenBoard(props.data))
 
 .qimen-cell {
   display: grid;
-  align-content: space-between;
-  gap: 10px;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: 8px;
   min-width: 0;
   min-height: 0;
   overflow: hidden;
@@ -188,19 +193,25 @@ const board = computed(() => normalizeQimenBoard(props.data))
 
 .qimen-cell-body {
   display: grid;
-  gap: 4px;
+  gap: 3px;
   min-width: 0;
 }
 
 .qimen-cell-body p {
-  display: flex;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
   min-width: 0;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   margin: 0;
   color: var(--paper);
   line-height: 1.18;
+}
+
+.qimen-cell-body span {
+  color: rgba(245, 234, 212, 0.44);
+  font-size: 11px;
+  white-space: nowrap;
 }
 
 .qimen-cell-body b {
@@ -210,6 +221,23 @@ const board = computed(() => normalizeQimenBoard(props.data))
   font-size: clamp(13px, 1.2vw, 17px);
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.qimen-cell-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 18px;
+}
+
+.qimen-cell-tags small {
+  padding: 2px 5px;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: 999px;
+  color: rgba(245, 234, 212, 0.68);
+  background: rgba(0, 0, 0, 0.12);
+  font-size: 10px;
+  line-height: 1.1;
 }
 
 .qimen-cell-body em {
@@ -258,8 +286,8 @@ const board = computed(() => normalizeQimenBoard(props.data))
   }
 
   .qimen-cell {
-    gap: 5px;
-    padding: 8px;
+    gap: 4px;
+    padding: 6px;
   }
 
   .qimen-cell-head {
@@ -272,12 +300,21 @@ const board = computed(() => normalizeQimenBoard(props.data))
   }
 
   .qimen-cell-head span,
+  .qimen-cell-body span,
   .qimen-cell-body em {
     font-size: 10px;
   }
 
   .qimen-cell-body b {
-    font-size: 12px;
+    font-size: 11px;
+  }
+
+  .qimen-cell-body p {
+    grid-template-columns: 38px minmax(0, 1fr);
+  }
+
+  .qimen-cell-tags small {
+    font-size: 9px;
   }
 
   .qimen-axis {

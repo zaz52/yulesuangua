@@ -53,6 +53,14 @@ export function normalizeZiweiBoard(data = {}) {
 }
 
 export function normalizeLiuyaoBoard(data = {}) {
+  const fallbackLines = [
+    { position: '上爻', yaoType: '阴爻', sixRelative: '父母', role: '应', sixGod: '青龙', najia: '戌土', wuxing: '土', change: '', note: '收束与外部' },
+    { position: '五爻', yaoType: '阳爻', sixRelative: '官鬼', role: '', sixGod: '朱雀', najia: '申金', wuxing: '金', change: '', note: '主事压力' },
+    { position: '四爻', yaoType: '阴爻', sixRelative: '妻财', role: '动', sixGod: '勾陈', najia: '午火', wuxing: '火', change: '变爻', note: '资源变化' },
+    { position: '三爻', yaoType: '阳爻', sixRelative: '兄弟', role: '', sixGod: '腾蛇', najia: '辰土', wuxing: '土', change: '', note: '竞争与阻力' },
+    { position: '二爻', yaoType: '阴爻', sixRelative: '子孙', role: '世', sixGod: '白虎', najia: '寅木', wuxing: '木', change: '', note: '自身落点' },
+    { position: '初爻', yaoType: '阳爻', sixRelative: '父母', role: '', sixGod: '玄武', najia: '子水', wuxing: '水', change: '', note: '事情起因' },
+  ]
   return {
     meta: {
       originalName: data.meta?.originalName || '本卦待定',
@@ -60,15 +68,49 @@ export function normalizeLiuyaoBoard(data = {}) {
       interName: data.meta?.interName || '',
       palace: data.meta?.palace || '世应用神',
       specialPattern: data.meta?.specialPattern || '以世应、用神、动爻为判断核心',
+      voidBranches: Array.isArray(data.meta?.voidBranches) ? data.meta.voidBranches.join('') : data.meta?.voidBranches || '',
+      usefulGod: data.meta?.usefulGod || '用神待定',
     },
-    lines: normalizeRows(data.lines, [
-      ['上爻', '阴爻', '父母', '应', '收束与外部'],
-      ['五爻', '阳爻', '官鬼', '', '主事压力'],
-      ['四爻', '阴爻', '妻财', '动', '资源变化'],
-      ['三爻', '阳爻', '兄弟', '', '竞争与阻力'],
-      ['二爻', '阴爻', '子孙', '世', '自身落点'],
-      ['初爻', '阳爻', '父母', '', '事情起因'],
-    ]).slice(0, 6),
+    lines: normalizeRows(data.lines, fallbackLines).slice(0, 6).map((line, index) => normalizeLiuyaoLine(line, fallbackLines[index])),
+  }
+}
+
+function normalizeLiuyaoLine(line, fallback) {
+  if (Array.isArray(line)) {
+    return {
+      position: line[0] || fallback.position,
+      yaoType: line[1] || fallback.yaoType,
+      sixRelative: line[2] || fallback.sixRelative,
+      role: line[3] || '',
+      note: line[4] || fallback.note,
+      sixGod: line[5] || fallback.sixGod,
+      najia: line[6] || fallback.najia,
+      wuxing: line[7] || fallback.wuxing,
+      change: line[8] || '',
+      flags: line[3] ? [line[3]] : [],
+    }
+  }
+  const flags = [
+    line.role,
+    line.isWorld ? '世' : '',
+    line.isResponse ? '应' : '',
+    line.isChanging ? '动' : '',
+    line.isVoid ? '空亡' : '',
+    line.isDayBreak ? '日破' : '',
+    line.isMonthBreak ? '月破' : '',
+  ].filter(Boolean)
+  return {
+    position: line.position || fallback.position,
+    yaoType: line.yaoType || fallback.yaoType,
+    sixRelative: line.sixRelative || fallback.sixRelative,
+    sixGod: line.sixGod || fallback.sixGod,
+    najia: line.najia || line.najiaDizhi || fallback.najia,
+    wuxing: line.wuxing || fallback.wuxing,
+    role: flags.includes('世') ? '世' : flags.includes('应') ? '应' : flags.includes('动') ? '动' : '',
+    change: line.change || line.changeType || fallback.change || '',
+    changedYao: line.changedYao || null,
+    note: line.note || line.seasonState || fallback.note,
+    flags: [...new Set(flags)],
   }
 }
 

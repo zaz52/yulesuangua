@@ -546,7 +546,13 @@ function extractClientBoardFacts(data = {}) {
     })
   }
   if (Array.isArray(data.lines)) {
-    data.lines.slice(0, 6).forEach((line) => pushPair(Array.isArray(line) ? line[0] : '爻位', Array.isArray(line) ? line.slice(1).join(' / ') : line))
+    data.lines.slice(0, 6).forEach((line, index) => {
+      if (Array.isArray(line)) {
+        pushPair(line[0], line.slice(1).join(' / '))
+      } else {
+        pushPair(line.position || `爻位${index + 1}`, [line.yaoType, line.sixRelative, line.sixGod, line.najia, line.wuxing, line.role, line.change].filter(Boolean).join(' / '))
+      }
+    })
   }
   if (Array.isArray(data.palaces)) {
     data.palaces.slice(0, 12).forEach((palace) => pushPair(palace.name || palace.label, [palace.star, palace.note, palace.age].filter(Boolean).join(' / ')))
