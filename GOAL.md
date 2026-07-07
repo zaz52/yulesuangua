@@ -435,3 +435,6 @@ Progress:
 - Validation passed: `npm run build`, Function syntax checks, `git diff --check`, and privacy scan. Privacy scan only found documentation references and the unused exported consultation helper, with no active local record storage or recent-record UI.
 - Browser E2E initially found that the error state blocked the fixed-column fallback renderer; fixed the template so `RitualState` and `AnswerText` render together on failures.
 - Clean local browser E2E passed on `http://127.0.0.1:4312` for `/divine/qimen`, `/divine/bazi`, and `/divine/tarot` with backend-unavailable health simulation: each route showed one result board, fixed-column fallback sections, retry/clear actions, no horizontal overflow at 390px, no console errors, and no `qk_` localStorage keys.
+- Completed GitHub push: `8bb16f0 feat: harden runtime error fallbacks`.
+- Deployed Cloudflare Pages preview: `https://ac1a35e0.yulesuangua.pages.dev`.
+- Production verification on `https://suangua.weiyiai.top` passed for `/divine/qimen`, `/divine/bazi`, and `/divine/tarot` with backend-unavailable health simulation: each route showed one result board, fixed-column fallback sections, retry/clear actions, no horizontal overflow at 390px, no console errors, and no `qk_` localStorage keys.
