@@ -209,3 +209,9 @@ Progress:
 - Updated normalizers and board components for Daliuren/Xiaoliuren richer plates.
 - Updated frontend and backend fact extraction for four lessons, three transmissions, heavenly plate, six palaces, and stages.
 - Validation passed locally: `npm run build`, Function syntax check, `git diff --check`, privacy scan, direct Function calls, and mobile browser E2E on local Pages dev for `/divine/daliuren` and `/divine/xiaoliuren`.
+- Completed GitHub push: `9a4e404 feat: enrich liuren plates`.
+- Deployed Cloudflare Pages preview: `https://40453b3a.yulesuangua.pages.dev`.
+- Verified production custom domain API:
+  - `daliuren` returns 12 heavenly plate cells, 4 lessons, 3 transmissions, and meta.
+  - `xiaoliuren` returns 6 palace cards, 3 stages, and meta timing/direction/fortune.
+- Verified production mobile browser flow on `https://suangua.weiyiai.top/divine/daliuren` and `/divine/xiaoliuren`: result plates render, no horizontal overflow, no console errors, and no `qk_` localStorage keys.
