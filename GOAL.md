@@ -293,3 +293,28 @@ Progress:
 - Local acceptance result: all 9 pages render a method-specific result board, expected fixed-column AI schema strip, filled AI sections matching the schema count, no horizontal overflow, no console errors, and no `qk_` localStorage keys at 390px mobile viewport.
 - Production mobile E2E on `https://suangua.weiyiai.top` covered all 9 core divination pages. All pages rendered result boards and fixed-column AI sections. Some production pages needed a longer wait because real AI/SSE output stayed on the loading placeholder for more than 3 seconds; after waiting for schema fill, Bazi, Ziwei, Qimen, Liuyao, Meihua, Daliuren, Xiaoliuren, Fengshui, and Tarot all passed.
 - Production acceptance result: no horizontal overflow, no console errors, no `qk_` localStorage keys, and schema counts matched the expected fixed columns for every core skill.
+
+## 2026-07-07 priority 10: complete remaining boards and whole-site run-through
+
+Task: close the gap reported by the user: several entries were not included in the previous "full" regression, and some remaining pages still look less like dedicated plates.
+
+Success criteria:
+- `/divine/yinyuan`, `/divine/hehun`, `/divine/fojiao`, and `/divine/daily-fortune` have clear dedicated visual boards, not generic text-only output.
+- `/zhouyi` and `/tools/huangli`, `/tools/lingqian`, `/tools/jiemeng`, `/tools/qiming`, `/tools/xianghuo` are included in a whole-site smoke run.
+- Build, Function syntax check, privacy scan, local browser E2E, GitHub push, Cloudflare deployment, and production verification pass.
+- Privacy remains unchanged: no local records, no `qk_` localStorage keys, no automatic D1 persistence.
+
+Architecture:
+- Keep the current Vue 3 + Vite + Cloudflare Pages Functions architecture.
+- Upgrade existing renderers in `Divine.vue` first; avoid creating duplicate flows.
+- Treat relation, mind-practice, and daily fortune as "plate-like" product surfaces even when they are not classical astrological charts.
+
+Progress:
+- Started gap-closing pass after confirming the previous regression covered only 9 core `/divine` skills.
+- Upgraded remaining `/divine` board rendering:
+  - Relationship boards now show a dedicated title strip, pair cards, central score, dimension bars, timeline, and friction notes.
+  - Buddhist guidance now renders as a clearer observation/practice plate instead of a bare list.
+  - Daily fortune now renders date/lunar/theme, yi/ji, lucky hours, direction, color, desk advice, and reminder.
+- Strengthened frontend and backend facts extraction for relation dimensions, timeline, frictions, yi/ji, lucky hours, directions, and desk advice so AI fixed columns can use the actual plate data.
+- Local validation passed: `npm run build`, Function syntax check, `git diff --check`, and privacy scan.
+- Local mobile E2E passed for `/divine/yinyuan`, `/divine/hehun`, `/divine/fojiao`, `/divine/daily-fortune`, `/zhouyi`, `/tools/huangli`, `/tools/lingqian`, `/tools/jiemeng`, `/tools/qiming`, and `/tools/xianghuo`; no horizontal overflow, no console errors, and no `qk_` localStorage keys.

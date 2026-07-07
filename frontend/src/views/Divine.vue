@@ -577,6 +577,28 @@ function extractClientBoardFacts(data = {}) {
   if (Array.isArray(data.stages)) {
     data.stages.forEach((stage) => pushPair(stage.label, [stage.name, stage.state, stage.tendency, stage.direction, stage.advice].filter(Boolean).join(' / ')))
   }
+  if (Array.isArray(data.dimensions)) {
+    data.dimensions.slice(0, 6).forEach((dimension) => pushPair(dimension.label, [
+      dimension.score ? `${dimension.score}分` : '',
+      dimension.level,
+      dimension.note,
+    ].filter(Boolean).join(' / ')))
+  }
+  if (Array.isArray(data.timeline)) {
+    data.timeline.slice(0, 4).forEach((item) => pushPair(item.label, [item.value, item.tone].filter(Boolean).join(' / ')))
+  }
+  if (Array.isArray(data.frictions) && data.frictions.length) {
+    pushPair('关系摩擦', data.frictions.slice(0, 4).join(' / '))
+  }
+  if (Array.isArray(data.yi)) pushPair('今日宜', data.yi.join(' / '))
+  if (Array.isArray(data.ji)) pushPair('今日忌', data.ji.join(' / '))
+  if (Array.isArray(data.luckyHours)) {
+    pushPair('吉时', data.luckyHours.map((item) => `${item.name || ''}${item.range ? ` ${item.range}` : ''}`).join(' / '))
+  }
+  if (data.directions && typeof data.directions === 'object') {
+    pushPair('方位', `利${data.directions.lucky || ''} / 静${data.directions.calm || ''} / 财${data.directions.wealth || ''}`)
+  }
+  if (data.desk) pushPair('桌面建议', data.desk)
   if (Array.isArray(data.cells)) {
     data.cells.slice(0, 9).forEach((cell, index) => {
       if (Array.isArray(cell)) pushPair(cell[0] || `宫位${index + 1}`, cell.slice(1).join(' / '))
@@ -937,7 +959,12 @@ function renderRelationshipBoard(data = {}, mark = '缘') {
   const timeline = Array.isArray(data.timeline) ? data.timeline : []
   const frictions = Array.isArray(data.frictions) ? data.frictions : []
   const score = Number.isFinite(data.score) ? data.score : Math.round(dimensions.reduce((sum, item) => sum + item.score, 0) / dimensions.length)
+  const relationLabel = data.mode === 'hehun' ? '合婚配对盘' : '姻缘关系盘'
   return h('div', { class: ['relationship-board', data.mode === 'hehun' ? 'is-hehun' : 'is-yinyuan'] }, [
+    h('div', { class: 'relationship-title' }, [
+      h('span', relationLabel),
+      h('strong', data.phase || '关系合盘'),
+    ]),
     h('div', { class: 'relationship-people' }, people.slice(0, 2).map((person) => h('article', [
       h('span', person.label),
       h('strong', person.value),
@@ -957,7 +984,10 @@ function renderRelationshipBoard(data = {}, mark = '缘') {
       h('span', item.label),
       h('strong', item.value),
     ]))) : null,
-    frictions.length ? h('div', { class: 'relationship-frictions' }, frictions.map((item) => h('p', item))) : null,
+    h('div', { class: 'relationship-frictions' }, [
+      h('span', '需要留意'),
+      ...(frictions.length ? frictions : ['当前没有明显短板，重点保持节奏和边界清晰。']).map((item) => h('p', item)),
+    ]),
   ])
 }
 
@@ -965,10 +995,16 @@ function renderFojiaoBoard(data) {
   const items = data.items || []
   return h('div', { class: 'fojiao-scroll' }, [
     h('div', { class: 'fojiao-seal' }, '禅'),
-    h('div', { class: 'fojiao-lines' }, items.map((item) => h('section', [
+    h('div', { class: 'fojiao-lines' }, [
+      h('div', { class: 'fojiao-title' }, [
+        h('strong', '观照功课盘'),
+        h('span', '从困惑、执着、观照和行动四层整理当下。'),
+      ]),
+      ...items.map((item) => h('section', [
       h('span', item[0]),
       h('p', item[1]),
-    ]))),
+      ])),
+    ]),
   ])
 }
 
@@ -978,12 +1014,24 @@ function renderFengshuiBoard(data) {
 
 function renderDailyFortuneBoard(data) {
   const items = data.items || []
+  const yi = Array.isArray(data.yi) ? data.yi : []
+  const ji = Array.isArray(data.ji) ? data.ji : []
+  const hours = Array.isArray(data.luckyHours) ? data.luckyHours : []
   return h('div', { class: 'daily-board' }, [
-    h('div', { class: 'daily-sun' }, [h('strong', '今日'), h('span', items[0]?.[1] || '先稳后动')]),
-    h('div', { class: 'daily-rhythm' }, items.slice(1).map((item) => h('div', [
-      h('span', item[0]),
-      h('strong', item[1]),
-    ]))),
+    h('div', { class: 'daily-sun' }, [
+      h('span', data.weekday || '今日'),
+      h('strong', data.theme || items[0]?.[1] || '先稳后动'),
+      h('em', data.lunar || data.date || '日课待定'),
+    ]),
+    h('div', { class: 'daily-rhythm' }, [
+      h('div', [h('span', '宜'), h('strong', yi.length ? yi.join(' / ') : items.find((item) => item[0] === '宜')?.[1] || '整理计划')]),
+      h('div', [h('span', '忌'), h('strong', ji.length ? ji.join(' / ') : items.find((item) => item[0] === '忌')?.[1] || '冲动决策')]),
+      h('div', [h('span', '吉时'), h('strong', hours.length ? hours.map((item) => `${item.name}${item.range ? ` ${item.range}` : ''}`).join(' / ') : '午时 / 未时')]),
+      h('div', [h('span', '方位'), h('strong', data.directions ? `利${data.directions.lucky || '东南'}，静${data.directions.calm || '正北'}` : items.find((item) => item[0] === '方位')?.[1] || '自定')]),
+      h('div', [h('span', '颜色'), h('strong', data.color || '暗金')]),
+      h('div', [h('span', '桌面'), h('strong', data.desk || '清空正前方杂物，保留一处稳定焦点。')]),
+    ]),
+    data.reminder ? h('p', { class: 'daily-reminder' }, data.reminder) : null,
   ])
 }
 
@@ -2219,6 +2267,31 @@ function renderGenericBoard(data) {
   padding: 14px;
 }
 
+.relationship-title {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-xs);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+.relationship-title span {
+  color: var(--seal);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.relationship-title strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 25px;
+  font-weight: 400;
+}
+
 .relationship-people {
   display: contents;
 }
@@ -2361,8 +2434,16 @@ function renderGenericBoard(data) {
 }
 
 .relationship-frictions {
+  display: grid;
+  gap: 8px;
   padding: 12px;
   background: rgba(0, 0, 0, 0.12);
+}
+
+.relationship-frictions span {
+  color: var(--seal);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .relationship-frictions p {
@@ -2396,6 +2477,24 @@ function renderGenericBoard(data) {
 .fojiao-lines {
   display: grid;
   gap: 10px;
+}
+
+.fojiao-title {
+  display: grid;
+  gap: 5px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(215, 179, 95, 0.13);
+}
+
+.fojiao-title strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 27px;
+  font-weight: 400;
+}
+
+.fojiao-title span {
+  color: var(--paper-dim);
 }
 
 .fojiao-lines section {
@@ -2444,6 +2543,22 @@ function renderGenericBoard(data) {
   border: 1px solid rgba(215, 179, 95, 0.14);
   border-radius: var(--radius-xs);
   background: rgba(255, 247, 231, 0.04);
+}
+
+.daily-sun em,
+.daily-reminder {
+  color: var(--paper-dim);
+  font-style: normal;
+  line-height: 1.65;
+}
+
+.daily-reminder {
+  grid-column: 1 / -1;
+  margin: 0;
+  padding: 11px 12px;
+  border: 1px solid rgba(215, 179, 95, 0.14);
+  border-radius: var(--radius-xs);
+  background: rgba(0, 0, 0, 0.12);
 }
 
 .meihua-pro-grid,

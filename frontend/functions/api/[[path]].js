@@ -1767,6 +1767,30 @@ function extractBoardFacts(board) {
       facts.push([stage.label, stage.name, stage.state, stage.tendency, stage.direction, stage.advice].filter(Boolean).map(valueText).join('/'))
     }
   }
+  if (Array.isArray(data.dimensions)) {
+    for (const dimension of data.dimensions.slice(0, 6)) {
+      facts.push([dimension.label, dimension.score ? `${dimension.score}分` : '', dimension.level, dimension.note].filter(Boolean).map(valueText).join('/'))
+    }
+  }
+  if (Array.isArray(data.timeline)) {
+    for (const item of data.timeline.slice(0, 4)) {
+      facts.push([item.label, item.value, item.tone].filter(Boolean).map(valueText).join('/'))
+    }
+  }
+  if (Array.isArray(data.frictions) && data.frictions.length) {
+    facts.push(`关系摩擦：${data.frictions.slice(0, 4).map(valueText).join(' / ')}`)
+  }
+  if (Array.isArray(data.yi) || Array.isArray(data.ji)) {
+    facts.push(`今日宜：${(data.yi || []).map(valueText).join(' / ') || '待定'}`)
+    facts.push(`今日忌：${(data.ji || []).map(valueText).join(' / ') || '待定'}`)
+  }
+  if (Array.isArray(data.luckyHours)) {
+    facts.push(`吉时：${data.luckyHours.map((item) => `${item.name || ''}${item.range ? ` ${item.range}` : ''}`).join(' / ')}`)
+  }
+  if (data.directions && typeof data.directions === 'object') {
+    facts.push(`方位：利${valueText(data.directions.lucky, '')} / 静${valueText(data.directions.calm, '')} / 财${valueText(data.directions.wealth, '')}`)
+  }
+  if (data.desk) facts.push(`桌面建议：${valueText(data.desk)}`)
   for (const key of ['original', 'mutual', 'changed', 'relation']) {
     if (data[key]) facts.push(`${key}：${valueText(data[key])}`)
   }
