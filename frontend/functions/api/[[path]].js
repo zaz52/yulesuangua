@@ -445,6 +445,7 @@ async function calculateMetaphysics(context) {
       yinyuan: { fn: calculateYinyuanBoard, source: 'rules-mvp@2026-07' },
       hehun: { fn: calculateHehunBoard, source: 'rules-mvp@2026-07' },
       fengshui: { fn: calculateFengshuiBoard, source: 'rules-mvp@2026-07' },
+      'daily-fortune': { fn: calculateDailyFortuneBoard, source: 'rules-mvp+mingyu-core@2026-07' },
       tarot: { fn: calculateTarotBoard, source: 'mingyu-core@0.1.8' },
     }
     const calculator = calculators[skill]
@@ -988,6 +989,124 @@ function relationFrictions(dimensions) {
     .sort((a, b) => a.score - b.score)
     .slice(0, 3)
     .map((item) => `${item.label}偏弱：${item.note}`)
+}
+
+function calculateDailyFortuneBoard(payload) {
+  const date = payload.date ? new Date(`${payload.date}T12:00:00+08:00`) : todayInShanghai()
+  if (Number.isNaN(date.getTime())) throw new Error('缺少有效日期')
+
+  const seed = Math.floor(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) / 86400000)
+  const ganzhi = buildGanzhiSnapshot(date)
+  const bazi = baziCalculator.calculateBazi({
+    year: date.getFullYear(),
+    month: date.getMonth() + 1,
+    day: date.getDate(),
+    timeIndex: shichenToIndex(payload.shichen || '午时'),
+    gender: 'male',
+    isLunar: false,
+    isLeapMonth: false,
+  })
+  const lunarText = formatLunarDate(bazi.lunarDate, '农历待定')
+  const jieqi = nearestSolarTerm(date)
+  const themePool = ['先稳后动', '整理复盘', '谨慎沟通', '小步推进', '留白养神', '定边界', '清理杂务', '借势开局']
+  const directionPool = ['东南', '正东', '正南', '西南', '西北', '正北', '东北', '正西']
+  const colorPool = ['青绿', '朱红', '米白', '暗金', '墨黑', '湖蓝', '松石', '暖棕']
+  const theme = themePool[seed % themePool.length]
+  const direction = directionPool[(seed + date.getDay()) % directionPool.length]
+  const color = colorPool[(seed + date.getMonth()) % colorPool.length]
+  const auspicious = rotateBy([
+    '整理计划',
+    '问卦复盘',
+    '拜访沟通',
+    '学习进修',
+    '修整空间',
+    '签订小约',
+    '纳采备忘',
+    '出行准备',
+  ], seed).slice(0, 4)
+  const avoid = rotateBy([
+    '冲动承诺',
+    '借贷担保',
+    '情绪争执',
+    '仓促搬动',
+    '高风险投资',
+    '熬夜硬撑',
+    '口舌辩胜',
+    '临时改约',
+  ], seed + 3).slice(0, 4)
+  const luckyHours = buildLuckyHours(seed, ganzhi.day)
+
+  return {
+    date: date.toISOString().slice(0, 10),
+    weekday: new Intl.DateTimeFormat('zh-CN', { weekday: 'long', timeZone: 'Asia/Shanghai' }).format(date),
+    lunar: lunarText,
+    ganzhi,
+    jieqi,
+    theme,
+    yi: auspicious,
+    ji: avoid,
+    luckyHours,
+    directions: {
+      lucky: direction,
+      calm: directionPool[(seed + 4) % directionPool.length],
+      wealth: directionPool[(seed + 2) % directionPool.length],
+    },
+    color,
+    desk: `今日宜清空桌面${direction}侧，保留一件${color}或木质小物，减少杂物压迫。`,
+    reminder: `今日主题为“${theme}”。黄历结果用于传统文化娱乐参考，现实决策仍以事实、合同、医生或专业人士意见为准。`,
+    items: [
+      ['今日主题', theme],
+      ['宜', auspicious.join('、')],
+      ['忌', avoid.join('、')],
+      ['吉时', luckyHours.map((item) => item.name).join('、')],
+      ['方位', `${direction}利推进，${directionPool[(seed + 4) % directionPool.length]}利收束`],
+    ],
+  }
+}
+
+function todayInShanghai() {
+  const parts = new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date()).reduce((acc, item) => {
+    acc[item.type] = item.value
+    return acc
+  }, {})
+  return new Date(`${parts.year}-${parts.month}-${parts.day}T12:00:00+08:00`)
+}
+
+function nearestSolarTerm(date) {
+  const terms = [
+    ['小寒', 1, 5], ['大寒', 1, 20], ['立春', 2, 4], ['雨水', 2, 19],
+    ['惊蛰', 3, 5], ['春分', 3, 20], ['清明', 4, 4], ['谷雨', 4, 20],
+    ['立夏', 5, 5], ['小满', 5, 21], ['芒种', 6, 5], ['夏至', 6, 21],
+    ['小暑', 7, 7], ['大暑', 7, 22], ['立秋', 8, 7], ['处暑', 8, 23],
+    ['白露', 9, 7], ['秋分', 9, 23], ['寒露', 10, 8], ['霜降', 10, 23],
+    ['立冬', 11, 7], ['小雪', 11, 22], ['大雪', 12, 7], ['冬至', 12, 22],
+  ]
+  const current = terms
+    .map(([name, month, day]) => ({ name, date: new Date(date.getFullYear(), month - 1, day) }))
+    .filter((item) => item.date <= date)
+    .pop() || { name: '冬至', date: new Date(date.getFullYear() - 1, 11, 22) }
+  const next = terms
+    .map(([name, month, day]) => ({ name, date: new Date(date.getFullYear(), month - 1, day) }))
+    .find((item) => item.date > date) || { name: '小寒', date: new Date(date.getFullYear() + 1, 0, 5) }
+  return {
+    current: current.name,
+    next: next.name,
+    daysToNext: Math.max(0, Math.ceil((next.date - date) / 86400000)),
+  }
+}
+
+function buildLuckyHours(seed, dayGanzhi) {
+  const hours = [
+    ['子时', '23:00-01:00'], ['丑时', '01:00-03:00'], ['寅时', '03:00-05:00'], ['卯时', '05:00-07:00'],
+    ['辰时', '07:00-09:00'], ['巳时', '09:00-11:00'], ['午时', '11:00-13:00'], ['未时', '13:00-15:00'],
+    ['申时', '15:00-17:00'], ['酉时', '17:00-19:00'], ['戌时', '19:00-21:00'], ['亥时', '21:00-23:00'],
+  ]
+  return rotateBy(hours, seed + String(dayGanzhi || '').charCodeAt(0)).slice(0, 3).map(([name, range]) => ({ name, range }))
 }
 
 function calculateXiaoliurenBoard(payload) {

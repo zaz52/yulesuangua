@@ -42,13 +42,18 @@
 
         <article v-if="toolId === 'huangli'" class="work-card oracle-card">
           <PanelHead kicker="Daily Almanac" title="今日宜忌" :badge="today" />
-          <div class="almanac-grid">
-            <div><span>宜</span><strong>问卦、复盘、整理计划、拜访长辈</strong></div>
-            <div><span>忌</span><strong>冲动承诺、借贷担保、情绪争执</strong></div>
-            <div><span>吉时</span><strong>辰时、午时、酉时</strong></div>
-            <div><span>方位</span><strong>东南利沟通，西北利决断</strong></div>
+          <div class="huangli-actions">
+            <label class="ds-field">
+              <span>择日日期</span>
+              <input v-model="huangliDate" type="date" @change="loadHuangli(true)" />
+            </label>
+            <button class="ds-button primary" type="button" :disabled="huangliLoading" @click="loadHuangli(true)">
+              {{ huangliLoading ? '正在推演...' : '重新推演' }}
+            </button>
           </div>
-          <ResultBlock title="今日提醒" copy="适合先把问题写清楚，再进入周易起卦或奇门页面深问。黄历仅作传统文化参考，不作为现实决策依据。" />
+          <div v-if="huangliLoading" class="name-state" role="status" aria-live="polite">正在换算农历、干支、节气和今日宜忌...</div>
+          <div v-if="huangliError" class="name-state error" role="alert">{{ huangliError }}</div>
+          <AlmanacBoard :data="huangliData" :source="huangliSource" />
         </article>
 
         <article v-else-if="toolId === 'lingqian'" class="work-card oracle-card lingqian-ritual">
@@ -137,7 +142,7 @@
 </template>
 
 <script setup>
-import { computed, defineComponent, h, onMounted, ref } from 'vue'
+import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { calculateChart } from '../api/divine'
 
@@ -152,6 +157,38 @@ const PanelHead = defineComponent({
   props: { kicker: String, title: String, badge: String },
   setup(props) {
     return () => h('div', { class: 'panel-head' }, [h('div', [h('span', { class: 'section-kicker' }, props.kicker), h('h2', props.title)]), h('span', { class: 'ds-badge gold' }, props.badge)])
+  },
+})
+
+const AlmanacBoard = defineComponent({
+  props: { data: Object, source: String },
+  setup(props) {
+    const list = (key) => Array.isArray(props.data?.[key]) ? props.data[key].join('、') : props.data?.[key] || '待推演'
+    return () => h('section', { class: 'almanac-board' }, [
+      h('div', { class: 'almanac-hero-card' }, [
+        h('span', props.data?.weekday || '今日'),
+        h('strong', props.data?.theme || '先稳后动'),
+        h('em', props.source ? `来源：${props.source}` : '本页规则预览'),
+      ]),
+      h('div', { class: 'almanac-meta' }, [
+        h('div', [h('span', '公历'), h('strong', props.data?.date || '今日')]),
+        h('div', [h('span', '农历'), h('strong', props.data?.lunar || '待换算')]),
+        h('div', [h('span', '干支'), h('strong', [props.data?.ganzhi?.year, props.data?.ganzhi?.month, props.data?.ganzhi?.day].filter(Boolean).join(' / ') || '待定')]),
+        h('div', [h('span', '节气'), h('strong', `${props.data?.jieqi?.current || '待定'} → ${props.data?.jieqi?.next || '待定'}`)]),
+      ]),
+      h('div', { class: 'almanac-grid' }, [
+        h('div', [h('span', '宜'), h('strong', list('yi'))]),
+        h('div', [h('span', '忌'), h('strong', list('ji'))]),
+        h('div', [h('span', '吉时'), h('strong', (props.data?.luckyHours || []).map((item) => `${item.name} ${item.range}`).join('、') || '待定')]),
+        h('div', [h('span', '方位'), h('strong', props.data?.directions ? `${props.data.directions.lucky}利推进，${props.data.directions.calm}利收束` : '待定')]),
+      ]),
+      h('div', { class: 'almanac-advice' }, [
+        h('strong', '今日提醒'),
+        h('p', props.data?.reminder || '黄历仅作传统文化参考，不作为现实决策依据。'),
+        h('strong', '桌面建议'),
+        h('p', props.data?.desk || '保持桌面清爽，先清理正前方杂物。'),
+      ]),
+    ])
   },
 })
 
@@ -217,6 +254,11 @@ const tools = [
 
 const tool = computed(() => tools.find((item) => item.id === toolId.value) || tools[0])
 const today = computed(() => new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }).format(new Date()))
+const huangliDate = ref(todayDateString())
+const huangliLoading = ref(false)
+const huangliError = ref('')
+const huangliSource = ref('规则预览')
+const huangliData = ref(buildFallbackHuangli())
 const question = ref('')
 const lotIndex = ref(0)
 const lots = [
@@ -255,6 +297,12 @@ const incenseCount = ref(108)
 
 onMounted(() => {
   if (toolId.value === 'liuyao') router.replace('/zhouyi')
+  if (toolId.value === 'huangli') loadHuangli()
+})
+
+watch(toolId, (next) => {
+  if (next === 'liuyao') router.replace('/zhouyi')
+  if (next === 'huangli') loadHuangli()
 })
 
 function drawLot() {
@@ -270,6 +318,68 @@ function analyzeDream() {
 function appendDreamPrompt(prompt) {
   const current = dreamForm.value.dream.trim()
   dreamForm.value.dream = current ? `${current}\n${prompt}` : prompt
+}
+
+async function loadHuangli(force = false) {
+  if (huangliLoading.value) return
+  if (!force && huangliSource.value !== '规则预览') return
+  huangliLoading.value = true
+  huangliError.value = ''
+
+  try {
+    const result = await calculateChart('daily-fortune', { date: huangliDate.value })
+    huangliData.value = result.data
+    huangliSource.value = result.source || '黄历规则'
+  } catch (error) {
+    huangliData.value = buildFallbackHuangli(huangliDate.value)
+    huangliSource.value = '本页规则兜底'
+    huangliError.value = `黄历接口暂时不可用，已使用本页规则兜底。原因：${error.message || '网络异常'}`
+  } finally {
+    huangliLoading.value = false
+  }
+}
+
+function buildFallbackHuangli(date = huangliDate?.value || todayDateString()) {
+  const seed = stableNumber(date)
+  const yi = rotateLocal(['问卦复盘', '整理计划', '拜访长辈', '学习进修', '清理桌面', '小步沟通'], seed).slice(0, 4)
+  const ji = rotateLocal(['冲动承诺', '借贷担保', '情绪争执', '临时改约', '熬夜硬撑', '高风险投资'], seed + 2).slice(0, 4)
+  const hours = rotateLocal([
+    { name: '辰时', range: '07:00-09:00' },
+    { name: '午时', range: '11:00-13:00' },
+    { name: '酉时', range: '17:00-19:00' },
+    { name: '亥时', range: '21:00-23:00' },
+  ], seed).slice(0, 3)
+  return {
+    date,
+    weekday: new Intl.DateTimeFormat('zh-CN', { weekday: 'long' }).format(new Date(`${date}T12:00:00`)),
+    lunar: '待接口换算',
+    ganzhi: { year: '待定', month: '待定', day: '待定' },
+    jieqi: { current: '待定', next: '待定' },
+    theme: ['先稳后动', '整理复盘', '谨慎沟通', '小步推进'][seed % 4],
+    yi,
+    ji,
+    luckyHours: hours,
+    directions: { lucky: '东南', calm: '西北', wealth: '正东' },
+    desk: '今日宜先清空桌面正前方杂物，保留必要纸笔，减少干扰。',
+    reminder: '适合先把问题写清楚，再进入周易起卦或奇门页面深问。黄历仅作传统文化参考，不作为现实决策依据。',
+  }
+}
+
+function stableNumber(text) {
+  return String(text).split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)
+}
+
+function todayDateString() {
+  const date = new Date()
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function rotateLocal(items, seed) {
+  const offset = ((seed % items.length) + items.length) % items.length
+  return [...items.slice(offset), ...items.slice(0, offset)]
 }
 
 async function generateNames() {
@@ -555,6 +665,73 @@ function offerIncense() {
   gap: 18px;
 }
 
+.huangli-actions {
+  display: grid;
+  grid-template-columns: minmax(180px, 260px) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.almanac-board {
+  display: grid;
+  gap: 14px;
+}
+
+.almanac-hero-card {
+  display: grid;
+  gap: 8px;
+  min-height: 150px;
+  align-content: center;
+  padding: 22px;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: var(--radius-sm);
+  background:
+    radial-gradient(circle at 84% 22%, rgba(215, 179, 95, 0.18), transparent 34%),
+    linear-gradient(135deg, rgba(119, 27, 27, 0.18), rgba(0, 0, 0, 0.1));
+}
+
+.almanac-hero-card span,
+.almanac-hero-card em {
+  color: rgba(245, 234, 212, 0.62);
+  font-size: 13px;
+  font-style: normal;
+}
+
+.almanac-hero-card strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: clamp(38px, 6vw, 62px);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.almanac-meta {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.almanac-meta div {
+  padding: 12px;
+  border: 1px solid rgba(215, 179, 95, 0.14);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.04);
+}
+
+.almanac-meta span {
+  display: block;
+  color: var(--seal);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.almanac-meta strong {
+  display: block;
+  margin-top: 5px;
+  color: var(--paper);
+  line-height: 1.5;
+}
+
 .lingqian-hero {
   min-height: 210px;
   display: grid;
@@ -707,6 +884,25 @@ function offerIncense() {
 
 .result-block p {
   margin: 8px 0 0;
+}
+
+.almanac-advice {
+  display: grid;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-xs);
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.almanac-advice strong {
+  color: var(--gold-bright);
+}
+
+.almanac-advice p {
+  margin: 0 0 8px;
+  color: var(--paper-dim);
+  line-height: 1.7;
 }
 
 .name-board {
@@ -890,6 +1086,8 @@ function offerIncense() {
 
   .form-grid,
   .almanac-grid,
+  .almanac-meta,
+  .huangli-actions,
   .name-grid,
   .name-analysis,
   .panel-head {
