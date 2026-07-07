@@ -2947,4 +2947,134 @@ function renderGenericBoard(data) {
     height: 62px;
   }
 }
+
+@media (max-width: 768px) {
+  .divine-page {
+    background: transparent;
+  }
+
+  .skill-hero {
+    order: 1;
+    padding: 18px;
+  }
+
+  .skill-hero h1 {
+    color: var(--mobile-text);
+    font-size: 24px;
+  }
+
+  .skill-hero p {
+    color: var(--mobile-muted);
+    font-size: 14px;
+  }
+
+  .dimension-filter {
+    order: 2;
+    display: flex;
+    gap: 8px;
+    margin: 0;
+  }
+
+  .dimension-filter span {
+    display: none;
+  }
+
+  .dimension-filter button {
+    flex: 0 0 auto;
+    min-height: 36px;
+    width: auto;
+    padding: 0 12px;
+    border-radius: 999px;
+  }
+
+  .work-tabs {
+    order: 3;
+    display: flex;
+    gap: 8px;
+  }
+
+  .primary-work-grid {
+    order: 4;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .board-preview-panel {
+    display: none;
+  }
+
+  .form-panel {
+    padding: 16px;
+  }
+
+  .form-panel .panel-head h2 {
+    color: var(--mobile-text);
+    font-size: 20px;
+  }
+
+  .inline-question textarea {
+    min-height: 136px;
+    font-size: 16px;
+  }
+
+  .privacy-note,
+  .form-submit-hint,
+  .info-chip {
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  .result-list {
+    order: 5;
+    gap: 14px;
+  }
+
+  .answer-card {
+    padding: 14px;
+  }
+
+  .answer-head time {
+    color: var(--mobile-muted);
+  }
+
+  .visual-board,
+  .pro-board,
+  .qimen-pro-board,
+  .bazi-board,
+  .ziwei-board,
+  .liuyao-board,
+  .meihua-board,
+  .tarot-board {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .qimen-nine-grid,
+  .fengshui-nine-grid,
+  .ziwei-palace-grid,
+  .bazi-pillars,
+  .liuyao-lines,
+  .daliuren-grid,
+  .daily-rhythm,
+  .tarot-spread,
+  .answer-text-body {
+    grid-template-columns: 1fr !important;
+  }
+
+  .qimen-palace,
+  .fengshui-cell,
+  .answer-section,
+  .generic-pro-card,
+  .daily-card,
+  .relationship-card {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .answer-text-head {
+    display: grid;
+    gap: 4px;
+  }
+}
 </style>

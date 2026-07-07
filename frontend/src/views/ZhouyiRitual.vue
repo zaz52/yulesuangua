@@ -139,10 +139,11 @@
 
 <script setup>
 import { computed, defineComponent, h, onMounted, onUnmounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { buildZhouyiReading } from '../domain/zhouyi'
 
 const router = useRouter()
+const route = useRoute()
 const step = ref('intro')
 const breathIndex = ref(0)
 const introReady = ref(false)
@@ -179,6 +180,12 @@ const activeYaoci = computed(() => {
 
 let breathTimer
 onMounted(() => {
+  const queryQuestion = String(route.query.question || '').trim()
+  if (queryQuestion) {
+    question.value = queryQuestion.slice(0, 240)
+    step.value = 'question'
+    introReady.value = true
+  }
   breathTimer = window.setInterval(() => {
     if (step.value !== 'intro' || introReady.value) return
     if (breathIndex.value < 2) breathIndex.value += 1
@@ -840,6 +847,143 @@ const HexagramLines = defineComponent({
   .scroll-left {
     border-right: 0;
     border-bottom: 1px solid rgba(143, 106, 44, 0.25);
+  }
+}
+
+@media (max-width: 768px) {
+  .zhouyi-page {
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+    padding: max(10px, env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom));
+    color: var(--mobile-text);
+    background:
+      radial-gradient(circle at 20% 0%, rgba(215, 179, 95, 0.2), transparent 34%),
+      linear-gradient(180deg, #fbf6ed 0%, var(--mobile-bg) 56%, #efe1cc 100%);
+  }
+
+  .ritual-nav {
+    position: relative;
+    top: auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+    min-height: auto;
+    padding: 14px;
+    border: 1px solid var(--mobile-border);
+    border-radius: 20px;
+    color: var(--mobile-text);
+    background: var(--mobile-card);
+    box-shadow: 0 14px 30px rgba(95, 59, 31, 0.12);
+  }
+
+  .ritual-nav h1 {
+    color: var(--mobile-text);
+    font-size: 22px;
+    line-height: 1.2;
+  }
+
+  .ritual-nav p {
+    color: var(--mobile-muted);
+    font-size: 13px;
+  }
+
+  .ritual-nav .ds-button {
+    width: 100%;
+  }
+
+  .ritual-dashboard {
+    display: block;
+    width: 100%;
+    min-width: 0;
+    margin-top: 14px;
+  }
+
+  .ritual-main {
+    display: grid;
+    gap: 14px;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .stage-card,
+  .result-scroll {
+    width: 100%;
+    min-width: 0;
+    min-height: auto;
+    padding: 18px;
+    border: 1px solid var(--mobile-border);
+    border-radius: 20px;
+    color: var(--mobile-text);
+    background: var(--mobile-card);
+    box-shadow: 0 12px 28px rgba(95, 59, 31, 0.1);
+  }
+
+  .stage-card h2,
+  .result-scroll h2 {
+    color: var(--mobile-text);
+    font-size: 24px;
+    line-height: 1.25;
+  }
+
+  .stage-card p,
+  .result-scroll p,
+  .reading-block p,
+  .yaoci-list li {
+    color: var(--mobile-muted);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+
+  .stage-actions,
+  .result-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .stage-actions .ds-button,
+  .result-actions .ds-button {
+    width: 100%;
+  }
+
+  .breath-circle {
+    width: min(220px, 68vw);
+    height: min(220px, 68vw);
+  }
+
+  .bagua-plate,
+  .desk-card .bagua-plate {
+    width: min(230px, 70vw);
+    height: min(230px, 70vw);
+  }
+
+  .coin-row,
+  .coin-flight {
+    max-width: 100%;
+    gap: 10px;
+  }
+
+  .coin {
+    width: 58px;
+    height: 58px;
+  }
+
+  .hex-lines {
+    width: min(260px, 76vw);
+  }
+
+  .scroll-left,
+  .scroll-right {
+    min-width: 0;
+    padding: 0;
+  }
+
+  .yaoci-list {
+    padding-left: 0;
+    list-style: none;
   }
 }
 </style>

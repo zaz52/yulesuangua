@@ -37,6 +37,14 @@
               <button class="ds-button primary" type="button" @click="go('/zhouyi')">开始问卦</button>
               <button class="ds-button ghost" type="button" @click="go('/divine/qimen')">查看功能</button>
             </div>
+            <form class="mobile-quick-ask" @submit.prevent="startMobileAsk">
+              <label>
+                <span>{{ quickAskLabel }}</span>
+                <textarea v-model.trim="mobileQuestion" :placeholder="quickAskPlaceholder"></textarea>
+              </label>
+              <button class="ds-button primary" type="submit">{{ quickAskButton }}</button>
+              <small>{{ quickAskPrivacy }}</small>
+            </form>
           </div>
           <div class="hero-plate">
             <div class="bagua-orbit" aria-hidden="true">
@@ -149,6 +157,11 @@ const trigrams = ['乾', '兑', '离', '震', '巽', '坎', '艮', '坤']
 const activeGroup = ref('all')
 const activeFunctionGroup = ref('all')
 const toolSearch = ref('')
+const mobileQuestion = ref('')
+const quickAskLabel = '\u8bf7\u8f93\u5165\u4f60\u60f3\u95ee\u7684\u4e8b'
+const quickAskPlaceholder = '\u4f8b\u5982\uff1a\u8fd9\u6b21\u9009\u62e9\u662f\u5426\u987a\u5229\uff1f'
+const quickAskButton = '\u7acb\u5373\u8d77\u5366'
+const quickAskPrivacy = '\u9690\u79c1\u4fdd\u62a4\uff1a\u95ee\u9898\u53ea\u5e26\u5165\u5f53\u524d\u8d77\u5366\u6d41\u7a0b\uff0c\u4e0d\u4fdd\u5b58\u4e3a\u672c\u5730\u8bb0\u5f55\u3002'
 
 const groups = [
   { id: 'all', name: '全部' },
@@ -247,6 +260,13 @@ const visibleFunctionSections = computed(() => {
 
 function go(path) {
   router.push(path)
+}
+
+function startMobileAsk() {
+  router.push({
+    path: '/zhouyi',
+    query: mobileQuestion.value ? { question: mobileQuestion.value } : {},
+  })
 }
 </script>
 
@@ -799,6 +819,10 @@ function go(path) {
   padding: 24px;
 }
 
+.mobile-quick-ask {
+  display: none;
+}
+
 @media (max-width: 1100px) {
   .skill-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -858,6 +882,145 @@ function go(path) {
   .tool-grid,
   .function-card-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .home-page {
+    padding-inline: 14px;
+  }
+
+  .home-hero {
+    display: grid;
+    grid-template-columns: 1fr;
+    min-height: auto;
+    padding: 20px 18px;
+  }
+
+  .hero-copy {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .home-hero h1,
+  .hero-copy h1 {
+    margin: 6px 0 8px;
+    color: var(--mobile-text);
+    font-size: clamp(28px, 9vw, 38px);
+    line-height: 1.18;
+  }
+
+  .home-hero p,
+  .hero-copy p {
+    max-width: none;
+    color: var(--mobile-muted);
+    font-size: 15px;
+    line-height: 1.65;
+  }
+
+  .hero-actions,
+  .function-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .hero-actions .ds-button,
+  .function-actions .ds-button {
+    width: 100%;
+  }
+
+  .mobile-quick-ask {
+    display: grid;
+    gap: 10px;
+    margin-top: 14px;
+    padding: 14px;
+    border: 1px solid var(--mobile-border);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.58);
+  }
+
+  .mobile-quick-ask label {
+    display: grid;
+    gap: 8px;
+  }
+
+  .mobile-quick-ask span {
+    color: var(--mobile-primary-dark);
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .mobile-quick-ask textarea {
+    width: 100%;
+    min-height: 118px;
+    border-radius: 14px;
+    font-size: 16px;
+  }
+
+  .mobile-quick-ask .ds-button {
+    width: 100%;
+  }
+
+  .mobile-quick-ask small {
+    color: var(--mobile-muted);
+    font-size: 12px;
+    line-height: 1.55;
+  }
+
+  .home-hero .hero-visual,
+  .hero-plate {
+    min-height: 220px;
+    margin-top: 8px;
+    border-radius: 18px;
+  }
+
+  .bagua-orbit {
+    width: min(238px, 72vw);
+    height: min(238px, 72vw);
+  }
+
+  .plate-center {
+    width: min(138px, 42vw);
+    height: min(138px, 42vw);
+  }
+
+  .function-center,
+  .boundary-section {
+    padding: 18px;
+  }
+
+  .skill-grid,
+  .tool-grid,
+  .function-card-grid {
+    gap: 12px;
+  }
+
+  .function-card,
+  .skill-card,
+  .tool-card {
+    min-height: auto;
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .tool-card {
+    align-items: center;
+  }
+
+  .tool-card strong,
+  .boundary-section h2 {
+    color: var(--mobile-text);
+    font-size: 20px;
+  }
+
+  .tool-card p,
+  .function-card p,
+  .skill-card p {
+    color: var(--mobile-muted);
+    font-size: 14px;
+    line-height: 1.6;
   }
 }
 </style>

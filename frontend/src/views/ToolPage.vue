@@ -2483,4 +2483,123 @@ function buildWishBoard(form = {}, count = 108, message = '') {
     grid-column: 1 / -1;
   }
 }
+
+@media (max-width: 768px) {
+  .tool-hero {
+    padding: 18px;
+  }
+
+  .tool-hero h1 {
+    margin: 4px 0 8px;
+    color: var(--mobile-text);
+    font-size: 24px;
+    line-height: 1.25;
+  }
+
+  .tool-hero p {
+    color: var(--mobile-muted);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .tool-hero .ds-button {
+    width: 100%;
+  }
+
+  .tool-privacy-note {
+    margin: 0;
+    padding: 12px 14px;
+    border: 1px solid var(--mobile-border);
+    border-radius: 16px;
+    color: var(--mobile-muted);
+    background: rgba(255, 255, 255, 0.6);
+  }
+
+  .work-card {
+    padding: 16px;
+  }
+
+  .work-card > p {
+    color: var(--mobile-muted);
+    font-size: 14px;
+    line-height: 1.65;
+  }
+
+  .dream-textarea textarea,
+  .wishForm textarea,
+  .work-card textarea {
+    min-height: 136px;
+  }
+
+  .dream-prompts {
+    display: flex;
+    max-width: 100%;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .dream-prompts button {
+    flex: 0 0 auto;
+    width: auto;
+    min-height: 38px;
+    padding: 0 12px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+
+  .dream-action,
+  .lingqian-hero .ds-button,
+  .work-card > .ds-button.primary {
+    width: 100%;
+  }
+
+  .lingqian-hero {
+    min-height: 180px;
+    border-radius: 18px;
+  }
+
+  .lingqian-hero > div {
+    width: 100%;
+  }
+
+  .huangli-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .pillar-table,
+  :deep(.pillar-table),
+  :deep(.almanac-board),
+  :deep(.name-board),
+  :deep(.lot-board),
+  :deep(.dream-board),
+  :deep(.wish-board) {
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  :deep(.pillar-table) {
+    overflow-x: auto;
+  }
+
+  :deep(.tool-insight-section),
+  :deep(.name-card),
+  :deep(.lot-advice),
+  :deep(.dream-symbol),
+  :deep(.wish-item) {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  :deep(.tool-insight-section p),
+  :deep(.name-card p),
+  :deep(.lot-advice p),
+  :deep(.dream-symbol p),
+  :deep(.wish-item p) {
+    font-size: 15px;
+    line-height: 1.7;
+  }
+}
 </style>

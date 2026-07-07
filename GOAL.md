@@ -454,3 +454,34 @@ Progress:
 - Final validation passed: `npm run build`, Cloudflare Function syntax check, frontend module syntax checks, production domain 200 check, and privacy scan.
 - Added `DELIVERY.md` for handoff and `FINAL_ACCEPTANCE.md` for final acceptance.
 - No Obsidian sync performed.
+
+## 2026-07-07 mobile app-like responsive adaptation
+
+Task: adapt the production site for phone browsing without changing existing desktop layout or business logic.
+
+Success criteria:
+- Viewport meta uses `viewport-fit=cover`.
+- At screen widths `<= 768px`, the site switches to an app-like single-column mobile layout.
+- Mobile first screen prioritizes site title, short description, input/action area, and clear primary button where the page has a form.
+- Home, divination pages, tool pages, and Zhouyi ritual are usable on 320px, 360px, 390px, 412px, and 430px widths.
+- No page-level horizontal scrolling on mobile.
+- Inputs, textareas, selects, and buttons are finger-friendly.
+- Result content is readable in card/module form with appropriate line height.
+- Desktop layout remains unchanged.
+- Build, syntax checks, privacy scan, browser E2E, GitHub push, Cloudflare deployment, and production verification pass.
+
+Architecture:
+- Keep Vue page/component structure and existing business logic.
+- Add focused CSS media queries at `max-width: 768px`.
+- Use global CSS for shared shell/topbar/rail/card/form behavior.
+- Use scoped page CSS for page-specific grids and ritual/result boards.
+
+Progress:
+- Started implementation after final MVP handoff, at user's request to make the website phone-app-like.
+- Updated viewport meta to include `viewport-fit=cover`.
+- Added a global `max-width: 768px` app-like mobile shell: single-column layout, hidden desktop rails, finger-friendly buttons/inputs, mobile card surfaces, safe-area padding, media/table overflow guards, and no page-level horizontal scrolling.
+- Added page-specific mobile refinements for Home, Divine, ToolPage, and ZhouyiRitual.
+- Added a mobile-only quick ask card on the home hero; submitted questions are passed to `/zhouyi?question=...` and prefilled into the Zhouyi question step.
+- Browser checks passed locally on 320px, 360px, 390px, 412px, and 430px for `/`, `/zhouyi`, `/divine/qimen`, `/tools/qiming`, and `/tools/huangli`: no horizontal overflow and no `qk_` localStorage keys.
+- Mobile result-flow checks passed locally at 390px for `/divine/qimen`, `/tools/qiming`, and `/tools/huangli`: result boards render, primary actions are finger-sized, no page-level overflow, and no `qk_` keys.
+- Validation passed: `npm run build`, Function syntax checks, frontend module syntax checks, `git diff --check`, and privacy scan. Privacy scan only found documentation references and the unused exported consultation helper.
