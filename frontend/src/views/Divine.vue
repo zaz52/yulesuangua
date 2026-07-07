@@ -115,13 +115,13 @@
           <article v-if="previewableSkills.includes(skillId)" class="board-preview-panel oracle-card">
             <div class="panel-head">
               <div>
-                <span class="section-kicker">{{ skillInfo.name }}命盘</span>
-                <h2>排盘结果</h2>
+                <span class="section-kicker">{{ skillInfo.name }}示例</span>
+                <h2>示例预览盘</h2>
               </div>
-              <span class="ds-badge gold">实时预览</span>
+              <span class="ds-badge">未提交</span>
             </div>
-            <VisualBoard :board="buildBoard(null)" />
-            <p class="preview-note">此为示例命盘，填写信息并排盘后可查看你的专属盘面与详细解读。</p>
+            <VisualBoard :board="buildBoard(null, 'preview')" />
+            <p class="preview-note">这是示例预览盘，只用于告诉你这个功能会长什么样；填写信息并点击“开始排盘”后，下方会生成你的专属结果盘。</p>
           </article>
         </section>
 
@@ -160,7 +160,7 @@
 
           <article v-for="(resp, index) in responses" :key="index" class="answer-card oracle-card">
             <div class="answer-head">
-              <span class="ds-badge gold">第 {{ index + 1 }} 次问事</span>
+              <span class="ds-badge gold">第 {{ index + 1 }} 次问事 · 已提交结果</span>
               <time>{{ today }}</time>
             </div>
             <VisualBoard v-if="typeof resp !== 'string' && resp.board" :board="resp.board" />
@@ -413,14 +413,15 @@ function buildMessage() {
   return [`术法：${name}`, `事件类型：${f.topic}`, `起局时间：${f.datetime}`, `地点/方位：${f.place || '未填写'}`, `所问之事：${userInput.value}`].join('；')
 }
 
-function buildBoard(chartResult = null) {
+function buildBoard(chartResult = null, state = 'preview') {
   if (chartResult?.ok && chartResult.data) {
     return {
       type: skillId.value,
       title: `${skillInfo.value.name}盘面`,
-      badge: '真实排盘',
+      badge: chartResult.source?.startsWith('rules-mvp') ? '规则结果盘' : '真实排盘',
       data: chartResult.data,
       source: chartResult.source,
+      state: 'result',
     }
   }
 
@@ -497,8 +498,10 @@ function buildBoard(chartResult = null) {
   return {
     type: skillId.value,
     title: `${skillInfo.value.name}盘面`,
-    badge: skillInfo.value.caption,
+    badge: state === 'result' ? '本地兜底盘' : '示例预览',
     data: base[skillId.value] || base.qimen,
+    source: state === 'result' ? 'local-fallback' : '',
+    state,
   }
 }
 
@@ -551,7 +554,7 @@ async function sendMessage() {
   } catch {
     chartResult = null
   }
-  const board = buildBoard(chartResult)
+  const board = buildBoard(chartResult, 'result')
   const extra = {}
   if (skillId.value === 'qimen' && eventForm.value.datetime) extra.datetime_str = eventForm.value.datetime.replace('T', ' ')
 
@@ -614,7 +617,7 @@ function buildChartPayload(message) {
 const VisualBoard = defineComponent({
   props: { board: Object },
   setup(props) {
-    return () => h('div', { class: ['visual-board', 'pro-board', `board-${props.board.type}`] }, [
+    return () => h('div', { class: ['visual-board', 'pro-board', `board-${props.board.type}`, `is-${props.board.state || 'preview'}`] }, [
       h('div', { class: 'board-head' }, [
         h('h3', props.board.title),
         h('div', { class: 'board-badges' }, [
@@ -1020,6 +1023,16 @@ function renderGenericBoard(data) {
 
 .board-preview-panel .visual-board {
   margin-bottom: 0;
+}
+
+.visual-board.is-preview {
+  opacity: 0.82;
+  filter: saturate(0.86);
+}
+
+.visual-board.is-result {
+  border-color: rgba(215, 179, 95, 0.36);
+  box-shadow: 0 0 0 1px rgba(215, 179, 95, 0.08), 0 18px 42px rgba(0, 0, 0, 0.24);
 }
 
 .preview-note {
