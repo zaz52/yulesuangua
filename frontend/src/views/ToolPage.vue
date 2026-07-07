@@ -202,7 +202,7 @@ const NameBoard = defineComponent({
     source: String,
   },
   setup(props) {
-    const renderAnalysis = () => {
+    const renderSummary = () => {
       if (!props.analysis) return null
       const items = [
         ['日主', props.analysis.dayMaster],
@@ -216,14 +216,66 @@ const NameBoard = defineComponent({
       ])))
     }
 
+    const renderPillars = () => {
+      const plate = props.analysis?.plate
+      if (!plate?.columns?.length) return null
+      const rows = [
+        ['天干', plate.gan],
+        ['地支', plate.zhi],
+        ['干支', plate.ganzhi],
+        ['十神', plate.tenGods],
+        ['纳音', plate.nayin],
+      ]
+      return h('section', { class: 'naming-plate', 'aria-label': '四柱起名排盘' }, [
+        h('div', { class: 'plate-title' }, [
+          h('span', '生辰排盘'),
+          h('strong', plate.title || '四柱命名盘'),
+        ]),
+        h('div', { class: 'pillar-table', role: 'table', 'aria-label': '四柱命名盘表' }, [
+          h('div', { class: 'pillar-table-row head', role: 'row' }, [
+            h('span', { role: 'columnheader' }, '四柱'),
+            ...plate.columns.map((column) => h('strong', { role: 'columnheader' }, column)),
+          ]),
+          ...rows.map(([label, values]) => h('div', { class: ['pillar-table-row', label === '干支' ? 'ganzhi' : ''], role: 'row' }, [
+            h('span', { role: 'rowheader' }, label),
+            ...plate.columns.map((_, index) => h('strong', { role: 'cell' }, values?.[index] || '待定')),
+          ])),
+        ]),
+      ])
+    }
+
+    const renderElements = () => {
+      const elements = props.analysis?.elements || []
+      if (!elements.length) return null
+      const max = Math.max(...elements.map((item) => item.score), 1)
+      return h('section', { class: 'element-plate', 'aria-label': '五行补益盘' }, [
+        h('div', { class: 'plate-title' }, [
+          h('span', '五行补益'),
+          h('strong', props.analysis?.elementFocus || '待定'),
+        ]),
+        h('div', { class: 'element-bars' }, elements.map((item) => h('div', { class: ['element-row', item.focus ? 'focus' : ''] }, [
+          h('span', item.name),
+          h('i', { style: { '--value': `${Math.max(8, Math.round((item.score / max) * 100))}%` } }),
+          h('strong', `${item.score}`),
+        ]))),
+        h('div', { class: 'naming-rules' }, [
+          h('div', [h('span', '宜补'), h('strong', props.analysis?.elementFocus || '待定')]),
+          h('div', [h('span', '避用'), h('strong', props.analysis?.avoidFocus || '避免过偏')]),
+          h('div', [h('span', '原则'), h('strong', '先平衡五行，再看读音字义')]),
+        ]),
+      ])
+    }
+
     return () => h('section', { class: 'name-board' }, [
       h('div', { class: 'name-board-head' }, [
-        h('div', [h('span', '候选美称'), h('strong', props.summary)]),
-        h('em', props.source ? `来源：${props.source}` : '参考图样式：卡片候选，不再输出纯文字段落'),
+        h('div', [h('span', '起名命盘'), h('strong', props.summary)]),
+        h('em', props.source ? `排盘来源：${props.source}` : '填写后生成命名排盘'),
       ]),
       props.loading ? h('div', { class: 'name-state', role: 'status', 'aria-live': 'polite' }, '正在排八字并推演五行补益...') : null,
       props.error ? h('div', { class: 'name-state error', role: 'alert' }, props.error) : null,
-      renderAnalysis(),
+      renderSummary(),
+      renderPillars(),
+      renderElements(),
       !props.loading && !(props.names || []).length ? h('div', { class: 'name-state empty' }, '填写信息后生成候选名册。') : null,
       h('div', { class: 'name-grid' }, (props.names || []).map((item) => h('article', { class: 'name-card' }, [
         h('div', { class: 'name-main' }, [h('strong', item.full), h('span', item.pinyin)]),
@@ -289,6 +341,9 @@ const nameAnalysis = ref({
   elementFocus: '填写后生成',
   usefulGod: '待分析',
   lunarDate: '农历生日',
+  avoidFocus: '待分析',
+  plate: buildFallbackNamePlate(),
+  elements: buildFallbackElements('木火'),
 })
 const canGenerateNames = computed(() => Boolean(nameForm.value.familyName.trim() && isValidBirthDate(nameForm.value.birth)))
 const wishForm = ref({ target: '自己', text: '' })
@@ -455,16 +510,100 @@ function buildNameAnalysis(board, style) {
   const usefulGod = findHighlight(highlights, '用神') || '以八字平衡为先'
   const lunarDate = findHighlight(highlights, '农历') || '农历生日已接入'
   const elementFocus = inferElementFocus(`${dayMaster} ${usefulGod} ${style} ${flattenRows(rows)}`)
-  return { dayMaster, usefulGod, lunarDate, elementFocus }
+  const avoidFocus = inferAvoidFocus(board, elementFocus)
+  return {
+    dayMaster,
+    usefulGod,
+    lunarDate,
+    elementFocus,
+    avoidFocus,
+    plate: buildNamePlate(board),
+    elements: buildElementPlate(board, elementFocus),
+  }
 }
 
 function buildFallbackNameAnalysis(style) {
+  const elementFocus = inferElementFocus(style || '清雅自然')
   return {
     dayMaster: '未取得排盘',
     usefulGod: '以字义、读音、五行均衡为先',
     lunarDate: nameForm.value.birth || '未填写',
-    elementFocus: inferElementFocus(style || '清雅自然'),
+    elementFocus,
+    avoidFocus: buildAvoidFocus(elementFocus),
+    plate: buildFallbackNamePlate(),
+    elements: buildFallbackElements(elementFocus),
   }
+}
+
+function buildNamePlate(board = {}) {
+  const rows = Array.isArray(board?.rows) ? board.rows : []
+  const columns = Array.isArray(board?.columns) ? board.columns : ['年柱', '月柱', '日柱', '时柱']
+  const plate = {
+    title: '四柱命名盘',
+    columns,
+    gan: rowValues(rows, '天干'),
+    zhi: rowValues(rows, '地支'),
+    ganzhi: rowValues(rows, '干支'),
+    tenGods: rowValues(rows, '十神'),
+    nayin: rowValues(rows, '纳音'),
+  }
+  if (plate.ganzhi.some(Boolean)) return plate
+  return buildFallbackNamePlate()
+}
+
+function buildFallbackNamePlate() {
+  return {
+    title: '四柱命名盘',
+    columns: ['年柱', '月柱', '日柱', '时柱'],
+    gan: ['待', '待', '待', '待'],
+    zhi: ['排', '排', '排', '排'],
+    ganzhi: ['待定', '待定', '待定', '待定'],
+    tenGods: ['待定', '待定', '日主', '待定'],
+    nayin: ['待定', '待定', '待定', '待定'],
+  }
+}
+
+function rowValues(rows, label) {
+  const row = rows.find((item) => item?.[0] === label)
+  return row ? row.slice(1, 5).map((item) => item || '待定') : []
+}
+
+function buildElementPlate(board, focus) {
+  const scores = board?.raw?.wuxingStrength?.scores || {}
+  const names = ['木', '火', '土', '金', '水']
+  const hasScore = names.some((name) => Number.isFinite(Number(scores[name])))
+  if (!hasScore) return buildFallbackElements(focus)
+  return names.map((name) => ({
+    name,
+    score: Number(scores[name]) || 0,
+    focus: String(focus || '').includes(name),
+  }))
+}
+
+function buildFallbackElements(focus) {
+  const base = { 木: 42, 火: 36, 土: 30, 金: 28, 水: 24 }
+  return Object.entries(base).map(([name, score]) => ({
+    name,
+    score: String(focus || '').includes(name) ? score + 18 : score,
+    focus: String(focus || '').includes(name),
+  }))
+}
+
+function inferAvoidFocus(board, focus) {
+  const avoid = board?.raw?.analysis?.usefulGod?.primaryAvoid || board?.raw?.analysis?.usefulGod?.avoid
+  if (avoid) return valueTextLocal(avoid)
+  return buildAvoidFocus(focus)
+}
+
+function buildAvoidFocus(focus) {
+  const missing = ['金', '木', '水', '火', '土'].filter((element) => !String(focus || '').includes(element)).slice(0, 2)
+  return missing.length ? `少偏${missing.join('、')}` : '避生僻与谐音'
+}
+
+function valueTextLocal(value) {
+  if (Array.isArray(value)) return value.join('、')
+  if (value && typeof value === 'object') return Object.values(value).filter(Boolean).join('、')
+  return String(value || '')
 }
 
 function findHighlight(highlights, label) {
@@ -990,6 +1129,176 @@ function offerIncense() {
   line-height: 1.5;
 }
 
+.naming-plate,
+.element-plate {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: var(--radius-sm);
+  background:
+    linear-gradient(180deg, rgba(255, 247, 231, 0.05), rgba(0, 0, 0, 0.1)),
+    rgba(0, 0, 0, 0.16);
+}
+
+.plate-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.plate-title span {
+  color: var(--seal);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.plate-title strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+}
+
+.pillar-table {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: var(--radius-xs);
+  background:
+    radial-gradient(circle at 50% 0%, rgba(215, 179, 95, 0.1), transparent 34%),
+    rgba(13, 9, 7, 0.34);
+}
+
+.pillar-table-row {
+  display: grid;
+  grid-template-columns: 72px repeat(4, minmax(0, 1fr));
+  min-height: 48px;
+  border-top: 1px solid rgba(215, 179, 95, 0.12);
+}
+
+.pillar-table-row:first-child {
+  border-top: 0;
+}
+
+.pillar-table-row > span,
+.pillar-table-row > strong {
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  padding: 10px 8px;
+  border-left: 1px solid rgba(215, 179, 95, 0.12);
+  color: var(--paper);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.pillar-table-row > span:first-child {
+  border-left: 0;
+  color: var(--seal);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pillar-table-row.head {
+  min-height: 52px;
+  background: rgba(215, 179, 95, 0.08);
+}
+
+.pillar-table-row.head strong {
+  color: var(--seal);
+  font-weight: 700;
+}
+
+.pillar-table-row.ganzhi strong {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+}
+
+.naming-rules div {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  padding: 7px 8px;
+  border: 1px solid rgba(215, 179, 95, 0.1);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.035);
+}
+
+.naming-rules span {
+  color: var(--seal);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.naming-rules strong {
+  min-width: 0;
+  color: var(--paper);
+  overflow-wrap: anywhere;
+}
+
+.element-plate {
+  grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.85fr);
+}
+
+.element-plate .plate-title {
+  grid-column: 1 / -1;
+}
+
+.element-bars {
+  display: grid;
+  gap: 10px;
+}
+
+.element-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 42px;
+  gap: 10px;
+  align-items: center;
+}
+
+.element-row span {
+  color: var(--paper);
+  font-weight: 700;
+}
+
+.element-row i {
+  position: relative;
+  height: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(215, 179, 95, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 247, 231, 0.05);
+}
+
+.element-row i::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--value);
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(140, 35, 30, 0.86), rgba(215, 179, 95, 0.9));
+}
+
+.element-row.focus i::after {
+  background: linear-gradient(90deg, rgba(215, 179, 95, 0.95), rgba(242, 214, 138, 0.95));
+}
+
+.element-row strong {
+  color: var(--paper-dim);
+  font-size: 12px;
+  text-align: right;
+}
+
+.naming-rules {
+  display: grid;
+  gap: 8px;
+}
+
 .name-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -999,11 +1308,12 @@ function offerIncense() {
 .name-card {
   display: grid;
   gap: 10px;
-  min-height: 210px;
+  min-height: 260px;
   padding: 14px;
   border: 1px solid rgba(215, 179, 95, 0.16);
   border-radius: var(--radius-xs);
   background:
+    radial-gradient(circle at 12% 10%, rgba(215, 179, 95, 0.12), transparent 32%),
     linear-gradient(145deg, rgba(255, 247, 231, 0.07), transparent),
     rgba(0, 0, 0, 0.16);
 }
@@ -1018,7 +1328,7 @@ function offerIncense() {
 .name-main strong {
   color: var(--gold-bright);
   font-family: var(--font-display);
-  font-size: 34px;
+  font-size: 38px;
   font-weight: 400;
 }
 
@@ -1070,6 +1380,305 @@ function offerIncense() {
 .name-card dd {
   margin: 3px 0 0;
   color: var(--paper);
+  overflow-wrap: anywhere;
+}
+
+:deep(.name-board-head) {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+:deep(.name-board-head span),
+:deep(.name-board-head strong) {
+  display: block;
+}
+
+:deep(.name-board-head span),
+:deep(.name-analysis span),
+:deep(.plate-title span),
+:deep(.pillar-table-row > span:first-child),
+:deep(.naming-rules span),
+:deep(.name-card dt) {
+  color: var(--seal);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+:deep(.name-board-head strong) {
+  margin-top: 4px;
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+}
+
+:deep(.name-board-head em) {
+  color: rgba(245, 234, 212, 0.54);
+  font-size: 12px;
+  font-style: normal;
+  text-align: right;
+}
+
+:deep(.name-state),
+:deep(.name-analysis),
+:deep(.naming-plate),
+:deep(.element-plate) {
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: var(--radius-sm);
+  background: rgba(0, 0, 0, 0.16);
+}
+
+:deep(.name-state),
+:deep(.name-analysis) {
+  padding: 12px 14px;
+  color: var(--paper-dim);
+}
+
+:deep(.name-state.error) {
+  border-color: rgba(180, 54, 45, 0.42);
+  color: #f1b2a8;
+  background: rgba(180, 54, 45, 0.1);
+}
+
+:deep(.name-analysis) {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+:deep(.name-analysis div) {
+  display: grid;
+  gap: 4px;
+}
+
+:deep(.name-analysis strong) {
+  color: var(--paper);
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+:deep(.naming-plate),
+:deep(.element-plate) {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  background:
+    linear-gradient(180deg, rgba(255, 247, 231, 0.05), rgba(0, 0, 0, 0.1)),
+    rgba(0, 0, 0, 0.16);
+}
+
+:deep(.plate-title) {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+:deep(.plate-title strong) {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 400;
+}
+
+:deep(.pillar-table) {
+  display: grid;
+  overflow: hidden;
+  border: 1px solid rgba(215, 179, 95, 0.24);
+  border-radius: var(--radius-xs);
+  background: rgba(13, 9, 7, 0.42);
+}
+
+:deep(.pillar-table-row) {
+  display: grid;
+  grid-template-columns: 72px repeat(4, minmax(0, 1fr));
+  min-height: 48px;
+  border-top: 1px solid rgba(215, 179, 95, 0.18);
+}
+
+:deep(.pillar-table-row:first-child) {
+  border-top: 0;
+}
+
+:deep(.pillar-table-row > span),
+:deep(.pillar-table-row > strong) {
+  display: grid;
+  min-width: 0;
+  place-items: center;
+  padding: 10px 8px;
+  border-left: 1px solid rgba(215, 179, 95, 0.16);
+  color: var(--paper);
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+:deep(.pillar-table-row > span:first-child) {
+  border-left: 0;
+}
+
+:deep(.pillar-table-row.head) {
+  min-height: 52px;
+  background: rgba(215, 179, 95, 0.1);
+}
+
+:deep(.pillar-table-row.head strong) {
+  color: var(--seal);
+  font-weight: 700;
+}
+
+:deep(.pillar-table-row.ganzhi strong) {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 400;
+}
+
+:deep(.element-plate) {
+  grid-template-columns: minmax(0, 1.15fr) minmax(220px, 0.85fr);
+}
+
+:deep(.element-plate .plate-title) {
+  grid-column: 1 / -1;
+}
+
+:deep(.element-bars),
+:deep(.naming-rules) {
+  display: grid;
+  gap: 10px;
+}
+
+:deep(.element-row) {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) 42px;
+  gap: 10px;
+  align-items: center;
+}
+
+:deep(.element-row span) {
+  color: var(--paper);
+  font-weight: 700;
+}
+
+:deep(.element-row i) {
+  position: relative;
+  height: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(215, 179, 95, 0.12);
+  border-radius: 999px;
+  background: rgba(255, 247, 231, 0.05);
+}
+
+:deep(.element-row i::after) {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--value);
+  border-radius: inherit;
+  background: linear-gradient(90deg, rgba(140, 35, 30, 0.86), rgba(215, 179, 95, 0.9));
+}
+
+:deep(.element-row.focus i::after) {
+  background: linear-gradient(90deg, rgba(215, 179, 95, 0.95), rgba(242, 214, 138, 0.95));
+}
+
+:deep(.element-row strong) {
+  color: var(--paper-dim);
+  font-size: 12px;
+  text-align: right;
+}
+
+:deep(.naming-rules div) {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  padding: 7px 8px;
+  border: 1px solid rgba(215, 179, 95, 0.1);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.035);
+}
+
+:deep(.naming-rules strong) {
+  color: var(--paper);
+}
+
+:deep(.name-grid) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+:deep(.name-card) {
+  display: grid;
+  gap: 10px;
+  min-height: 260px;
+  padding: 14px;
+  border: 1px solid rgba(215, 179, 95, 0.16);
+  border-radius: var(--radius-xs);
+  background:
+    radial-gradient(circle at 12% 10%, rgba(215, 179, 95, 0.12), transparent 32%),
+    linear-gradient(145deg, rgba(255, 247, 231, 0.07), transparent),
+    rgba(0, 0, 0, 0.16);
+}
+
+:deep(.name-main) {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+:deep(.name-main strong) {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 38px;
+  font-weight: 400;
+}
+
+:deep(.name-main span) {
+  color: rgba(245, 234, 212, 0.52);
+  font-size: 12px;
+}
+
+:deep(.name-card p) {
+  margin: 0;
+  color: var(--paper);
+  line-height: 1.7;
+}
+
+:deep(.name-tags) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+:deep(.name-tags span) {
+  padding: 3px 8px;
+  border: 1px solid rgba(215, 179, 95, 0.18);
+  border-radius: 999px;
+  color: var(--paper-dim);
+  font-size: 12px;
+}
+
+:deep(.name-card dl) {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+:deep(.name-card dl div) {
+  padding: 8px;
+  border: 1px solid rgba(215, 179, 95, 0.12);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.04);
+}
+
+:deep(.name-card dd) {
+  margin: 3px 0 0;
+  color: var(--paper);
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 900px) {
@@ -1090,9 +1699,46 @@ function offerIncense() {
   .huangli-actions,
   .name-grid,
   .name-analysis,
+  .element-plate,
   .panel-head {
     grid-template-columns: 1fr;
     display: grid;
+  }
+
+  .pillar-table-row {
+    grid-template-columns: 52px repeat(4, minmax(54px, 1fr));
+  }
+
+  .pillar-table {
+    overflow-x: auto;
+  }
+
+  :deep(.name-board-head),
+  :deep(.plate-title) {
+    display: grid;
+    text-align: left;
+  }
+
+  :deep(.name-board-head em) {
+    text-align: left;
+  }
+
+  :deep(.name-analysis),
+  :deep(.element-plate),
+  :deep(.name-grid) {
+    grid-template-columns: 1fr;
+  }
+
+  :deep(.pillar-table) {
+    overflow-x: auto;
+  }
+
+  :deep(.pillar-table-row) {
+    grid-template-columns: 52px repeat(4, minmax(54px, 1fr));
+  }
+
+  :deep(.name-card dl) {
+    grid-template-columns: 1fr;
   }
 
   .name-board-head {
