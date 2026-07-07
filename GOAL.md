@@ -181,3 +181,9 @@ Progress:
 - Updated normalizers and board components to render richer Bazi and Meihua plates.
 - Updated `readingChart.facts` extraction for pillars, elements, hexagrams, relation, and yaos.
 - Validation passed locally: `npm run build`, Function syntax check, `git diff --check`, privacy scan, direct Function calls, and mobile browser E2E on local Pages dev for `/divine/bazi` and `/divine/meihua`.
+- Completed GitHub push: `6cb3059 feat: enrich bazi and meihua plates`.
+- Deployed Cloudflare Pages preview: `https://b3569b6b.yulesuangua.pages.dev`.
+- Verified production custom domain API:
+  - `bazi` returns 4 pillars, 5 element stats, day master, strength, pattern, useful and avoid fields.
+  - `meihua` returns original hexagram, 6 yaos, 6 clues, moving line, and changed relation.
+- Verified production mobile browser flow on `https://suangua.weiyiai.top/divine/bazi` and `/divine/meihua`: result plates render, no horizontal overflow, no console errors, and no `qk_` localStorage keys.
