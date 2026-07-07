@@ -98,3 +98,6 @@
 - 第三步已完成 MVP 数据结构：前端提交时生成 `readingChart`，包含 `version/meta/input/board/chart/facts/sections`；后端解读入口优先读取 `readingChart` 的 facts 和固定栏目。
 - 已补后端 `fojiao` 规则盘，并在前端把佛学开示设为本地规则盘，避免无排盘算法页面产生 422 控制台错误。
 - 已完成验证：`npm run build` 通过，`node --check frontend/functions/api/[[path]].js` 通过；工具页和术法页浏览器验证均无横向溢出、无控制台错误、无 `qk_` 本地记录。
+- 已提交并推送代码：`3977bab feat: upgrade tool and reading boards`。
+- 已部署 Cloudflare Pages，预览地址：`https://a41f7186.yulesuangua.pages.dev`。
+- 已完成生产验收：`https://suangua.weiyiai.top/tools/lingqian`、`/tools/jiemeng`、`/tools/xianghuo` 返回 200；线上移动端浏览器验证三页均显示新盘面；`/divine/qimen` 和 `/divine/fojiao` 提交后均生成 `visual-board board-* is-result`；新增 `fojiao` 排盘 API 返回 200；无横向溢出、无控制台错误、无 `qk_` 本地记录。
