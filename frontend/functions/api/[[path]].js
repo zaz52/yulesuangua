@@ -570,6 +570,7 @@ function calculateQimenBoard(payload) {
   const names = { 1: '坎一', 2: '坤二', 3: '震三', 4: '巽四', 5: '中五', 6: '乾六', 7: '兑七', 8: '艮八', 9: '离九' }
   const directions = { 1: '正北', 2: '西南', 3: '正东', 4: '东南', 5: '中宫', 6: '西北', 7: '正西', 8: '东北', 9: '正南' }
   const elements = { 1: '水', 2: '土', 3: '木', 4: '木', 5: '土', 6: '金', 7: '金', 8: '土', 9: '火' }
+  const horseText = formatHorseStar(result.horseStar)
   return {
     center: {
       time: payload.datetime || result.timestamp || date.toISOString(),
@@ -588,7 +589,7 @@ function calculateQimenBoard(payload) {
         result.zhiFu && String(result.zhiFu).includes(String(star).replace('星', '')) ? '值符' : '',
         result.zhiShi && String(result.zhiShi).includes(String(gate).replace('门', '')) ? '值使' : '',
         Array.isArray(result.voidPalaces) && result.voidPalaces.includes(gong) ? '空亡' : '',
-        result.horseStar && [cell?.name, direction, heavenStem, earthStem].some((item) => String(item || '').includes(result.horseStar)) ? '马星' : '',
+        horseText && [cell?.name, direction, heavenStem, earthStem].some((item) => String(item || '').includes(horseText.slice(0, 1))) ? '马星' : '',
         ...(Array.isArray(result.patternTags) ? result.patternTags.filter((tag) => String(tag).includes(names[gong]) || String(tag).includes(direction)).slice(0, 1) : []),
       ].filter(Boolean)
       if (!cell) {
@@ -629,7 +630,7 @@ function calculateQimenBoard(payload) {
       zhiFu: result.zhiFu ? `${result.zhiFu}星` : '待定',
       zhiShi: result.zhiShi || '待定',
       xunShou: result.ganzhi?.hour || result.ganzhi?.day || '待定',
-      horse: result.horseStar || '待定',
+      horse: horseText || '待定',
       empty: Array.isArray(result.voidBranches) ? result.voidBranches.join('') : '待定',
       patternTags: result.patternTags || [],
     },
@@ -685,6 +686,13 @@ function calculateLiuyaoBoard(payload) {
     },
     raw: compactRaw(result),
   }
+}
+
+function formatHorseStar(value) {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  if (typeof value === 'object') return [value.branch, value.name || value.palace].filter(Boolean).join(' / ')
+  return String(value)
 }
 
 function inferLiuyaoUsefulGod(question = '', yaos = []) {
