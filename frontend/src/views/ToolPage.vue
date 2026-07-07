@@ -64,7 +64,7 @@
               <span>今日可抽取 3 次</span>
             </div>
           </div>
-          <LotBoard :lot="lot" :count="lotIndex" :insight="toolInsights.lingqian" :loading="toolInsightLoading.lingqian" :error="toolInsightErrors.lingqian" />
+          <LotBoard :lot="lot" :count="lotIndex" :insight="toolInsights.lingqian" :loading="toolInsightLoading.lingqian" :error="toolInsightErrors.lingqian" @retry="retryToolInsight('lingqian')" />
         </article>
 
         <article v-else-if="toolId === 'jiemeng'" class="work-card oracle-card dream-ritual">
@@ -75,7 +75,7 @@
             <button v-for="prompt in dreamPrompts" :key="prompt" type="button" @click="appendDreamPrompt(prompt)">{{ prompt }}</button>
           </div>
           <button class="ds-button primary dream-action" type="button" @click="analyzeDream">开始解析</button>
-          <DreamBoard :board="dreamBoard" :insight="toolInsights.jiemeng" :loading="toolInsightLoading.jiemeng" :error="toolInsightErrors.jiemeng" />
+          <DreamBoard :board="dreamBoard" :insight="toolInsights.jiemeng" :loading="toolInsightLoading.jiemeng" :error="toolInsightErrors.jiemeng" @retry="retryToolInsight('jiemeng')" />
         </article>
 
         <article v-else-if="toolId === 'qiming'" class="work-card oracle-card qiming-ritual">
@@ -108,7 +108,7 @@
             <label class="ds-field wide"><span>心愿</span><textarea v-model.trim="wishForm.text" placeholder="写下今天想安放的一句话"></textarea></label>
           </div>
           <button class="ds-button primary" type="button" @click="offerIncense">敬上三炷香</button>
-          <WishBoard :board="wishBoard" :insight="toolInsights.xianghuo" :loading="toolInsightLoading.xianghuo" :error="toolInsightErrors.xianghuo" />
+          <WishBoard :board="wishBoard" :insight="toolInsights.xianghuo" :loading="toolInsightLoading.xianghuo" :error="toolInsightErrors.xianghuo" @retry="retryToolInsight('xianghuo')" />
         </article>
       </section>
 
@@ -154,7 +154,8 @@ const PanelHead = defineComponent({
 
 const ToolInsight = defineComponent({
   props: { text: String, loading: Boolean, error: String },
-  setup(props) {
+  emits: ['retry'],
+  setup(props, { emit }) {
     return () => h('section', { class: 'tool-insight', 'aria-label': 'AI 固定栏目解读' }, [
       h('div', { class: 'tool-insight-head' }, [
         h('strong', 'AI 解读'),
@@ -162,7 +163,10 @@ const ToolInsight = defineComponent({
       ]),
       props.loading ? h('p', { role: 'status', 'aria-live': 'polite' }, '正在根据当前盘面生成固定栏目解读...') : null,
       props.error ? h('p', { class: 'error', role: 'alert' }, props.error) : null,
-      !props.loading && !props.error && props.text ? h('div', { class: 'tool-insight-sections' }, parseToolSections(props.text).map((item) => h('article', [
+      !props.loading && props.error ? h('div', { class: 'tool-insight-actions' }, [
+        h('button', { class: 'ds-button ghost', type: 'button', onClick: () => emit('retry') }, '重试解读'),
+      ]) : null,
+      !props.loading && props.text ? h('div', { class: 'tool-insight-sections' }, parseToolSections(props.text).map((item) => h('article', [
         h('span', item.title),
         h('p', item.body),
       ]))) : null,
@@ -205,7 +209,8 @@ const AlmanacBoard = defineComponent({
 
 const LotBoard = defineComponent({
   props: { lot: Object, count: Number, insight: String, loading: Boolean, error: String },
-  setup(props) {
+  emits: ['retry'],
+  setup(props, { emit }) {
     return () => {
       const lot = props.lot || {}
       const chart = buildLotChart(lot, props.count || 0)
@@ -229,7 +234,7 @@ const LotBoard = defineComponent({
           h('span', item.label),
           h('strong', item.value),
         ]))),
-        h(ToolInsight, { text: props.insight, loading: props.loading, error: props.error }),
+        h(ToolInsight, { text: props.insight, loading: props.loading, error: props.error, onRetry: () => emit('retry') }),
       ])
     }
   },
@@ -237,7 +242,8 @@ const LotBoard = defineComponent({
 
 const DreamBoard = defineComponent({
   props: { board: Object, insight: String, loading: Boolean, error: String },
-  setup(props) {
+  emits: ['retry'],
+  setup(props, { emit }) {
     return () => {
       const board = props.board || buildDreamBoard({})
       return h('section', { class: 'dream-board', 'aria-label': '梦象解析盘' }, [
@@ -255,7 +261,7 @@ const DreamBoard = defineComponent({
           h('strong', board.guidanceTitle),
           h('p', board.guidance),
         ]),
-        h(ToolInsight, { text: props.insight, loading: props.loading, error: props.error }),
+        h(ToolInsight, { text: props.insight, loading: props.loading, error: props.error, onRetry: () => emit('retry') }),
       ])
     }
   },
@@ -363,7 +369,8 @@ const NameBoard = defineComponent({
 
 const WishBoard = defineComponent({
   props: { board: Object, insight: String, loading: Boolean, error: String },
-  setup(props) {
+  emits: ['retry'],
+  setup(props, { emit }) {
     return () => {
       const board = props.board || buildWishBoard({})
       return h('section', { class: 'wish-board', 'aria-label': '香火祈愿盘' }, [
@@ -378,7 +385,7 @@ const WishBoard = defineComponent({
           h('strong', item.value),
         ]))),
         h('p', board.message),
-        h(ToolInsight, { text: props.insight, loading: props.loading, error: props.error }),
+        h(ToolInsight, { text: props.insight, loading: props.loading, error: props.error, onRetry: () => emit('retry') }),
       ])
     }
   },
@@ -446,6 +453,8 @@ const wishBoard = ref(buildWishBoard(wishForm.value, incenseCount.value, wishRes
 const toolInsights = ref({ lingqian: '', jiemeng: '', xianghuo: '' })
 const toolInsightLoading = ref({ lingqian: false, jiemeng: false, xianghuo: false })
 const toolInsightErrors = ref({ lingqian: '', jiemeng: '', xianghuo: '' })
+const toolInsightPayloads = ref({ lingqian: null, jiemeng: null, xianghuo: null })
+const TOOL_INSIGHT_TIMEOUT_MS = 18000
 
 onMounted(() => {
   if (toolId.value === 'liuyao') router.replace('/zhouyi')
@@ -776,25 +785,64 @@ function offerIncense() {
 
 async function streamToolInsight(key, payload) {
   if (toolInsightLoading.value[key]) return
+  toolInsightPayloads.value = { ...toolInsightPayloads.value, [key]: payload }
   toolInsightLoading.value = { ...toolInsightLoading.value, [key]: true }
   toolInsightErrors.value = { ...toolInsightErrors.value, [key]: '' }
   toolInsights.value = { ...toolInsights.value, [key]: '' }
   try {
-    const result = await generateToolInsight({
+    const result = await withTimeout(generateToolInsight({
       message: payload.message,
       requestedTool: key,
       readingChart: payload.readingChart,
       board: payload.readingChart.board,
       chart: payload.readingChart.chart,
-    })
+    }), TOOL_INSIGHT_TIMEOUT_MS)
     toolInsights.value = { ...toolInsights.value, [key]: normalizeToolInsight(result.text, key) }
     toolInsightLoading.value = { ...toolInsightLoading.value, [key]: false }
   } catch (error) {
     toolInsightLoading.value = { ...toolInsightLoading.value, [key]: false }
-    toolInsightErrors.value = { ...toolInsightErrors.value, [key]: `AI 解读暂时不可用：${error.message || '网络异常'}` }
+    toolInsights.value = { ...toolInsights.value, [key]: buildToolInsightFallback(key, payload) }
+    toolInsightErrors.value = { ...toolInsightErrors.value, [key]: buildToolInsightError(error) }
   }
 }
 
+function retryToolInsight(key) {
+  const payload = toolInsightPayloads.value[key]
+  if (!payload || toolInsightLoading.value[key]) return
+  streamToolInsight(key, payload)
+}
+
+function withTimeout(promise, ms) {
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => window.setTimeout(() => reject(new Error('timeout')), ms)),
+  ])
+}
+
+function buildToolInsightError(error) {
+  if (error?.message === 'timeout') return '\u0041\u0049 \u89e3\u8bfb\u54cd\u5e94\u8f83\u6162\uff0c\u5df2\u5148\u663e\u793a\u672c\u5730\u56fa\u5b9a\u680f\u76ee\uff0c\u53ef\u7a0d\u540e\u91cd\u8bd5\u3002'
+  return `\u0041\u0049 \u89e3\u8bfb\u6682\u65f6\u4e0d\u53ef\u7528\uff0c\u5df2\u5148\u663e\u793a\u672c\u5730\u56fa\u5b9a\u680f\u76ee\u3002\u539f\u56e0\uff1a${error?.message || '\u7f51\u7edc\u5f02\u5e38'}`
+}
+
+function buildToolInsightFallback(key, payload = {}) {
+  const sections = payload.readingChart?.sections || {
+    lingqian: ['\u7b7e\u8c61\u603b\u89c8', '\u4e8b\u4e1a\u8d22\u8fd0', '\u611f\u60c5\u5065\u5eb7', '\u884c\u52a8\u5efa\u8bae', '\u98ce\u9669\u63d0\u9192'],
+    jiemeng: ['\u68a6\u8c61\u603b\u89c8', '\u60c5\u7eea\u7ebf\u7d22', '\u73b0\u5b9e\u5bf9\u5e94', '\u884c\u52a8\u5efa\u8bae', '\u98ce\u9669\u63d0\u9192'],
+    xianghuo: ['\u613f\u5fc3\u603b\u89c8', '\u5f53\u4e0b\u529f\u8bfe', '\u5173\u7cfb\u8fb9\u754c', '\u884c\u52a8\u5efa\u8bae', '\u98ce\u9669\u63d0\u9192'],
+  }[key] || ['\u76d8\u9762\u6458\u8981', '\u884c\u52a8\u5efa\u8bae', '\u98ce\u9669\u63d0\u9192']
+  const facts = payload.readingChart?.facts || []
+  const factText = facts
+    .map((fact) => `${fact.label || ''}${fact.value ? `\uff1a${fact.value}` : ''}`)
+    .filter(Boolean)
+    .slice(0, 3)
+    .join('\uff1b')
+  return sections.map((title, index) => {
+    const body = index === 0
+      ? (factText || '\u76d8\u9762\u5df2\u751f\u6210\uff0c\u8bf7\u7ed3\u5408\u5f53\u524d\u95ee\u9898\u89c2\u5bdf\u3002')
+      : '\u0041\u0049 \u54cd\u5e94\u8f83\u6162\uff0c\u5148\u6309\u5f53\u524d\u76d8\u9762\u505a\u4f4e\u98ce\u9669\u590d\u76d8\uff1b\u7a0d\u540e\u53ef\u70b9\u51fb\u91cd\u8bd5\u83b7\u53d6\u5b8c\u6574\u89e3\u8bfb\u3002'
+    return `\u3010${title}\u3011${body}`
+  }).join('\n')
+}
 function buildLotInsightPayload(lotData, count) {
   const chart = buildLotChart(lotData, count)
   const message = `灵签占问：${lotData.title}；签等：${lotData.level}；签文：${lotData.text}`
@@ -1443,6 +1491,17 @@ function buildWishBoard(form = {}, count = 108, message = '') {
 
 :deep(.tool-insight > p.error) {
   color: #f1b2a8;
+}
+
+:deep(.tool-insight-actions) {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+:deep(.tool-insight-actions .ds-button) {
+  min-height: 36px;
+  padding: 0 14px;
 }
 
 :deep(.tool-insight-sections) {

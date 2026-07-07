@@ -322,3 +322,28 @@ Progress:
 - Deployed Cloudflare Pages preview: `https://cb76a29d.yulesuangua.pages.dev`.
 - Production mobile verification on `https://suangua.weiyiai.top` passed for `/divine/yinyuan`, `/divine/hehun`, `/divine/fojiao`, `/divine/daily-fortune`, `/zhouyi`, `/tools/huangli`, `/tools/lingqian`, `/tools/jiemeng`, `/tools/qiming`, and `/tools/xianghuo`; pages render their boards or ritual surfaces, have no horizontal overflow, no console errors, and no `qk_` localStorage keys.
 - Noted production risk: tool AI insight can remain in loading state for more than 15 seconds on `/tools/jiemeng`; the board itself renders correctly. Next hardening step should add timeout fallback copy for tool insights.
+
+## 2026-07-07 tool AI insight timeout hardening
+
+Task: harden `/tools/lingqian`, `/tools/jiemeng`, and `/tools/xianghuo` so AI fixed-column insight never leaves the user stuck in an indefinite loading state.
+
+Success criteria:
+- Tool boards still render immediately after user action.
+- AI insight has loading, error, fallback, and retry states.
+- After an AI timeout or network failure, the page shows local fixed-column fallback content and a retry button.
+- Retry reuses only the current in-memory payload and does not create local records.
+- Privacy remains unchanged: no `localStorage` records, no `qk_` keys, no automatic D1 persistence, and no recent-record UI.
+- Build, Function syntax check, privacy scan, local browser E2E, GitHub push, Cloudflare deployment, and production verification pass.
+
+Architecture:
+- Keep the existing Vue 3 + Vite + Cloudflare Pages Functions structure.
+- Add timeout and retry at the page orchestration layer in `ToolPage.vue`; keep `/api/tools/insight` unchanged.
+- Store the last tool insight payload only in Vue memory for retry.
+- Render fallback text through the same fixed-column `ToolInsight` renderer so the UI contract stays stable.
+
+Progress:
+- Started implementation from the noted `/tools/jiemeng` loading risk.
+- Added `ToolInsight` retry event support and passed retry events through `LotBoard`, `DreamBoard`, and `WishBoard`.
+- Added in-memory payload tracking, 18-second timeout wrapping, fallback fixed-column text generation, and retry orchestration.
+- Local validation passed: `npm run build`, Function syntax check, `git diff --check`, and privacy scan.
+- Local browser E2E passed on `http://127.0.0.1:4298` for `/tools/lingqian`, `/tools/jiemeng`, and `/tools/xianghuo` with simulated 25-second `/api/tools/insight` delay. Each page rendered 5 fallback fixed-column sections, showed a retry button, had no horizontal overflow, no console errors, and no `qk_` localStorage keys.
