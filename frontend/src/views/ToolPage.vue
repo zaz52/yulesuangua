@@ -64,15 +64,7 @@
               <span>今日可抽取 3 次</span>
             </div>
           </div>
-          <div class="lingqian-result">
-            <div class="lot-stick"><span>{{ lot.title.replace('：', '\n') }}</span></div>
-            <section>
-              <h3>{{ lot.title }}</h3>
-              <strong>签文</strong>
-              <p>{{ lot.text }}</p>
-              <div class="lot-tags"><span>事业</span><span>财运</span><span>感情</span><span>健康</span></div>
-            </section>
-          </div>
+          <LotBoard :lot="lot" :count="lotIndex" />
         </article>
 
         <article v-else-if="toolId === 'jiemeng'" class="work-card oracle-card dream-ritual">
@@ -83,7 +75,7 @@
             <button v-for="prompt in dreamPrompts" :key="prompt" type="button" @click="appendDreamPrompt(prompt)">{{ prompt }}</button>
           </div>
           <button class="ds-button primary dream-action" type="button" @click="analyzeDream">开始解析</button>
-          <ResultBlock title="梦象提示" :copy="dreamResult" />
+          <DreamBoard :board="dreamBoard" />
         </article>
 
         <article v-else-if="toolId === 'qiming'" class="work-card oracle-card qiming-ritual">
@@ -116,7 +108,7 @@
             <label class="ds-field wide"><span>心愿</span><textarea v-model.trim="wishForm.text" placeholder="写下今天想安放的一句话"></textarea></label>
           </div>
           <button class="ds-button primary" type="button" @click="offerIncense">敬上三炷香</button>
-          <ResultBlock title="心愿回响" :copy="wishResult" />
+          <WishBoard :board="wishBoard" />
         </article>
       </section>
 
@@ -189,6 +181,62 @@ const AlmanacBoard = defineComponent({
         h('p', props.data?.desk || '保持桌面清爽，先清理正前方杂物。'),
       ]),
     ])
+  },
+})
+
+const LotBoard = defineComponent({
+  props: { lot: Object, count: Number },
+  setup(props) {
+    return () => {
+      const lot = props.lot || {}
+      const chart = buildLotChart(lot, props.count || 0)
+      return h('section', { class: 'lot-board', 'aria-label': '灵签签盘' }, [
+        h('div', { class: 'lot-seal' }, [
+          h('span', lot.level || '待抽签'),
+          h('strong', chart.number),
+          h('em', `第 ${Math.max(0, props.count || 0)} 次`),
+        ]),
+        h('div', { class: 'lot-stick' }, [h('span', (lot.title || '未抽签').replace('：', '\n'))]),
+        h('div', { class: 'lot-reading' }, [
+          h('h3', lot.title || '静心后抽签'),
+          h('p', lot.text || '点击抽取灵签后，在当前页面生成签盘。'),
+          h('div', { class: 'lot-axis' }, chart.axis.map((item) => h('section', [
+            h('span', item.label),
+            h('strong', item.value),
+            h('small', item.note),
+          ]))),
+        ]),
+        h('div', { class: 'lot-advice-grid' }, chart.advice.map((item) => h('section', [
+          h('span', item.label),
+          h('strong', item.value),
+        ]))),
+      ])
+    }
+  },
+})
+
+const DreamBoard = defineComponent({
+  props: { board: Object },
+  setup(props) {
+    return () => {
+      const board = props.board || buildDreamBoard({})
+      return h('section', { class: 'dream-board', 'aria-label': '梦象解析盘' }, [
+        h('div', { class: 'dream-orb' }, [
+          h('span', '梦象'),
+          h('strong', board.symbol),
+          h('em', board.phase),
+        ]),
+        h('div', { class: 'dream-map' }, board.layers.map((item, index) => h('section', { style: { '--i': index } }, [
+          h('span', item.label),
+          h('strong', item.value),
+          h('p', item.note),
+        ]))),
+        h('div', { class: 'dream-guidance' }, [
+          h('strong', board.guidanceTitle),
+          h('p', board.guidance),
+        ]),
+      ])
+    }
   },
 })
 
@@ -292,6 +340,28 @@ const NameBoard = defineComponent({
   },
 })
 
+const WishBoard = defineComponent({
+  props: { board: Object },
+  setup(props) {
+    return () => {
+      const board = props.board || buildWishBoard({})
+      return h('section', { class: 'wish-board', 'aria-label': '香火祈愿盘' }, [
+        h('div', { class: 'wish-altar' }, [
+          h('span', board.target),
+          h('strong', board.count),
+          h('em', '香火'),
+        ]),
+        h('div', { class: 'incense-lines' }, [0, 1, 2].map((item) => h('i', { style: { '--delay': `${item * 0.18}s` } }))),
+        h('div', { class: 'wish-grid' }, board.items.map((item) => h('section', [
+          h('span', item.label),
+          h('strong', item.value),
+        ]))),
+        h('p', board.message),
+      ])
+    }
+  },
+})
+
 const route = useRoute()
 const router = useRouter()
 const toolId = computed(() => route.params.tool || 'huangli')
@@ -329,6 +399,7 @@ const dreamPrompts = [
   '梦醒时的第一感受？',
 ]
 const dreamResult = ref('填写梦境后点击解析，会从象意、情绪和现实提醒三个角度生成提示。')
+const dreamBoard = ref(buildDreamBoard(dreamForm.value))
 const shichenOptions = ['子时', '丑时', '寅时', '卯时', '辰时', '巳时', '午时', '未时', '申时', '酉时', '戌时', '亥时']
 const nameForm = ref({ familyName: '', gender: '不限', birth: '', shichen: '辰时', style: '' })
 const nameResult = ref('填写姓氏、农历生日和偏好后生成候选名册。')
@@ -349,6 +420,7 @@ const canGenerateNames = computed(() => Boolean(nameForm.value.familyName.trim()
 const wishForm = ref({ target: '自己', text: '' })
 const wishResult = ref('写下心愿后，点击上香会在当前页面显示，不会保存到本地浏览器。')
 const incenseCount = ref(108)
+const wishBoard = ref(buildWishBoard(wishForm.value, incenseCount.value, wishResult.value))
 
 onMounted(() => {
   if (toolId.value === 'liuyao') router.replace('/zhouyi')
@@ -368,6 +440,7 @@ function analyzeDream() {
   const mood = dreamForm.value.mood
   const context = dreamForm.value.context || '未填写现实背景'
   dreamResult.value = `梦境可先看三层：一是画面象意，二是醒来时的${mood}情绪，三是它和现实背景“${context}”的关系。建议把梦中最强烈的画面写成一句问题，再进入佛学开示继续深问。`
+  dreamBoard.value = buildDreamBoard(dreamForm.value, dreamResult.value)
 }
 
 function appendDreamPrompt(prompt) {
@@ -670,6 +743,77 @@ function buildAvoidNote(focus) {
 function offerIncense() {
   incenseCount.value += 3
   wishResult.value = `已为${wishForm.value.target}敬上三炷香。心愿仅在当前页面显示，不会保存到本地浏览器：${wishForm.value.text || '愿心安定，所行有度。'}`
+  wishBoard.value = buildWishBoard(wishForm.value, incenseCount.value, wishResult.value)
+}
+
+function buildLotChart(lot, count = 0) {
+  const title = String(lot?.title || '')
+  const number = title.match(/第(.+?)签/)?.[1] || String((count % 32) + 1).padStart(2, '0')
+  const level = lot?.level || '待抽签'
+  const text = lot?.text || ''
+  return {
+    number,
+    axis: [
+      { label: '签等', value: level, note: level.includes('上') ? '可主动推进' : '先稳住节奏' },
+      { label: '主象', value: title.split('：')[1] || '静心待显', note: text.slice(0, 18) || '抽签后生成' },
+      { label: '时机', value: count > 0 ? '已起签' : '未起签', note: count > 0 ? '以本次抽签为准' : '点击后生成签盘' },
+    ],
+    advice: [
+      { label: '事业', value: level.includes('吉') ? '可小步推进' : '先复核计划' },
+      { label: '财运', value: '不宜重押，先看现金流' },
+      { label: '感情', value: text.includes('沟通') ? '宜主动沟通' : '先看对方回应' },
+      { label: '健康', value: '少熬夜，先安神定息' },
+    ],
+  }
+}
+
+function buildDreamBoard(form = {}, result = dreamResult?.value || '') {
+  const dream = String(form.dream || '').trim()
+  const mood = form.mood || '平静'
+  const context = form.context || '未填写现实背景'
+  const symbol = inferDreamSymbol(dream)
+  const phase = dream ? '已入象' : '待记录'
+  return {
+    symbol,
+    phase,
+    layers: [
+      { label: '象', value: symbol, note: dream ? pickDreamSentence(dream) : '先记录最强烈画面' },
+      { label: '情', value: mood, note: `醒后情绪为“${mood}”，先看它在提醒什么需求。` },
+      { label: '事', value: context, note: '把梦象与近期现实压力、选择和关系相互参照。' },
+      { label: '行', value: dream ? '写成一问' : '补全梦境', note: '整理成一句具体问题后再深问。' },
+    ],
+    guidanceTitle: dream ? '梦象提示' : '空盘提示',
+    guidance: result || '填写梦境后点击解析，会从象意、情绪和现实提醒三个角度生成提示。',
+  }
+}
+
+function inferDreamSymbol(text = '') {
+  if (/水|河|海|雨|湖/.test(text)) return '水象'
+  if (/火|光|太阳|灯/.test(text)) return '火象'
+  if (/山|树|森林|花|草/.test(text)) return '木土'
+  if (/飞|车|路|门|桥/.test(text)) return '迁动'
+  if (/人|家|朋友|父母|恋人/.test(text)) return '人事'
+  return text ? '杂象' : '未定'
+}
+
+function pickDreamSentence(text = '') {
+  return String(text).split(/\n|。|，/).map((item) => item.trim()).filter(Boolean)[0]?.slice(0, 42) || '梦象已记录'
+}
+
+function buildWishBoard(form = {}, count = 108, message = '') {
+  const text = String(form.text || '').trim()
+  const target = form.target || '自己'
+  return {
+    target,
+    count,
+    message: message || '写下心愿后，点击上香会在当前页面显示，不会保存到本地浏览器。',
+    items: [
+      { label: '愿主', value: target },
+      { label: '愿心', value: text || '愿心安定，所行有度' },
+      { label: '功课', value: '今日先做一件可完成的小事' },
+      { label: '隐私', value: '仅当前页面显示，不落本地记录' },
+    ],
+  }
 }
 </script>
 
@@ -948,6 +1092,214 @@ function offerIncense() {
   border-radius: 999px;
   color: var(--paper-dim);
   background: rgba(255, 247, 231, 0.04);
+}
+
+:deep(.lot-board),
+:deep(.dream-board),
+:deep(.wish-board) {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(215, 179, 95, 0.2);
+  border-radius: var(--radius-sm);
+  background:
+    radial-gradient(circle at 16% 8%, rgba(215, 179, 95, 0.12), transparent 30%),
+    linear-gradient(160deg, rgba(184, 58, 47, 0.08), rgba(0, 0, 0, 0.16));
+}
+
+:deep(.lot-board) {
+  grid-template-columns: 128px 170px minmax(0, 1fr);
+  align-items: stretch;
+}
+
+:deep(.lot-seal),
+:deep(.wish-altar),
+:deep(.dream-orb) {
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  min-height: 150px;
+  border: 1px solid rgba(240, 217, 132, 0.34);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(215, 179, 95, 0.18), rgba(13, 9, 7, 0.78) 72%);
+  text-align: center;
+}
+
+:deep(.lot-seal span),
+:deep(.lot-seal em),
+:deep(.wish-altar span),
+:deep(.wish-altar em),
+:deep(.dream-orb span),
+:deep(.dream-orb em),
+:deep(.lot-axis span),
+:deep(.lot-advice-grid span),
+:deep(.dream-map span),
+:deep(.wish-grid span) {
+  color: rgba(245, 234, 212, 0.58);
+  font-size: 12px;
+  font-style: normal;
+}
+
+:deep(.lot-seal strong),
+:deep(.wish-altar strong),
+:deep(.dream-orb strong) {
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 42px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+:deep(.lot-board .lot-stick) {
+  min-height: 250px;
+}
+
+:deep(.lot-reading) {
+  display: grid;
+  gap: 12px;
+  align-content: center;
+}
+
+:deep(.lot-reading h3) {
+  margin: 0;
+  color: var(--gold-bright);
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 400;
+}
+
+:deep(.lot-reading p),
+:deep(.dream-guidance p),
+:deep(.wish-board > p) {
+  margin: 0;
+  color: var(--paper);
+  line-height: 1.75;
+}
+
+:deep(.lot-axis),
+:deep(.lot-advice-grid),
+:deep(.dream-map),
+:deep(.wish-grid) {
+  display: grid;
+  gap: 10px;
+}
+
+:deep(.lot-axis) {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+:deep(.lot-advice-grid) {
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+:deep(.lot-axis section),
+:deep(.lot-advice-grid section),
+:deep(.dream-map section),
+:deep(.dream-guidance),
+:deep(.wish-grid section) {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(215, 179, 95, 0.14);
+  border-radius: var(--radius-xs);
+  background: rgba(255, 247, 231, 0.045);
+}
+
+:deep(.lot-axis strong),
+:deep(.lot-advice-grid strong),
+:deep(.dream-map strong),
+:deep(.dream-guidance strong),
+:deep(.wish-grid strong) {
+  color: var(--gold-bright);
+  overflow-wrap: anywhere;
+}
+
+:deep(.lot-axis small),
+:deep(.dream-map p) {
+  margin: 0;
+  color: var(--paper-dim);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+:deep(.dream-board) {
+  grid-template-columns: 160px minmax(0, 1fr);
+}
+
+:deep(.dream-map) {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+:deep(.dream-map section) {
+  min-height: 128px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(215, 179, 95, calc(0.08 + var(--i) * 0.015)), transparent 50%),
+    rgba(255, 247, 231, 0.04);
+}
+
+:deep(.dream-guidance) {
+  grid-column: 1 / -1;
+}
+
+:deep(.wish-board) {
+  grid-template-columns: 150px 72px minmax(0, 1fr);
+  align-items: center;
+}
+
+:deep(.incense-lines) {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  min-height: 150px;
+}
+
+:deep(.incense-lines i) {
+  position: relative;
+  display: block;
+  width: 8px;
+  height: 132px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(215, 179, 95, 0.92), rgba(119, 27, 27, 0.86));
+}
+
+:deep(.incense-lines i::before) {
+  position: absolute;
+  top: -18px;
+  left: 50%;
+  width: 18px;
+  height: 28px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(245, 234, 212, 0.72), rgba(215, 179, 95, 0.2), transparent 70%);
+  content: "";
+  transform: translateX(-50%);
+  animation: incenseGlow 2.8s ease-in-out infinite;
+  animation-delay: var(--delay);
+}
+
+:deep(.wish-grid) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+:deep(.wish-board > p) {
+  grid-column: 1 / -1;
+  padding: 12px 14px;
+  border: 1px solid rgba(215, 179, 95, 0.14);
+  border-radius: var(--radius-xs);
+  background: rgba(0, 0, 0, 0.12);
+}
+
+@keyframes incenseGlow {
+  0%, 100% {
+    opacity: 0.42;
+    transform: translate(-50%, 0) scale(0.9);
+  }
+  50% {
+    opacity: 0.9;
+    transform: translate(-50%, -8px) scale(1.12);
+  }
 }
 
 .dream-ritual {
@@ -1844,7 +2196,14 @@ function offerIncense() {
   :deep(.element-plate),
   :deep(.name-grid),
   :deep(.almanac-meta),
-  :deep(.almanac-grid) {
+  :deep(.almanac-grid),
+  :deep(.lot-board),
+  :deep(.lot-axis),
+  :deep(.lot-advice-grid),
+  :deep(.dream-board),
+  :deep(.dream-map),
+  :deep(.wish-board),
+  :deep(.wish-grid) {
     grid-template-columns: 1fr;
   }
 

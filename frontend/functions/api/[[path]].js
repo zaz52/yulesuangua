@@ -207,7 +207,8 @@ async function streamReading(skill, payload, env) {
 
 async function generateReading(skill, payload, env) {
   const message = String(payload.message || payload.question || '').trim()
-  const board = payload.board || payload.chart || null
+  const readingChart = payload.readingChart || null
+  const board = payload.board || readingChart?.board || payload.chart || null
   const profile = payload.profile || {}
   const relation = payload.relation || {}
   const event = payload.eventForm || payload.event || {}
@@ -243,8 +244,13 @@ async function generateReading(skill, payload, env) {
     tarot.topic && `塔罗主题：${tarot.topic}`,
   ].filter(Boolean)
   const boardSummary = summarizeBoard(board)
-  const boardFacts = extractBoardFacts(board)
-  const resultSchema = resultSchemas[skill] || resultSchemas.default
+  const boardFacts = [
+    ...extractReadingChartFacts(readingChart),
+    ...extractBoardFacts(board),
+  ].slice(0, 24)
+  const resultSchema = Array.isArray(readingChart?.sections) && readingChart.sections.length
+    ? readingChart.sections
+    : resultSchemas[skill] || resultSchemas.default
 
   if (env.OPENAI_API_KEY || env.NVIDIA_API_KEY || env.NVCF_API_KEY) {
     const modelText = await callOpenAICompatibleModel({
@@ -284,6 +290,21 @@ async function generateReading(skill, payload, env) {
     风险提醒: '若涉及金钱、合同、健康、婚姻承诺，请以现实证据和专业意见为准，问卦结果只用于整理思路。',
   }
   return resultSchema.map((title) => `【${title}】${fallbackBodies[title] || fallbackBodies.趋势判断}`).join('\n')
+}
+
+function extractReadingChartFacts(readingChart) {
+  if (!readingChart || typeof readingChart !== 'object') return []
+  const facts = []
+  if (readingChart.version) facts.push(`chart-version：${readingChart.version}`)
+  if (readingChart.meta?.skillName) facts.push(`术法：${readingChart.meta.skillName}`)
+  if (readingChart.meta?.source) facts.push(`排盘来源：${readingChart.meta.source}`)
+  if (readingChart.meta?.question) facts.push(`所问：${readingChart.meta.question}`)
+  if (Array.isArray(readingChart.facts)) {
+    for (const item of readingChart.facts.slice(0, 18)) {
+      if (item?.label && item?.value) facts.push(`${item.label}：${item.value}`)
+    }
+  }
+  return facts
 }
 
 function normalizeReadingOutput(skill, text) {
@@ -444,6 +465,7 @@ async function calculateMetaphysics(context) {
       xiaoliuren: { fn: calculateXiaoliurenBoard, source: 'mingyu-core@0.1.8' },
       yinyuan: { fn: calculateYinyuanBoard, source: 'rules-mvp@2026-07' },
       hehun: { fn: calculateHehunBoard, source: 'rules-mvp@2026-07' },
+      fojiao: { fn: calculateFojiaoBoard, source: 'rules-mvp@2026-07' },
       fengshui: { fn: calculateFengshuiBoard, source: 'rules-mvp@2026-07' },
       'daily-fortune': { fn: calculateDailyFortuneBoard, source: 'rules-mvp+mingyu-core@2026-07' },
       tarot: { fn: calculateTarotBoard, source: 'mingyu-core@0.1.8' },
@@ -733,6 +755,40 @@ function calculateDaliurenBoard(payload) {
       ['判断', topic],
     ],
   }
+}
+
+function calculateFojiaoBoard(payload) {
+  const mind = payload.mind || {}
+  const topic = mind.topic || payload.topic || '当下困惑'
+  const mood = mind.mood || '心绪待定'
+  const context = mind.context || payload.context || payload.question || '背景待补充'
+  const seed = stableTextSeed([topic, mood, context].join('|'))
+  const practicePool = ['先止语三息', '写下事实与想象', '今日只做一件善小事', '把边界说清楚', '先睡眠后决策', '少作评判，多看因缘']
+  const linePool = ['诸行无常，先看变化', '因缘和合，不急定论', '照见当下，少被念头牵走', '慈悲不是纵容，清明也需边界']
+  return {
+    items: [
+      ['当下心境', mood],
+      ['困惑类型', topic],
+      ['执着所在', inferAttachment(context)],
+      ['观照句', linePool[seed % linePool.length]],
+      ['今日功课', practicePool[(seed + 3) % practicePool.length]],
+      ['现实边界', '重要健康、法律、财务事项仍以专业意见为准'],
+    ],
+    meta: {
+      topic,
+      mood,
+      context,
+      source: '佛学文化娱乐规则盘',
+    },
+  }
+}
+
+function inferAttachment(text = '') {
+  if (/感情|关系|对方|复合|联系/.test(text)) return '对回应与确定性的执着'
+  if (/工作|事业|项目|合作|钱|财/.test(text)) return '对结果、得失和控制感的执着'
+  if (/家人|父母|孩子|家庭/.test(text)) return '对责任、牵挂和边界的混杂'
+  if (/焦虑|内耗|睡|累|压力/.test(text)) return '对念头反复与身心疲惫的执着'
+  return '先分清事实、情绪与推测'
 }
 
 function calculateFengshuiBoard(payload) {

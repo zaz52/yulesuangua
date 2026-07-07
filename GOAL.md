@@ -65,3 +65,36 @@
 - 已提交并推送代码：`52b357d fix: apply tool child component styles`。
 - 已部署 Cloudflare Pages，预览地址：`https://ad959d06.yulesuangua.pages.dev`。
 - 已完成生产验收：`https://suangua.weiyiai.top/tools/huangli` 与 `/tools/qiming` 返回 200；黄历结果区在桌面端和 390px 移动端均为 grid 盘面；宝宝起名提交后调用 `/api/metaphysics/calculate` 返回 200，排盘来源 `mingyu-core@0.1.8`，生成 6 张候选名盘卡；无横向溢出、无控制台错误、无 `qk_` 本地记录。
+## 2026-07-07 三阶段排盘化升级
+
+### 任务
+
+按用户指定顺序继续完善站点：
+
+1. 先把工具页中仍然像纯文字的结果补成盘面化 UI。
+2. 再把核心术法页补成各术法专属排盘，而不是通用文本卡片。
+3. 最后统一“输入 -> 结构化 chart -> AI 固定栏目解读”的数据结构，为后续真实算法和生产维护做准备。
+
+### 成功标准
+
+- 灵签、梦境、祈福不再只输出一段文字，必须有签盘、梦象盘、香火愿盘等结构化结果。
+- 八字、奇门、紫微、梅花、六爻、风水、塔罗、小六壬、大六壬等页面应根据术法类型展示专属排盘组件。
+- 结果数据统一先形成结构化 `chart`，AI 解读只消费 chart 和固定栏目，不把排盘逻辑塞进文案。
+- 保持隐私策略：不写入 `localStorage`，不自动保存到 D1，不恢复“最近记录”。
+- 桌面端和移动端无横向溢出、无控制台错误、可提交、可看到盘面。
+- `npm run build` 和 Cloudflare Function 语法检查通过；完成后推送 GitHub 并部署 Cloudflare。
+
+### 架构思路
+
+- 继续保留 Vue 3 + Vite + Cloudflare Pages Functions。
+- 前端优先抽出可复用的“结果盘面”小组件和 normalize 函数，减少 `ToolPage.vue` 与 `Divine.vue` 重复的文本拼接。
+- 后端保持现有 `/api/metaphysics/calculate` 入口，必要时只扩展返回结构，不引入默认持久化。
+- 验证采用浏览器自动化覆盖核心工具页和术法页，重点检查盘面 DOM、移动端宽度、API 返回、隐私本地存储。
+
+### 本轮进度
+
+- 第一步已完成：`/tools/lingqian` 改为灵签签盘，`/tools/jiemeng` 改为梦象解析盘，`/tools/xianghuo` 改为香火祈愿盘；不再只用 `ResultBlock` 输出纯文字。
+- 第二步已完成本轮补强：全术法移动端提交验证覆盖八字、紫微、六爻、梅花、大六壬、小六壬、姻缘、合婚、佛学、每日运势，均生成对应 `visual-board board-* is-result` 结果盘和解读。
+- 第三步已完成 MVP 数据结构：前端提交时生成 `readingChart`，包含 `version/meta/input/board/chart/facts/sections`；后端解读入口优先读取 `readingChart` 的 facts 和固定栏目。
+- 已补后端 `fojiao` 规则盘，并在前端把佛学开示设为本地规则盘，避免无排盘算法页面产生 422 控制台错误。
+- 已完成验证：`npm run build` 通过，`node --check frontend/functions/api/[[path]].js` 通过；工具页和术法页浏览器验证均无横向溢出、无控制台错误、无 `qk_` 本地记录。

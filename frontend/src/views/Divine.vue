@@ -245,6 +245,7 @@ const shichenList = [
 const skillInfo = computed(() => skillList.find((item) => item.id === skillId.value) || skillList[0])
 const sideRecommendations = computed(() => skillList.filter((item) => item.id !== skillId.value).slice(0, 4))
 const previewableSkills = ['bazi', 'ziwei', 'qimen', 'liuyao', 'meihua', 'daliuren', 'xiaoliuren', 'yinyuan', 'hehun', 'fojiao', 'fengshui', 'daily-fortune', 'tarot']
+const localOnlyChartSkills = ['fojiao']
 const dimensionMap = {
   bazi: ['全部', '命理', '阶段', '流年', '关系', '风水', '六亲'],
   ziwei: ['全部', '命宫', '事业', '财帛', '夫妻', '迁移', '福德'],
@@ -505,6 +506,60 @@ function buildBoard(chartResult = null, state = 'preview') {
   }
 }
 
+function buildReadingChart(board, chartResult = null, message = '') {
+  const data = board?.data || {}
+  const meta = {
+    skill: skillId.value,
+    skillName: skillInfo.value.name,
+    boardType: board?.type || skillId.value,
+    boardTitle: board?.title || `${skillInfo.value.name}盘面`,
+    source: chartResult?.source || board?.source || 'local-fallback',
+    state: board?.state || 'result',
+    question: message,
+  }
+  return {
+    version: 'mvp-chart-v1',
+    meta,
+    input: buildChartPayload(message),
+    board,
+    chart: chartResult?.data || data,
+    facts: extractClientBoardFacts(data),
+    sections: resultSectionSchemas[skillId.value] || [],
+  }
+}
+
+function extractClientBoardFacts(data = {}) {
+  const facts = []
+  const pushPair = (label, value) => {
+    if (value !== null && value !== undefined && value !== '') facts.push({ label, value: String(value).slice(0, 120) })
+  }
+  if (Array.isArray(data.rows)) {
+    data.rows.slice(0, 8).forEach((row) => pushPair(row[0], row.slice(1).join(' / ')))
+  }
+  if (Array.isArray(data.items)) {
+    data.items.slice(0, 8).forEach((item) => pushPair(item[0], item[1]))
+  }
+  if (Array.isArray(data.cells)) {
+    data.cells.slice(0, 9).forEach((cell, index) => {
+      if (Array.isArray(cell)) pushPair(cell[0] || `宫位${index + 1}`, cell.slice(1).join(' / '))
+      else pushPair(cell.palace || cell.direction || `宫位${index + 1}`, [cell.god, cell.star, cell.gate, cell.note].filter(Boolean).join(' / '))
+    })
+  }
+  if (Array.isArray(data.lines)) {
+    data.lines.slice(0, 6).forEach((line) => pushPair(Array.isArray(line) ? line[0] : '爻位', Array.isArray(line) ? line.slice(1).join(' / ') : line))
+  }
+  if (Array.isArray(data.palaces)) {
+    data.palaces.slice(0, 12).forEach((palace) => pushPair(palace.name || palace.label, [palace.star, palace.note, palace.age].filter(Boolean).join(' / ')))
+  }
+  if (Array.isArray(data.cards)) {
+    data.cards.slice(0, 6).forEach((card) => pushPair(Array.isArray(card) ? card[0] : card.position, Array.isArray(card) ? card.slice(1).join(' / ') : [card.name, card.orientation].filter(Boolean).join(' / ')))
+  }
+  if (data.meta && typeof data.meta === 'object') {
+    Object.entries(data.meta).slice(0, 8).forEach(([key, value]) => pushPair(key, Array.isArray(value) ? value.join(' / ') : value))
+  }
+  return facts.filter((item) => item.label && item.value).slice(0, 18)
+}
+
 function buildZiweiPreviewPalaces() {
   const palaceNames = ['命宫', '兄弟', '夫妻', '子女', '财帛', '疾厄', '迁移', '仆役', '官禄', '田宅', '福德', '父母']
   const stars = ['紫微', '天机', '太阳', '武曲', '天同', '廉贞', '天府', '太阴', '贪狼', '巨门', '天相', '天梁']
@@ -549,12 +604,15 @@ async function sendMessage() {
   const message = buildMessage()
   const chartPayload = buildChartPayload(message)
   let chartResult = null
-  try {
-    chartResult = await calculateChart(skillId.value, chartPayload)
-  } catch {
-    chartResult = null
+  if (!localOnlyChartSkills.includes(skillId.value)) {
+    try {
+      chartResult = await calculateChart(skillId.value, chartPayload)
+    } catch {
+      chartResult = null
+    }
   }
   const board = buildBoard(chartResult, 'result')
+  const readingChart = buildReadingChart(board, chartResult, message)
   const extra = {}
   if (skillId.value === 'qimen' && eventForm.value.datetime) extra.datetime_str = eventForm.value.datetime.replace('T', ' ')
 
@@ -568,6 +626,7 @@ async function sendMessage() {
     await divineStream(skillId.value, message, [], {
       ...extra,
       ...chartPayload,
+      readingChart,
       board,
       chart: chartResult?.data || null,
       boardType: board.type,
