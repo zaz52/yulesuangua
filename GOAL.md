@@ -50,3 +50,6 @@
 - 已定位根因：`NameBoard` 是 `script setup` 内的子组件，父组件的 `scoped` CSS 只作用到子组件根节点，内部四柱/候选名样式未生效，导致视觉退回纯文字流。
 - 已完成修复：起名结果改为“起名命盘”结构，包含四柱命名盘表、五行补益盘、用神/避用规则、候选名盘卡；内部样式使用 `:deep()` 穿透到子组件 DOM。
 - 已完成本地验证：`npm run build` 通过；桌面端和 390px 移动端提交 `/tools/qiming` 后均显示 6 行四柱表、5 行五行盘和 6 张候选名卡；无横向溢出、无控制台错误、无 `qk_` 本地记录。
+- 已提交并推送代码：`86af9b0 feat: render naming results as plate`。
+- 已部署 Cloudflare Pages，预览地址：`https://78769d76.yulesuangua.pages.dev`。
+- 已完成生产验收：`https://suangua.weiyiai.top/tools/qiming` 返回 200，移动端浏览器提交后显示 6 行四柱命名盘、5 行五行补益盘和 6 张候选名盘卡；API 来源 `mingyu-core@0.1.8`，无横向溢出、无控制台错误、无 `qk_` 本地记录。
