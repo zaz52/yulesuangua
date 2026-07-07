@@ -347,3 +347,6 @@ Progress:
 - Added in-memory payload tracking, 18-second timeout wrapping, fallback fixed-column text generation, and retry orchestration.
 - Local validation passed: `npm run build`, Function syntax check, `git diff --check`, and privacy scan.
 - Local browser E2E passed on `http://127.0.0.1:4298` for `/tools/lingqian`, `/tools/jiemeng`, and `/tools/xianghuo` with simulated 25-second `/api/tools/insight` delay. Each page rendered 5 fallback fixed-column sections, showed a retry button, had no horizontal overflow, no console errors, and no `qk_` localStorage keys.
+- Completed GitHub push: `bb98bf7 feat: add tool insight timeout fallback`.
+- Deployed Cloudflare Pages preview: `https://3c16f1c6.yulesuangua.pages.dev`.
+- Production verification on `https://suangua.weiyiai.top` passed for `/tools/lingqian`, `/tools/jiemeng`, and `/tools/xianghuo` with simulated delayed `/api/tools/insight`: each page rendered 5 fallback fixed-column sections, showed a retry button, had no horizontal overflow, no console errors, and no `qk_` localStorage keys.
