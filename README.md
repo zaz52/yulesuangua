@@ -116,8 +116,8 @@ GET /api/divine/lunar?date=1990-05-15
 # 前端
 cd frontend && pnpm install
 
-# 后端
-pip install fastapi uvicorn coze-coding-dev-sdk langchain-core lunar_python
+# 后端（推荐）
+python3 -m pip install -r backend/requirements.txt
 ```
 
 ### 本地运行
@@ -127,6 +127,10 @@ pip install fastapi uvicorn coze-coding-dev-sdk langchain-core lunar_python
 cd frontend && pnpm build
 
 # 2. 启动后端（端口 5000）
+# 方式 A（推荐）：带依赖自检
+python3 backend/run.py
+
+# 方式 B（传统）
 cd backend && python3 -m uvicorn main:app --port 5000 --host 0.0.0.0
 ```
 
@@ -140,6 +144,36 @@ cd frontend && pnpm dev
 
 # 后端
 cd backend && python3 -m uvicorn main:app --port 5000 --reload
+```
+
+## Git 内自动更新（可选）
+
+如果你希望“在 Git 里操作时自动 push”，推荐使用仓库内置的 `post-commit` Hook 模板：**只有提交信息包含 `[push]` 才会自动推送**，避免每次 commit 都触发 push。
+
+### 安装 Hook
+
+```bash
+bash scripts/setup-git-hooks.sh
+```
+
+### 触发自动推送
+
+```bash
+git add -A
+git commit -m "feat: 更新首页文案 [push]"
+```
+
+提交完成后，Hook 会自动执行 `git push origin <当前分支>`。
+
+### 可选环境变量
+
+- `AUTO_PUSH_REMOTE`：默认 `origin`
+- `AUTO_PUSH_BRANCH`：默认“当前分支”
+
+示例（固定推送到 `work`）：
+
+```bash
+AUTO_PUSH_BRANCH=work git commit -m "chore: 同步配置 [push]"
 ```
 
 ## UI 设计

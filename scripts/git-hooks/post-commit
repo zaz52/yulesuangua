@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Only auto push when the latest commit message contains [push].
+TRIGGER_TAG="[push]"
+DEFAULT_REMOTE="origin"
+DEFAULT_BRANCH="work"
+
+commit_msg=$(git log -1 --pretty=%B)
+if [[ "$commit_msg" != *"$TRIGGER_TAG"* ]]; then
+  echo "[post-commit] Skip auto push: commit message missing $TRIGGER_TAG"
+  exit 0
+fi
+
+current_branch=$(git branch --show-current)
+remote="${AUTO_PUSH_REMOTE:-$DEFAULT_REMOTE}"
+branch="${AUTO_PUSH_BRANCH:-$current_branch}"
+
+if [[ -z "$branch" ]]; then
+  branch="$DEFAULT_BRANCH"
+fi
+
+if [[ "$current_branch" != "$branch" ]]; then
+  echo "[post-commit] Skip auto push: current branch '$current_branch' != target '$branch'"
+  exit 0
+fi
+
+echo "[post-commit] Trigger detected ($TRIGGER_TAG). Pushing to ${remote}/${branch}..."
+if ! git push "$remote" "$branch"; then
+  echo "[post-commit] Push failed. Please resolve network/auth issues and push manually."
+  exit 1
+fi
+
+echo "[post-commit] Push completed."
