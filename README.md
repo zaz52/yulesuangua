@@ -186,3 +186,12 @@ cd backend && python3 -m uvicorn main:app --port 5000 --reload
 ## 免责声明
 
 本项目仅供娱乐参考，不作为任何决策依据。道法自然，顺应天时。
+
+## 联系方式
+
+- 邮箱：1845779520@qq.com
+- 微信：Z3_March
+- X：https://x.com/Weiyi_Learn
+- QQ：1845779520
+- Telegram：https://t.me/Weiyiusername
+- GitHub：https://github.com/zaz52
