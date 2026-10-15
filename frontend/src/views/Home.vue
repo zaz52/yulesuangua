@@ -47,10 +47,8 @@
             </form>
           </div>
           <div class="hero-plate">
-            <div class="bagua-orbit" aria-hidden="true">
-              <span v-for="item in trigrams" :key="item">{{ item }}</span>
-            </div>
-            <div class="plate-center"><strong>易</strong><em>先定问题，再选术法</em></div>
+            <BaguaWheel />
+            <p class="wheel-caption"><strong>易</strong><span>先定问题，再选术法</span></p>
           </div>
         </article>
 
@@ -150,10 +148,10 @@
 <script setup>
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import BaguaWheel from '../components/BaguaWheel.vue'
 
 const router = useRouter()
 const today = computed(() => new Intl.DateTimeFormat('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }).format(new Date()))
-const trigrams = ['乾', '兑', '离', '震', '巽', '坎', '艮', '坤']
 const activeGroup = ref('all')
 const activeFunctionGroup = ref('all')
 const toolSearch = ref('')
@@ -328,13 +326,36 @@ function startMobileAsk() {
 
 .hero-plate {
   position: relative;
-  display: grid;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   min-height: 300px;
-  place-items: center;
-  border-radius: 50%;
+  padding: 28px 12px 20px;
+  border-radius: 32px;
   background:
-    radial-gradient(circle, rgba(215, 179, 95, 0.16), transparent 58%),
+    radial-gradient(circle at 50% 38%, rgba(215, 179, 95, 0.14), transparent 62%),
     rgba(34, 21, 14, 0.7);
+}
+
+.wheel-caption {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0;
+}
+
+.wheel-caption strong {
+  color: var(--gold-bright);
+  font-size: 26px;
+  font-family: var(--font-display);
+}
+
+.wheel-caption span {
+  color: rgba(245, 234, 212, 0.6);
+  font-size: 13px;
+  letter-spacing: 2px;
 }
 
 .function-center {
@@ -591,71 +612,6 @@ function startMobileAsk() {
   line-height: 1;
 }
 
-.bagua-orbit {
-  position: absolute;
-  width: 340px;
-  height: 340px;
-  border: 1px solid rgba(215, 179, 95, 0.34);
-  border-radius: 50%;
-  animation: slow-rotate 48s linear infinite;
-}
-
-.bagua-orbit::before,
-.bagua-orbit::after {
-  position: absolute;
-  inset: 38px;
-  border: 1px solid rgba(215, 179, 95, 0.16);
-  border-radius: 50%;
-  content: "";
-}
-
-.bagua-orbit::after {
-  inset: 84px;
-}
-
-.bagua-orbit span {
-  position: absolute;
-  top: 14px;
-  left: 50%;
-  color: var(--gold-bright);
-  font-family: var(--font-display);
-  font-size: 28px;
-}
-
-.bagua-orbit span:nth-child(1) { transform: rotate(0deg) translate(-50%, 0); }
-.bagua-orbit span:nth-child(2) { transform: rotate(45deg) translate(118px, 12px) rotate(-45deg); }
-.bagua-orbit span:nth-child(3) { transform: rotate(90deg) translate(150px, 132px) rotate(-90deg); }
-.bagua-orbit span:nth-child(4) { transform: rotate(135deg) translate(112px, 250px) rotate(-135deg); }
-.bagua-orbit span:nth-child(5) { transform: rotate(180deg) translate(0, 292px) rotate(-180deg); }
-.bagua-orbit span:nth-child(6) { transform: rotate(225deg) translate(-126px, 250px) rotate(-225deg); }
-.bagua-orbit span:nth-child(7) { transform: rotate(270deg) translate(-154px, 132px) rotate(-270deg); }
-.bagua-orbit span:nth-child(8) { transform: rotate(315deg) translate(-118px, 12px) rotate(-315deg); }
-
-.plate-center {
-  position: relative;
-  z-index: 2;
-  display: grid;
-  width: 184px;
-  height: 184px;
-  place-items: center;
-  align-content: center;
-  border: 1px solid var(--line-strong);
-  border-radius: 50%;
-  background: rgba(13, 9, 7, 0.64);
-  text-align: center;
-}
-
-.plate-center span,
-.plate-center em {
-  color: rgba(245, 234, 212, 0.6);
-  font-style: normal;
-}
-
-.plate-center strong {
-  color: var(--gold-bright);
-  font-size: 30px;
-}
-
 .section-block,
 .boundary-section {
   position: relative;
@@ -868,16 +824,6 @@ function startMobileAsk() {
     min-height: 300px;
   }
 
-  .bagua-orbit {
-    width: 250px;
-    height: 250px;
-  }
-
-  .plate-center {
-    width: 146px;
-    height: 146px;
-  }
-
   .skill-grid,
   .tool-grid,
   .function-card-grid {
@@ -972,16 +918,6 @@ function startMobileAsk() {
   .home-hero .hero-visual,
   .hero-plate {
     display: none;
-  }
-
-  .bagua-orbit {
-    width: min(238px, 72vw);
-    height: min(238px, 72vw);
-  }
-
-  .plate-center {
-    width: min(138px, 42vw);
-    height: min(138px, 42vw);
   }
 
   .function-center,
